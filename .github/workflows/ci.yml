@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -U pip
+          pip install -r requirements.txt
+
+      - name: Lint (black/isort)
+        run: |
+          black --check src/ main.py
+          isort --check-only src/ main.py
+
+      - name: Type check (mypy)
+        run: |
+          mypy src/ main.py
+
+      - name: Run tests
+        env:
+          SECRET_KEY: test-secret
+        run: |
+          pytest -q
+
+      - name: RAG quality (optional)
+        if: ${{ env.RAG_EVAL == 'true' }}
+        env:
+          SECRET_KEY: test-secret
+          RAG_EVAL: ${{ env.RAG_EVAL }}
+        run: |
+          pytest -q -m rag_eval
+

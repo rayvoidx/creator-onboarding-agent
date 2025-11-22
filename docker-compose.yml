@@ -1,0 +1,193 @@
+version: '3.8'
+
+services:
+  # Creator Onboarding API
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: creator-onboarding-api
+    command: ["uvicorn", "src.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8000:8000"
+    environment:
+      # Database
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/creator_onboarding_db
+      - REDIS_URL=redis://redis:6379
+
+      # LLM API Keys
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - VOYAGE_API_KEY=${VOYAGE_API_KEY}
+
+      # LLM Model Names
+      - ANTHROPIC_MODEL_NAME=${ANTHROPIC_MODEL_NAME:-claude-sonnet-4-5-20250929}
+      - GEMINI_MODEL_NAME=${GEMINI_MODEL_NAME:-gemini-2.0-flash}
+      - OPENAI_MODEL_NAME=${OPENAI_MODEL_NAME:-gpt-4o}
+
+      # Embedding Models
+      - EMBEDDING_MODEL_NAME=${EMBEDDING_MODEL_NAME:-text-embedding-3-large}
+      - GEMINI_EMBEDDING_MODEL_NAME=${GEMINI_EMBEDDING_MODEL_NAME:-text-embedding-004}
+      - VOYAGE_EMBEDDING_MODEL_NAME=${VOYAGE_EMBEDDING_MODEL_NAME:-voyage-3}
+      - DEFAULT_EMBEDDING_PROVIDER=${DEFAULT_EMBEDDING_PROVIDER:-voyage}
+
+      # Pinecone Vector DB
+      - VECTOR_DB_PROVIDER=pinecone
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+      - PINECONE_ENVIRONMENT=${PINECONE_ENVIRONMENT:-us-east-1-aws}
+      - PINECONE_INDEX_NAME=${PINECONE_INDEX_NAME:-creator-onboarding}
+      - PINECONE_NAMESPACE=${PINECONE_NAMESPACE:-default}
+
+      # MCP Configuration
+      - SUPADATA_API_KEY=${SUPADATA_API_KEY}
+      - MCP_SERVER_URL=http://mcp-gateway:3001
+
+      # Application
+      - ENV=production
+      - DEBUG=false
+      - LOG_LEVEL=INFO
+      - SECRET_KEY=${SECRET_KEY}
+      - ENABLE_AUTH=${ENABLE_AUTH:-true}
+      - ENABLE_RATE_LIMITING=${ENABLE_RATE_LIMITING:-true}
+
+      # Observability (Optional)
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
+      - LANGFUSE_HOST=${LANGFUSE_HOST:-https://cloud.langfuse.com}
+
+      # Optional
+      - CLOVASTUDIO_API_KEY=${CLOVASTUDIO_API_KEY}
+      - CLOUD_PROVIDER=${CLOUD_PROVIDER:-local}
+      - PROMPT_CONFIG_PATH=/app/prompts.yaml
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+    networks:
+      - creator-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Node.js MCP Gateway
+  mcp-gateway:
+    build:
+      context: ./node
+      dockerfile: Dockerfile
+    container_name: creator-mcp-gateway
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - SUPADATA_API_KEY=${SUPADATA_API_KEY}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - creator-network
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: creator-postgres
+    environment:
+      - POSTGRES_DB=creator_onboarding_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_HOST_AUTH_METHOD=md5
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - creator-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d creator_onboarding_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: creator-redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - creator-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Celery Worker (Background Tasks)
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: creator-celery
+    command: celery -A src.tasks.celery_app worker --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/creator_onboarding_db
+      - REDIS_URL=redis://redis:6379
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - VOYAGE_API_KEY=${VOYAGE_API_KEY}
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - creator-network
+    restart: unless-stopped
+
+  # Flower (Celery Monitoring) - Optional
+  flower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: creator-flower
+    command: celery -A src.tasks.celery_app flower --port=5555
+    ports:
+      - "5555:5555"
+    environment:
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+      - celery-worker
+    networks:
+      - creator-network
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+networks:
+  creator-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local

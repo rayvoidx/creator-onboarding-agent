@@ -1,0 +1,240 @@
+[project]
+name = "langgraph-ai-learning-system"
+version = "0.1.0"
+description = "LangGraph 기반 AI 학습 시스템 - 육아정책연구소 디지털연수 특화 하이브리드 AI 시스템"
+authors = [
+    {name = "AIPIA"}
+]
+readme = "README.md"
+requires-python = ">=3.11"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+
+dependencies = [
+    # Core LangGraph and LangChain
+    "langgraph>=0.2.0",
+    "langchain>=0.3.0",
+    "langchain-openai>=0.2.0",
+    "langchain-anthropic>=0.2.0",
+    "langchain-community>=0.3.0",
+    "langchain-core>=0.3.0",
+    # External Deep Agents
+    "deepagents>=0.1.2",
+    "tavily-python>=0.4.0",
+    
+    # Deep Agents 외부 패키지 (core만 설치)
+    
+    # Web Framework
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    
+    # Database and Storage
+    "sqlalchemy>=2.0.0",
+    "redis>=5.0.0",
+    "psycopg2-binary>=2.9.0",
+    
+    # Vector Search and Embeddings
+    "sentence-transformers>=2.2.0",
+    "faiss-cpu>=1.7.4",
+    "qdrant-client>=1.7.0",
+    "rank-bm25>=0.2.2",
+    
+    # Document Processing
+    "pypdf2>=3.0.0",
+    "pdfplumber>=0.10.0",
+    "python-docx>=1.1.0",
+    "beautifulsoup4>=4.12.0",
+    "lxml>=4.9.0",
+    "pytesseract>=0.3.10",
+    "easyocr>=1.7.0",
+    
+    # Machine Learning
+    "scikit-learn>=1.3.0",
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+    "transformers>=4.35.0",
+    "torch>=2.0.0",
+    
+    # Monitoring and Observability
+    "langfuse>=2.0.0",
+    "prometheus-client>=0.19.0",
+    "grafana-api>=1.0.3",
+    "elasticsearch>=8.11.0",
+    
+    # HTTP and API
+    "httpx>=0.25.0",
+    "aiohttp>=3.9.0",
+    "requests>=2.31.0",
+    
+    # Utilities
+    "python-multipart>=0.0.6",
+    "python-jose[cryptography]>=3.3.0",
+    "PyJWT>=2.8.0",
+    "passlib[bcrypt]>=1.7.4",
+    "python-dotenv>=1.0.0",
+    "typer>=0.9.0",
+    "rich>=13.7.0",
+    
+    # Development and Testing
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "mypy>=1.7.0",
+    "pre-commit>=3.5.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "mypy>=1.7.0",
+    "pre-commit>=3.5.0",
+    "jupyter>=1.0.0",
+    "ipython>=8.17.0",
+]
+
+monitoring = [
+    "langfuse>=2.0.0",
+    "prometheus-client>=0.19.0",
+    "grafana-api>=1.0.3",
+    "elasticsearch>=8.11.0",
+    # Note: kibana Python package max version is 0.7, not 8.x
+    # "kibana>=8.11.0",
+]
+
+deep-agents = [
+    # Keep internal experimental deps optional
+    # Note: The following packages are not available in PyPI registry
+    # "tree-of-thoughts>=0.1.0",
+    # "react-agent>=0.1.0",
+    # "self-reflection>=0.1.0",
+    # "mcts>=0.1.0",
+    # "beam-search>=0.1.0",
+    # External deepagents ecosystem
+    "deepagents>=0.1.2",
+    "tavily-python>=0.4.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/kicce/langgraph-ai-learning-system"
+Documentation = "https://langgraph-ai-learning-system.readthedocs.io"
+Repository = "https://github.com/kicce/langgraph-ai-learning-system.git"
+Issues = "https://github.com/kicce/langgraph-ai-learning-system/issues"
+
+[project.scripts]
+langgraph-ai = "main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.black]
+line-length = 88
+target-version = ['py39', 'py310', 'py311', 'py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["src", "config", "scripts", "tests"]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+    "qdrant_client.*",
+    "easyocr.*",
+    "pytesseract.*",
+    "layoutlm.*",
+    "tree_of_thoughts.*",
+    "react_agent.*",
+    "self_reflection.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--cov=src",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+    "deep_agents: marks tests as deep agents tests",
+]
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "*/__pycache__/*",
+    "*/migrations/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
