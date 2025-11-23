@@ -213,8 +213,8 @@ async def add_documents_to_rag():
                 'max_results': 10
             },
             'generation': {
-                'default_model': os.getenv('DEFAULT_LLM_MODEL', 'gpt-4o'),
-                'fallback_model': os.getenv('FALLBACK_LLM_MODEL', 'gpt-4o-mini'),
+                'default_model': os.getenv('DEFAULT_LLM_MODEL', 'gpt-5.1'),
+                'fallback_model': os.getenv('FALLBACK_LLM_MODEL', 'gpt-5.1'),
                 'openai_api_key': os.getenv('OPENAI_API_KEY'),
             }
         }

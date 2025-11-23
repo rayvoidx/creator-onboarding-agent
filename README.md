@@ -15,7 +15,7 @@ AI 기반 크리에이터 온보딩 평가 시스템. LangGraph 오케스트레�
 ### Backend
 - **Framework**: FastAPI (Python 3.11+)
 - **AI Orchestration**: LangGraph, LangChain
-- **LLM**: OpenAI GPT-4o, Anthropic Claude Sonnet 4.5, Google Gemini
+- **LLM**: OpenAI GPT-5.1, Anthropic Claude Sonnet 4.5, Google Gemini (멀티 모델 플릿)
 - **Embeddings**: OpenAI text-embedding-3-small
 - **Vector DB**: ChromaDB
 - **External Integration**: Supadata MCP (웹 스크래핑)
@@ -385,9 +385,9 @@ RAG 파이프라인을 활용하여 심층 인사이트 리포트를 생성합�
 
 | 작업 | 기본 모델 | 폴백 모델 |
 |------|----------|----------|
-| 크리에이터 분석 | Claude Sonnet 4.5 | GPT-4o |
-| 미션 추천 | GPT-4o | Claude Sonnet |
-| 리포트 생성 | GPT-4o | Claude Sonnet |
+| 크리에이터 분석 | Claude Sonnet 4.5 | GPT-5.1 |
+| 미션 추천 | GPT-5.1 | Claude Sonnet |
+| 리포트 생성 | GPT-5.1 | Claude Sonnet |
 | 임베딩 | text-embedding-3-small | - |
 
 ## 모니터링

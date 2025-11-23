@@ -43,9 +43,9 @@ class GenerationEngine:
             self.google_api_key = self.config.get('google_api_key', getattr(_st, 'GOOGLE_API_KEY', ''))
         except Exception:
             # 설정 모듈 접근 실패 시 합리적 기본값
-            self.default_model = self.config.get('default_model', 'gpt-4o')
+            self.default_model = self.config.get('default_model', 'gpt-5.1')
             self.fast_model = self.config.get('fast_model', 'gemini-2.0-flash')
-            self.deep_model = self.config.get('deep_model', 'gpt-4o')
+            self.deep_model = self.config.get('deep_model', 'gpt-5.1')
             self.fallback_model = self.config.get('fallback_model', 'gemini-2.0-flash')
             self.openai_api_key = self.config.get('openai_api_key', '')
             self.anthropic_api_key = self.config.get('anthropic_api_key', '')

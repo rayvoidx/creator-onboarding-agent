@@ -63,7 +63,7 @@ Client → Node.js API (3001) → Enterprise Briefing Agent
 ## 주요 기술 스택
 - **백엔드**: FastAPI, LangGraph, LangChain
 - **데이터베이스**: PostgreSQL, Redis, ChromaDB
-- **LLM**: OpenAI (gpt-4o), Anthropic (옵션)
+- **LLM**: OpenAI (gpt-5.1), Anthropic (옵션), Google Gemini (멀티 모델 플릿)
 - **모니터링**: Langfuse, Prometheus
 - **Node.js**: Express, TypeScript
 

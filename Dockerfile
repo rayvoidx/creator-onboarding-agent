@@ -32,9 +32,9 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app \
-    # Default model names
+    # Default model names (멀티 모델 플릿 구성)
     ANTHROPIC_MODEL_NAME=claude-sonnet-4-5-20250929 \
-    OPENAI_MODEL_NAME=gpt-4o \
+    OPENAI_MODEL_NAME=gpt-5.1 \
     GEMINI_MODEL_NAME=gemini-2.0-flash
 
 WORKDIR /app

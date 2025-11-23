@@ -8,7 +8,17 @@ Contains all AI agents for the system, each with consistent structure:
 """
 
 from src.agents.base import BaseAgent
-from src.agents.orchestrator import MainOrchestrator, get_orchestrator
+
+# Lazy import orchestrator to avoid circular dependencies
+try:
+    from src.agents.orchestrator import MainOrchestrator, get_orchestrator
+    _ORCHESTRATOR_AVAILABLE = True
+except ImportError as e:
+    MainOrchestrator = None  # type: ignore
+    get_orchestrator = None  # type: ignore
+    _ORCHESTRATOR_AVAILABLE = False
+    import logging
+    logging.getLogger(__name__).warning(f"Orchestrator not available: {e}")
 
 __all__ = [
     "BaseAgent",

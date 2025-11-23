@@ -79,14 +79,14 @@ class Settings(BaseSettings):
     # 폴백/가속 모델(저부하/빠른 응답)
     FAST_LLM_MODEL: str = os.getenv("FAST_LLM_MODEL", "gemini-2.0-flash")
     # 심화/대용량 컨텍스트 모델(고난도/심화 질문)
-    DEEP_LLM_MODEL: str = os.getenv("DEEP_LLM_MODEL", "gpt-4o")
+    DEEP_LLM_MODEL: str = os.getenv("DEEP_LLM_MODEL", "gpt-5.1")
     # 역사적 호환을 위해 유지하되 내부적으로 FAST로 매핑
     FALLBACK_LLM_MODEL: str = os.getenv("FALLBACK_LLM_MODEL", "gemini-2.0-flash")
 
-    # Provider-specific model names
+    # Provider-specific model names (멀티 모델 플릿 구성용)
     ANTHROPIC_MODEL_NAME: str = os.getenv("ANTHROPIC_MODEL_NAME", "claude-sonnet-4-20250514")
     GEMINI_MODEL_NAME: str = os.getenv("GEMINI_MODEL_NAME", "gemini-2.0-flash")
-    OPENAI_MODEL_NAME: str = os.getenv("OPENAI_MODEL_NAME", "gpt-4o")
+    OPENAI_MODEL_NAME: str = os.getenv("OPENAI_MODEL_NAME", "gpt-5.1")
 
     # Embedding models
     GEMINI_EMBEDDING_MODEL_NAME: str = os.getenv("GEMINI_EMBEDDING_MODEL_NAME", "text-embedding-004")
@@ -151,8 +151,8 @@ class Settings(BaseSettings):
 
         - 값 예시:
           {
-            "general": {"llm_models": ["gpt-4o", "claude-3-sonnet"]},
-            "competency": {"llm_models": ["claude-3-opus", "gpt-4o"]},
+            "general": {"llm_models": ["gpt-5.1", "claude-3-sonnet"]},
+            "competency": {"llm_models": ["claude-3-opus", "gpt-5.1"]},
             ...
           }
         """

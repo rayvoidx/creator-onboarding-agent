@@ -72,7 +72,7 @@ class ModelPerformanceMonitor:
     def get_best_performing_model(self, criteria: str = "response_time") -> str:
         """최고 성능 모델 조회"""
         if not self.model_stats:
-            return "gpt-4o"  # 기본값
+            return "gpt-5.1"  # 기본값
         
         best_model = None
         best_score = float('inf') if criteria == "response_time" else 0.0
@@ -97,7 +97,7 @@ class ModelPerformanceMonitor:
                     best_score = avg_cost
                     best_model = model_name
         
-        return best_model or "gpt-4o"
+        return best_model or "gpt-5.1"
 
 
 class ModelSelector:
@@ -106,13 +106,13 @@ class ModelSelector:
     def __init__(self, monitor: Optional[ModelPerformanceMonitor] = None):
         self.monitor = monitor or ModelPerformanceMonitor()
         self.available_models = [
-            "gpt-4o",
-            "gpt-4o-mini",
+            "gpt-5.1",
+            "gpt-5.1-mini",
             "claude-sonnet-4-5-20250929"
         ]
         self.model_capabilities = {
-            "gpt-4o": {"max_tokens": 128000, "cost_per_1k": 0.03, "speed": "medium"},
-            "gpt-4o-mini": {"max_tokens": 128000, "cost_per_1k": 0.0015, "speed": "fast"},
+            "gpt-5.1": {"max_tokens": 128000, "cost_per_1k": 0.03, "speed": "medium"},
+            "gpt-5.1-mini": {"max_tokens": 128000, "cost_per_1k": 0.0015, "speed": "fast"},
             "claude-sonnet-4-5-20250929": {"max_tokens": 200000, "cost_per_1k": 0.015, "speed": "medium"}
         }
 
@@ -139,7 +139,7 @@ class ModelSelector:
             ]
             
             if not suitable_models:
-                return "gpt-4o-mini"  # 폴백
+                return "gpt-5.1-mini"  # 폴백
             
             # 우선순위에 따른 선택
             if priority == "performance":
@@ -167,17 +167,17 @@ class ModelSelector:
                 cost_sorted = sorted(suitable_models, key=get_cost)
                 return cost_sorted[0]
             
-            # 기본 선택: gpt-4o-mini (균형잡힌 선택)
-            if "gpt-4o-mini" in suitable_models:
-                return "gpt-4o-mini"
-            elif "gpt-4o" in suitable_models:
-                return "gpt-4o"
+            # 기본 선택: gpt-5.1-mini (균형잡힌 선택)
+            if "gpt-5.1-mini" in suitable_models:
+                return "gpt-5.1-mini"
+            elif "gpt-5.1" in suitable_models:
+                return "gpt-5.1"
             else:
                 return suitable_models[0]
                 
         except Exception as e:
             logger.error(f"Model selection failed: {e}")
-            return "gpt-4o-mini"  # 안전한 폴백
+            return "gpt-5.1-mini"  # 안전한 폴백
 
     def get_model_info(self, model_name: str) -> Dict[str, Any]:
         """모델 정보 조회"""
@@ -190,11 +190,11 @@ class ModelSelector:
     async def get_recommended_model(self, use_case: str) -> str:
         """사용 사례별 추천 모델"""
         recommendations = {
-            "chat": "gpt-4o",
-            "analysis": "gpt-4o",
+            "chat": "gpt-5.1",
+            "analysis": "gpt-5.1",
             "creative": "claude-sonnet-4-5-20250929",
-            "fast_response": "gpt-4o-mini",
+            "fast_response": "gpt-5.1-mini",
             "long_context": "claude-sonnet-4-5-20250929"
         }
 
-        return recommendations.get(use_case, "gpt-4o-mini")
+        return recommendations.get(use_case, "gpt-5.1-mini")
