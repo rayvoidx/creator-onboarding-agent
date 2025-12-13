@@ -104,6 +104,26 @@ class DataCollectionAgent(BaseAgent[DataCollectionState]):
         except Exception as e:
             self.logger.error(f"Failed to initialize API clients: {e}")
 
+    async def collect(
+        self, source_type: DataSourceType, params: Dict[str, Any] | None = None
+    ) -> Dict[str, Any]:
+        """데이터 수집 실행 (Task 호환용 래퍼)"""
+        state = DataCollectionState(source_type=source_type)
+        result_state = await self.execute(state)
+
+        return {
+            "status": (
+                result_state.collection_status.value
+                if result_state.collection_status
+                else "unknown"
+            ),
+            "total_items": result_state.total_items,
+            "success_count": result_state.success_count,
+            "error_count": result_state.error_count,
+            "items": result_state.collected_items,
+            "errors": result_state.failed_items,
+        }
+
     async def execute(self, state: DataCollectionState) -> DataCollectionState:
         """데이터 수집 메인 실행 로직"""
         try:
@@ -1587,7 +1607,7 @@ class ContentProcessor:
         words = [w for w in words if w not in stopwords]
 
         # 빈도 계산
-        word_freq = {}
+        word_freq: Dict[str, int] = {}
         for word in words:
             word_freq[word] = word_freq.get(word, 0) + 1
 
