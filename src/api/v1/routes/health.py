@@ -26,15 +26,19 @@ async def health_check() -> HealthCheckResponse:
             "llm": "healthy" if settings.OPENAI_API_KEY else "not_configured",
         }
 
-        overall_status = "healthy" if all(
-            status in ["healthy", "disabled"] for status in health_status.values()
-        ) else "unhealthy"
+        overall_status = (
+            "healthy"
+            if all(
+                status in ["healthy", "disabled"] for status in health_status.values()
+            )
+            else "unhealthy"
+        )
 
         return HealthCheckResponse(
             status=overall_status,
             timestamp=datetime.now(),
             components=health_status,
-            version="1.0.0"
+            version="1.0.0",
         )
 
     except Exception as e:

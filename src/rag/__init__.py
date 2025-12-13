@@ -8,8 +8,8 @@ from .generation_engine import GenerationEngine
 
 __all__ = [
     "PromptTemplates",
-    "RAGPipeline", 
+    "RAGPipeline",
     "DocumentProcessor",
     "RetrievalEngine",
-    "GenerationEngine"
+    "GenerationEngine",
 ]

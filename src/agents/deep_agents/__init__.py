@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 class DeepAgentsState(BaseState):
     """Deep Agents 상태"""
+
     query: str = ""
     iterations: int = 0
     max_iterations: int = 5
@@ -39,10 +40,10 @@ class UnifiedDeepAgents:
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         self.config = config or {}
         self.logger = logging.getLogger("UnifiedDeepAgents")
-        self.max_steps = self.config.get('max_steps', 8)
-        self.critic_rounds = self.config.get('critic_rounds', 2)
-        self.timeout_secs = self.config.get('timeout_secs', 60)
-        self.quality_threshold = self.config.get('quality_threshold', 0.7)
+        self.max_steps = self.config.get("max_steps", 8)
+        self.critic_rounds = self.config.get("critic_rounds", 2)
+        self.timeout_secs = self.config.get("timeout_secs", 60)
+        self.quality_threshold = self.config.get("quality_threshold", 0.7)
 
     def should_use_deep_agents(self, query: str) -> bool:
         """
@@ -58,28 +59,48 @@ class UnifiedDeepAgents:
         # 복잡도 지표
         complexity_indicators = [
             # 다단계 추론 필요
-            '비교', '분석', '종합', '평가',
-            '장단점', '차이점', '공통점',
+            "비교",
+            "분석",
+            "종합",
+            "평가",
+            "장단점",
+            "차이점",
+            "공통점",
             # 전문적 질문
-            '아키텍처', '설계', '구현', '최적화',
-            '전략', '프레임워크', '시스템',
+            "아키텍처",
+            "설계",
+            "구현",
+            "최적화",
+            "전략",
+            "프레임워크",
+            "시스템",
             # 복잡한 요청
-            '단계별', '순차적', '체계적',
-            '완성해줘', '만들어줘', '개발해줘',
+            "단계별",
+            "순차적",
+            "체계적",
+            "완성해줘",
+            "만들어줘",
+            "개발해줘",
             # 영어 패턴
-            'compare', 'analyze', 'evaluate',
-            'architecture', 'design', 'implement'
+            "compare",
+            "analyze",
+            "evaluate",
+            "architecture",
+            "design",
+            "implement",
         ]
 
         # 복잡도 점수 계산
-        complexity_score = sum(1 for indicator in complexity_indicators if indicator in query_lower)
+        complexity_score = sum(
+            1 for indicator in complexity_indicators if indicator in query_lower
+        )
 
         # 질문 길이도 고려
         if len(query) > 300:
             complexity_score += 1
 
         # 여러 문장인 경우
-        sentences = re.split(r'[.?!。？！]', query)
+        sentences = re.split(r"[.?!。？！]", query)
         if len([s for s in sentences if s.strip()]) > 3:
             complexity_score += 1
 
@@ -96,7 +117,9 @@ class UnifiedDeepAgents:
             처리 결과 딕셔너리
         """
         try:
-            self.logger.info(f"Starting Deep Agents execution for query: {query[:100]}...")
+            self.logger.info(
+                f"Starting Deep Agents execution for query: {query[:100]}..."
+            )
 
             iterations = 0
             quality_score = 0.0
@@ -115,7 +138,7 @@ class UnifiedDeepAgents:
                 # 품질 평가
                 critique = await self._critique_response(query, current_response)
                 critique_history.append(critique)
-                quality_score = critique.get('score', 0.0)
+                quality_score = critique.get("score", 0.0)
 
                 # 품질 기준 충족 시 종료
                 if quality_score >= self.quality_threshold:
@@ -128,34 +151,36 @@ class UnifiedDeepAgents:
                 iterations += 1
 
             result = {
-                'success': True,
-                'response': current_response,
-                'iterations': iterations,
-                'quality_score': quality_score,
-                'critique_history': critique_history,
-                'result': {
-                    'content': current_response,
-                    'metadata': {
-                        'iterations': iterations,
-                        'quality_score': quality_score,
-                        'processing_time': 0,
-                        'needs_rag': False,
-                        'needs_competency': False,
-                        'needs_recommendation': False
-                    }
-                }
+                "success": True,
+                "response": current_response,
+                "iterations": iterations,
+                "quality_score": quality_score,
+                "critique_history": critique_history,
+                "result": {
+                    "content": current_response,
+                    "metadata": {
+                        "iterations": iterations,
+                        "quality_score": quality_score,
+                        "processing_time": 0,
+                        "needs_rag": False,
+                        "needs_competency": False,
+                        "needs_recommendation": False,
+                    },
+                },
             }
 
-            self.logger.info(f"Deep Agents completed: iterations={iterations}, quality={quality_score:.2f}")
+            self.logger.info(
+                f"Deep Agents completed: iterations={iterations}, quality={quality_score:.2f}"
+            )
             return result
 
         except Exception as e:
             self.logger.error(f"Deep Agents execution failed: {e}")
             return {
-                'success': False,
-                'error': str(e),
-                'iterations': 0,
-                'quality_score': 0.0
+                "success": False,
+                "error": str(e),
+                "iterations": 0,
+                "quality_score": 0.0,
             }
 
     async def _generate_initial_response(self, query: str) -> str:
@@ -176,28 +201,25 @@ class UnifiedDeepAgents:
             score += 0.1
 
         # 구조화 여부
-        if any(marker in response for marker in ['1.', '2.', '-', '•', '##']):
+        if any(marker in response for marker in ["1.", "2.", "-", "•", "##"]):
             score += 0.1
 
         return {
-            'score': min(score, 1.0),
-            'feedback': '품질 평가 완료',
-            'improvements': ['더 구체적인 예시 추가', '구조화된 형식으로 정리']
+            "score": min(score, 1.0),
+            "feedback": "품질 평가 완료",
+            "improvements": ["더 구체적인 예시 추가", "구조화된 형식으로 정리"],
         }
 
     async def _improve_response(
-        self,
-        query: str,
-        response: str,
-        critique: Dict[str, Any]
+        self, query: str, response: str, critique: Dict[str, Any]
     ) -> str:
         """응답 개선"""
         # 실제 구현에서는 LLM을 사용하여 응답 개선
-        improvements = critique.get('improvements', [])
+        improvements = critique.get("improvements", [])
         improved = f"{response}\n\n[개선사항 반영]\n"
         for imp in improvements:
             improved += f"- {imp}\n"
         return improved
 
 
-__all__ = ['UnifiedDeepAgents', 'DeepAgentsState']
+__all__ = ["UnifiedDeepAgents", "DeepAgentsState"]

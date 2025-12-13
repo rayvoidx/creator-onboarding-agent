@@ -1,6 +1,7 @@
 """
 크리에이터 프로필 이력 추적 모델
 """
+
 from datetime import datetime
 from typing import Optional, Dict, Any, List
 from pydantic import BaseModel, Field
@@ -8,6 +9,7 @@ from pydantic import BaseModel, Field
 
 class CreatorSnapshot(BaseModel):
     """특정 시점의 크리에이터 상태 스냅샷"""
+
     id: str
     creator_id: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
@@ -41,6 +43,7 @@ class CreatorSnapshot(BaseModel):
 
 class CreatorHistoryEntry(BaseModel):
     """크리에이터 이력 항목"""
+
     id: str
     creator_id: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
@@ -66,6 +69,7 @@ class CreatorHistoryEntry(BaseModel):
 
 class CreatorTrend(BaseModel):
     """크리에이터 트렌드 분석"""
+
     creator_id: str
     period_start: datetime
     period_end: datetime
@@ -101,6 +105,7 @@ class CreatorTrend(BaseModel):
 
 class CreatorHistoryQuery(BaseModel):
     """크리에이터 이력 조회 필터"""
+
     creator_id: str
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
@@ -111,6 +116,7 @@ class CreatorHistoryQuery(BaseModel):
 
 class CreatorHistoryResponse(BaseModel):
     """크리에이터 이력 응답"""
+
     creator_id: str
     entries: List[CreatorHistoryEntry]
     snapshots: List[CreatorSnapshot]

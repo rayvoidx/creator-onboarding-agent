@@ -19,23 +19,30 @@ async def generate_analytics_report(request: AnalyticsRequest) -> AnalyticsRespo
     try:
         deps = get_dependencies()
         if not deps.orchestrator:
-            raise HTTPException(status_code=503, detail="시스템이 초기화되지 않았습니다.")
+            raise HTTPException(
+                status_code=503, detail="시스템이 초기화되지 않았습니다."
+            )
 
-        result = await deps.orchestrator.run({
-            "message": f"{request.report_type} 리포트를 생성해주세요.",
-            "user_id": request.user_id,
-            "session_id": request.session_id or f"analytics_{datetime.now().timestamp()}",
-            "context": {
-                "report_type": request.report_type,
-                "date_range": request.date_range,
-                "filters": request.filters,
-                "workflow_type": "analytics",
-                "mcp": request.external_sources or {},
+        result = await deps.orchestrator.run(
+            {
+                "message": f"{request.report_type} 리포트를 생성해주세요.",
+                "user_id": request.user_id,
+                "session_id": request.session_id
+                or f"analytics_{datetime.now().timestamp()}",
+                "context": {
+                    "report_type": request.report_type,
+                    "date_range": request.date_range,
+                    "filters": request.filters,
+                    "workflow_type": "analytics",
+                    "mcp": request.external_sources or {},
+                },
             }
-        })
+        )
 
         if not result.get("success", False):
-            raise HTTPException(status_code=500, detail=result.get("error", "리포트 생성 실패"))
+            raise HTTPException(
+                status_code=500, detail=result.get("error", "리포트 생성 실패")
+            )
 
         return AnalyticsResponse(
             success=True,
@@ -45,11 +52,13 @@ async def generate_analytics_report(request: AnalyticsRequest) -> AnalyticsRespo
             report_data=result.get("analytics_results", {}),
             insights=result.get("insights", []),
             recommendations=result.get("recommendations", []),
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
         )
 
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Analytics report generation failed: {e}")
-        raise HTTPException(status_code=500, detail="리포트 생성 중 오류가 발생했습니다.")
+        raise HTTPException(
+            status_code=500, detail="리포트 생성 중 오류가 발생했습니다."
+        )

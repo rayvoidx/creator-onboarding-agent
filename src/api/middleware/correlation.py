@@ -3,6 +3,7 @@
 Adds/propagates X-Request-ID header, binds request_id into structured logging
 context, and exposes it via request.state.request_id.
 """
+
 import uuid
 from typing import Any, Callable
 
@@ -37,5 +38,3 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
         # propagate header
         response.headers[self.header_name] = req_id
         return response
-
-

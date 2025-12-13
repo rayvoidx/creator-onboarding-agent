@@ -13,6 +13,7 @@ Base = declarative_base()
 
 class ContentMetadataTable(Base):
     """콘텐츠 메타데이터 SQLAlchemy 모델"""
+
     __tablename__ = "content_metadata"
 
     id = Column(String(255), primary_key=True)
@@ -29,13 +30,14 @@ class ContentMetadataTable(Base):
 
     # 복합 인덱스
     __table_args__ = (
-        Index('idx_source_type', 'source', 'content_type'),
-        Index('idx_created_at_source', 'created_at', 'source'),
+        Index("idx_source_type", "source", "content_type"),
+        Index("idx_created_at_source", "created_at", "source"),
     )
 
 
 class CollectionHistoryTable(Base):
     """수집 히스토리 SQLAlchemy 모델"""
+
     __tablename__ = "collection_history"
 
     id = Column(String(36), primary_key=True)
@@ -52,6 +54,7 @@ class CollectionHistoryTable(Base):
 
 class DataSourceConfigTable(Base):
     """데이터 소스 설정 SQLAlchemy 모델"""
+
     __tablename__ = "data_source_config"
 
     id = Column(String(36), primary_key=True)

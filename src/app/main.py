@@ -64,7 +64,7 @@ def create_app() -> FastAPI:
         version="1.0.0",
         docs_url="/docs" if settings.DEBUG else None,
         redoc_url="/redoc" if settings.DEBUG else None,
-        lifespan=lifespan
+        lifespan=lifespan,
     )
 
     # Configure middleware (order matters - last added = first executed)
@@ -111,7 +111,7 @@ def _configure_middleware(app: FastAPI, settings) -> None:
             max_requests=100,
             window_seconds=60,
             redis_url=(settings.REDIS_URL if settings.RATE_LIMIT_USE_REDIS else None),
-            use_redis=settings.RATE_LIMIT_USE_REDIS
+            use_redis=settings.RATE_LIMIT_USE_REDIS,
         )
 
     # Audit logging (after auth to capture user info)
@@ -145,7 +145,9 @@ def _register_routers(app: FastAPI) -> None:
 def _configure_static_files(app: FastAPI) -> None:
     """Configure static file serving for frontend."""
     # Get the project root directory
-    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    project_root = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    )
     frontend_dist = os.path.join(project_root, "frontend", "dist")
 
     if os.path.exists(frontend_dist):
@@ -159,7 +161,9 @@ def _configure_static_files(app: FastAPI) -> None:
         async def serve_spa(full_path: str):
             """Serve the SPA for all non-API routes."""
             # Don't serve index.html for API routes
-            if full_path.startswith(("api/", "docs", "redoc", "openapi.json", "health", "v1/")):
+            if full_path.startswith(
+                ("api/", "docs", "redoc", "openapi.json", "health", "v1/")
+            ):
                 return None
 
             index_file = os.path.join(frontend_dist, "index.html")
@@ -179,11 +183,12 @@ app = create_app()
 # Development server entry point
 if __name__ == "__main__":
     import uvicorn
+
     settings = get_settings()
     uvicorn.run(
         "src.app.main:app",
         host=settings.HOST,
         port=settings.PORT,
         reload=settings.DEBUG,
-        log_level=settings.LOG_LEVEL.lower()
+        log_level=settings.LOG_LEVEL.lower(),
     )

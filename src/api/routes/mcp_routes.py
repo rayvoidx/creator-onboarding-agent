@@ -77,8 +77,10 @@ def get_vector_search_server():
     global _vector_search_server
     if _vector_search_server is None:
         from src.mcp.servers import VectorSearchMCPServer
+
         _vector_search_server = VectorSearchMCPServer()
         import asyncio
+
         asyncio.get_event_loop().run_until_complete(_vector_search_server.initialize())
     return _vector_search_server
 
@@ -88,8 +90,10 @@ def get_http_fetch_server():
     global _http_fetch_server
     if _http_fetch_server is None:
         from src.mcp.servers import HttpFetchMCPServer
+
         _http_fetch_server = HttpFetchMCPServer()
         import asyncio
+
         asyncio.get_event_loop().run_until_complete(_http_fetch_server.initialize())
     return _http_fetch_server
 
@@ -101,9 +105,7 @@ async def vector_search(request: VectorSearchRequest):
     try:
         server = get_vector_search_server()
         results = await server._vector_search(
-            query=request.query,
-            limit=request.limit,
-            filters=request.filters
+            query=request.query, limit=request.limit, filters=request.filters
         )
         return {"success": True, "results": results, "count": len(results)}
     except Exception as e:
@@ -116,10 +118,7 @@ async def keyword_search(request: VectorSearchRequest):
     """키워드 검색 실행"""
     try:
         server = get_vector_search_server()
-        results = await server._keyword_search(
-            query=request.query,
-            limit=request.limit
-        )
+        results = await server._keyword_search(query=request.query, limit=request.limit)
         return {"success": True, "results": results, "count": len(results)}
     except Exception as e:
         logger.error(f"Keyword search error: {e}")
@@ -135,7 +134,7 @@ async def hybrid_search(request: HybridSearchRequest):
             query=request.query,
             limit=request.limit,
             filters=request.filters,
-            vector_weight=request.vector_weight
+            vector_weight=request.vector_weight,
         )
         return {"success": True, "results": results, "count": len(results)}
     except Exception as e:
@@ -185,8 +184,7 @@ async def find_similar_creators(request: SimilarCreatorsRequest):
     try:
         server = get_vector_search_server()
         results = await server._find_similar_creators(
-            creator_profile=request.creator_profile,
-            limit=request.limit
+            creator_profile=request.creator_profile, limit=request.limit
         )
         return {"success": True, "similar_creators": results, "count": len(results)}
     except Exception as e:
@@ -212,10 +210,7 @@ async def fetch_urls(request: FetchUrlsRequest):
     """다중 URL 콘텐츠 가져오기"""
     try:
         server = get_http_fetch_server()
-        results = await server._fetch_urls(
-            urls=request.urls,
-            limit=request.limit
-        )
+        results = await server._fetch_urls(urls=request.urls, limit=request.limit)
         return {"success": True, "results": results, "count": len(results)}
     except Exception as e:
         logger.error(f"Fetch URLs error: {e}")
@@ -230,7 +225,7 @@ async def web_search(request: WebSearchRequest):
         result = await server._web_search(
             query=request.query,
             top_k=request.top_k,
-            prioritize_gov=request.prioritize_gov
+            prioritize_gov=request.prioritize_gov,
         )
         return {"success": True, "result": result}
     except Exception as e:
@@ -244,9 +239,7 @@ async def search_and_fetch(request: SearchAndFetchRequest):
     try:
         server = get_http_fetch_server()
         result = await server._search_and_fetch(
-            query=request.query,
-            top_k=request.top_k,
-            fetch_limit=request.fetch_limit
+            query=request.query, top_k=request.top_k, fetch_limit=request.fetch_limit
         )
         return {"success": True, "result": result}
     except Exception as e:
@@ -260,8 +253,7 @@ async def fetch_creator_profile(request: CreatorProfileRequest):
     try:
         server = get_http_fetch_server()
         result = await server._fetch_creator_profile(
-            profile_url=request.profile_url,
-            platform=request.platform
+            profile_url=request.profile_url, platform=request.platform
         )
         return {"success": True, "profile": result}
     except Exception as e:
@@ -278,19 +270,23 @@ async def list_tools():
     tools = []
 
     for tool in vector_server.tools.values():
-        tools.append({
-            "name": tool.name,
-            "description": tool.description,
-            "server": "vector-search",
-            "input_schema": tool.input_schema
-        })
+        tools.append(
+            {
+                "name": tool.name,
+                "description": tool.description,
+                "server": "vector-search",
+                "input_schema": tool.input_schema,
+            }
+        )
 
     for tool in http_server.tools.values():
-        tools.append({
-            "name": tool.name,
-            "description": tool.description,
-            "server": "http-fetch",
-            "input_schema": tool.input_schema
-        })
+        tools.append(
+            {
+                "name": tool.name,
+                "description": tool.description,
+                "server": "http-fetch",
+                "input_schema": tool.input_schema,
+            }
+        )
 
     return {"tools": tools, "count": len(tools)}

@@ -1,6 +1,7 @@
 """
 감사 추적 미들웨어
 """
+
 import logging
 import time
 from typing import Callable, Any
@@ -58,15 +59,15 @@ class AuditMiddleware(BaseHTTPMiddleware):
         audit_service = get_audit_service()
 
         # 요청 정보 추출
-        user_id = getattr(request.state, 'user_id', None)
-        username = getattr(request.state, 'username', None)
-        role = getattr(request.state, 'role', None)
-        if role and hasattr(role, 'value'):
+        user_id = getattr(request.state, "user_id", None)
+        username = getattr(request.state, "username", None)
+        role = getattr(request.state, "role", None)
+        if role and hasattr(role, "value"):
             role = role.value
 
-        request_id = request.headers.get('X-Request-ID')
+        request_id = request.headers.get("X-Request-ID")
         ip_address = self._get_client_ip(request)
-        user_agent = request.headers.get('User-Agent', '')[:500]
+        user_agent = request.headers.get("User-Agent", "")[:500]
 
         # 액션 결정
         action = self._determine_action(request)
@@ -132,12 +133,12 @@ class AuditMiddleware(BaseHTTPMiddleware):
     def _get_client_ip(self, request: Request) -> str:
         """클라이언트 IP 주소 추출"""
         # X-Forwarded-For 헤더 확인 (프록시/로드밸런서 뒤에 있는 경우)
-        forwarded_for = request.headers.get('X-Forwarded-For')
+        forwarded_for = request.headers.get("X-Forwarded-For")
         if forwarded_for:
-            return forwarded_for.split(',')[0].strip()
+            return forwarded_for.split(",")[0].strip()
 
         # X-Real-IP 헤더 확인
-        real_ip = request.headers.get('X-Real-IP')
+        real_ip = request.headers.get("X-Real-IP")
         if real_ip:
             return real_ip
 

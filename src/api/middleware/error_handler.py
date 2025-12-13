@@ -24,7 +24,7 @@ from src.core.exceptions import (
     DataCollectionError,
     ConfigurationError,
     ErrorSeverity,
-    create_error_response
+    create_error_response,
 )
 
 logger = logging.getLogger(__name__)
@@ -35,8 +35,7 @@ def register_error_handlers(app: FastAPI):
 
     @app.exception_handler(BaseApplicationException)
     async def application_exception_handler(
-        request: Request,
-        exc: BaseApplicationException
+        request: Request, exc: BaseApplicationException
     ):
         """애플리케이션 예외 핸들러"""
         exc.log()
@@ -61,25 +60,19 @@ def register_error_handlers(app: FastAPI):
         else:
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
 
-        return JSONResponse(
-            status_code=status_code,
-            content=create_error_response(exc)
-        )
+        return JSONResponse(status_code=status_code, content=create_error_response(exc))
 
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(
-        request: Request,
-        exc: RequestValidationError
+        request: Request, exc: RequestValidationError
     ):
         """Pydantic 검증 예외 핸들러"""
         errors = []
         for error in exc.errors():
             field = ".".join(str(loc) for loc in error["loc"])
-            errors.append({
-                "field": field,
-                "message": error["msg"],
-                "type": error["type"]
-            })
+            errors.append(
+                {"field": field, "message": error["msg"], "type": error["type"]}
+            )
 
         logger.warning(f"Validation error: {errors}")
 
@@ -91,16 +84,13 @@ def register_error_handlers(app: FastAPI):
                     "code": "VALIDATION_ERROR",
                     "message": "요청 데이터 검증에 실패했습니다",
                     "category": "validation",
-                    "details": {"errors": errors}
-                }
-            }
+                    "details": {"errors": errors},
+                },
+            },
         )
 
     @app.exception_handler(StarletteHTTPException)
-    async def http_exception_handler(
-        request: Request,
-        exc: StarletteHTTPException
-    ):
+    async def http_exception_handler(request: Request, exc: StarletteHTTPException):
         """HTTP 예외 핸들러"""
         logger.warning(f"HTTP error {exc.status_code}: {exc.detail}")
 
@@ -112,21 +102,19 @@ def register_error_handlers(app: FastAPI):
                     "code": f"HTTP_{exc.status_code}",
                     "message": str(exc.detail),
                     "category": "http",
-                }
-            }
+                },
+            },
         )
 
     @app.exception_handler(Exception)
-    async def general_exception_handler(
-        request: Request,
-        exc: Exception
-    ):
+    async def general_exception_handler(request: Request, exc: Exception):
         """일반 예외 핸들러 (최종 폴백)"""
         logger.error(f"Unhandled exception: {exc}", exc_info=True)
 
         # 프로덕션에서는 상세 정보 숨김
         try:
             from config.settings import get_settings
+
             debug = get_settings().DEBUG
         except Exception:
             debug = False
@@ -141,8 +129,8 @@ def register_error_handlers(app: FastAPI):
                     "code": "INTERNAL_ERROR",
                     "message": error_message,
                     "category": "system",
-                }
-            }
+                },
+            },
         )
 
     @app.middleware("http")
@@ -159,8 +147,10 @@ def register_error_handlers(app: FastAPI):
                         "method": request.method,
                         "path": request.url.path,
                         "status_code": response.status_code,
-                        "client_ip": request.client.host if request.client else "unknown"
-                    }
+                        "client_ip": (
+                            request.client.host if request.client else "unknown"
+                        ),
+                    },
                 )
 
             return response
@@ -168,7 +158,7 @@ def register_error_handlers(app: FastAPI):
         except Exception as e:
             logger.error(
                 f"Error in middleware: {request.method} {request.url.path} - {e}",
-                exc_info=True
+                exc_info=True,
             )
             raise
 

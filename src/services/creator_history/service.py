@@ -12,7 +12,16 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
 
-from sqlalchemy import create_engine, Column, String, DateTime, Float, Integer, JSON, Text
+from sqlalchemy import (
+    create_engine,
+    Column,
+    String,
+    DateTime,
+    Float,
+    Integer,
+    JSON,
+    Text,
+)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -255,7 +264,9 @@ class CreatorHistoryService:
                 first.grade, 0
             )
 
-        history_entries = await self._get_history_in_range(creator_id, start_date, end_date)
+        history_entries = await self._get_history_in_range(
+            creator_id, start_date, end_date
+        )
         missions_completed = len(
             [e for e in history_entries if e.change_type == "mission_complete"]
         )
@@ -435,7 +446,9 @@ class CreatorHistoryService:
             return [h for h in history if start_date <= h.timestamp <= end_date]
         return []
 
-    async def _get_history_memory(self, query: CreatorHistoryQuery) -> CreatorHistoryResponse:
+    async def _get_history_memory(
+        self, query: CreatorHistoryQuery
+    ) -> CreatorHistoryResponse:
         """메모리에서 이력 조회"""
         entries = self._history.get(query.creator_id, [])
         snapshots = self._snapshots.get(query.creator_id, [])
@@ -461,7 +474,9 @@ class CreatorHistoryService:
             total=total,
         )
 
-    async def _get_history_database(self, query: CreatorHistoryQuery) -> CreatorHistoryResponse:
+    async def _get_history_database(
+        self, query: CreatorHistoryQuery
+    ) -> CreatorHistoryResponse:
         """데이터베이스에서 이력 조회 (현재는 메모리 폴백)"""
         return await self._get_history_memory(query)
 
@@ -483,5 +498,3 @@ __all__ = [
     "CreatorHistoryTable",
     "get_creator_history_service",
 ]
-
-

@@ -1,6 +1,7 @@
 """
 알림 관련 Celery 작업
 """
+
 import logging
 from datetime import datetime
 from typing import Dict, Any, List
@@ -16,11 +17,7 @@ logger = logging.getLogger(__name__)
     default_retry_delay=30,
 )
 def send_email_notification(
-    self,
-    recipient: str,
-    subject: str,
-    body: str,
-    html_body: str = None
+    self, recipient: str, subject: str, body: str, html_body: str = None
 ) -> Dict[str, Any]:
     """
     이메일 알림 발송
@@ -31,7 +28,9 @@ def send_email_notification(
         body: 본문 (텍스트)
         html_body: HTML 본문 (선택적)
     """
-    logger.info(f"Sending email notification. Task ID: {self.request.id}, To: {recipient}")
+    logger.info(
+        f"Sending email notification. Task ID: {self.request.id}, To: {recipient}"
+    )
 
     try:
         # 실제 이메일 발송 로직 구현
@@ -59,10 +58,7 @@ def send_email_notification(
     default_retry_delay=30,
 )
 def send_webhook_notification(
-    self,
-    webhook_url: str,
-    payload: Dict[str, Any],
-    headers: Dict[str, str] = None
+    self, webhook_url: str, payload: Dict[str, Any], headers: Dict[str, str] = None
 ) -> Dict[str, Any]:
     """
     웹훅 알림 발송
@@ -72,7 +68,9 @@ def send_webhook_notification(
         payload: 전송할 데이터
         headers: HTTP 헤더 (선택적)
     """
-    logger.info(f"Sending webhook notification. Task ID: {self.request.id}, URL: {webhook_url}")
+    logger.info(
+        f"Sending webhook notification. Task ID: {self.request.id}, URL: {webhook_url}"
+    )
 
     try:
         import httpx
@@ -81,7 +79,7 @@ def send_webhook_notification(
             response = client.post(
                 webhook_url,
                 json=payload,
-                headers=headers or {"Content-Type": "application/json"}
+                headers=headers or {"Content-Type": "application/json"},
             )
             response.raise_for_status()
 
@@ -102,8 +100,7 @@ def send_webhook_notification(
 
 @shared_task(bind=True)
 def send_batch_notifications(
-    self,
-    notifications: List[Dict[str, Any]]
+    self, notifications: List[Dict[str, Any]]
 ) -> Dict[str, Any]:
     """
     대량 알림 발송
@@ -131,11 +128,13 @@ def send_batch_notifications(
                     body=notification.get("body"),
                     html_body=notification.get("html_body"),
                 )
-                results.append({
-                    "type": "email",
-                    "task_id": task.id,
-                    "recipient": notification.get("recipient"),
-                })
+                results.append(
+                    {
+                        "type": "email",
+                        "task_id": task.id,
+                        "recipient": notification.get("recipient"),
+                    }
+                )
 
             elif notif_type == "webhook":
                 task = send_webhook_notification.delay(
@@ -143,25 +142,31 @@ def send_batch_notifications(
                     payload=notification.get("payload"),
                     headers=notification.get("headers"),
                 )
-                results.append({
-                    "type": "webhook",
-                    "task_id": task.id,
-                    "url": notification.get("webhook_url"),
-                })
+                results.append(
+                    {
+                        "type": "webhook",
+                        "task_id": task.id,
+                        "url": notification.get("webhook_url"),
+                    }
+                )
 
             else:
                 logger.warning(f"Unknown notification type: {notif_type}")
-                results.append({
-                    "type": notif_type,
-                    "error": "Unknown notification type",
-                })
+                results.append(
+                    {
+                        "type": notif_type,
+                        "error": "Unknown notification type",
+                    }
+                )
 
         except Exception as e:
             logger.error(f"Failed to queue notification: {e}")
-            results.append({
-                "type": notification.get("type"),
-                "error": str(e),
-            })
+            results.append(
+                {
+                    "type": notification.get("type"),
+                    "error": str(e),
+                }
+            )
 
     logger.info(f"Batch notifications queued: {len(results)} tasks")
 
@@ -184,7 +189,7 @@ def notify_creator_evaluation_complete(
     self,
     creator_id: str,
     evaluation_result: Dict[str, Any],
-    notification_channels: List[str] = None
+    notification_channels: List[str] = None,
 ) -> Dict[str, Any]:
     """
     크리에이터 평가 완료 알림
@@ -205,7 +210,9 @@ def notify_creator_evaluation_complete(
     for channel in channels:
         if channel == "email":
             # 이메일 알림 생성
-            subject = f"크리에이터 평가 완료 - {evaluation_result.get('grade', 'N/A')} 등급"
+            subject = (
+                f"크리에이터 평가 완료 - {evaluation_result.get('grade', 'N/A')} 등급"
+            )
             body = f"""
             안녕하세요,
 
@@ -225,10 +232,12 @@ def notify_creator_evaluation_complete(
                 subject=subject,
                 body=body,
             )
-            results.append({
-                "channel": "email",
-                "task_id": task.id,
-            })
+            results.append(
+                {
+                    "channel": "email",
+                    "task_id": task.id,
+                }
+            )
 
         elif channel == "webhook":
             # 웹훅 알림 생성
@@ -241,10 +250,12 @@ def notify_creator_evaluation_complete(
                     "timestamp": datetime.utcnow().isoformat(),
                 },
             )
-            results.append({
-                "channel": "webhook",
-                "task_id": task.id,
-            })
+            results.append(
+                {
+                    "channel": "webhook",
+                    "task_id": task.id,
+                }
+            )
 
     logger.info(f"Creator evaluation notifications queued: {len(results)} tasks")
 

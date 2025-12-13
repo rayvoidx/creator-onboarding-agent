@@ -1,4 +1,5 @@
 """보안 유틸리티: RBAC 데코레이터, PII 로그 필터"""
+
 from __future__ import annotations
 
 import logging
@@ -34,23 +35,33 @@ def require_roles(*allowed_roles: str) -> Callable:
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         async def wrapper(*args, **kwargs):
-            request = kwargs.get("request") or (len(args) > 0 and getattr(args[0], "request", None))
+            request = kwargs.get("request") or (
+                len(args) > 0 and getattr(args[0], "request", None)
+            )
             user_role = None
             try:
-                if request and hasattr(request, "state") and getattr(request.state, "user", None):
+                if (
+                    request
+                    and hasattr(request, "state")
+                    and getattr(request.state, "user", None)
+                ):
                     user_role = getattr(request.state.user, "role", None)
             except Exception:
                 user_role = None
 
             if allowed_roles and user_role not in allowed_roles:
                 from fastapi import HTTPException  # type: ignore[import-not-found]
-                raise HTTPException(status_code=403, detail="Forbidden: insufficient role")
+
+                raise HTTPException(
+                    status_code=403, detail="Forbidden: insufficient role"
+                )
 
             return await func(*args, **kwargs)
 
         return wrapper
 
     return decorator
+
 
 def sanitize_prompt(prompt: str, max_len: int = 8000) -> str:
     """간단한 안전 프롬프트 가드.
@@ -76,7 +87,12 @@ def sanitize_prompt(prompt: str, max_len: int = 8000) -> str:
             p = re.sub(bp, "[blocked]", p, flags=re.IGNORECASE)
         # Mask obvious secrets
         p = re.sub(r"sk-[A-Za-z0-9]{16,}", "sk-***", p)
-        p = re.sub(r"(api[_-]?key)\s*[:=]\s*([A-Za-z0-9-_]{10,})", r"\1: ***", p, flags=re.IGNORECASE)
+        p = re.sub(
+            r"(api[_-]?key)\s*[:=]\s*([A-Za-z0-9-_]{10,})",
+            r"\1: ***",
+            p,
+            flags=re.IGNORECASE,
+        )
         # Truncate
         if len(p) > max_len:
             p = p[:max_len] + "..."
@@ -118,6 +134,3 @@ def sanitize_output(obj: Any, max_str_len: int = 20000) -> Any:
         return obj
     except Exception:
         return obj
-
-
-

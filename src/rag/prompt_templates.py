@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 class PromptType(Enum):
     """프롬프트 타입"""
+
     COMPETENCY_ASSESSMENT = "competency_assessment"
     RECOMMENDATION = "recommendation"
     SEARCH = "search"
@@ -62,7 +63,7 @@ class PromptTemplates:
             "If the answer is not in the context, say you don't know.\n\n"
             "Context:\n{context}\n\nQuestion: {question}"
         )
-    
+
     def _initialize_templates(self) -> Dict[PromptType, str]:
         """프롬프트 템플릿 초기화"""
         return {
@@ -92,7 +93,6 @@ class PromptTemplates:
 
 위 정보를 바탕으로 종합적인 역량진단을 수행해주세요.
 """,
-
             PromptType.RECOMMENDATION: """
 당신은 개인화된 학습 추천 AI 어시스턴트입니다.
 
@@ -121,7 +121,6 @@ class PromptTemplates:
 
 위 정보를 바탕으로 개인화된 학습 추천을 제공해주세요.
 """,
-
             PromptType.SEARCH: """
 당신은 지능형 검색 AI 어시스턴트입니다.
 
@@ -139,7 +138,6 @@ class PromptTemplates:
 
 위 검색 결과를 바탕으로 사용자에게 유용한 정보를 제공해주세요.
 """,
-
             PromptType.ANALYTICS: """
 당신은 데이터 분석 전문가입니다.
 
@@ -159,7 +157,6 @@ class PromptTemplates:
 
 위 데이터를 바탕으로 종합적인 분석 리포트를 작성해주세요.
 """,
-
             PromptType.GENERAL_CHAT: """
 당신은 육아정책연구소의 디지털연수 특화 AI 어시스턴트입니다.
 
@@ -182,7 +179,6 @@ class PromptTemplates:
 
 위 정보를 바탕으로 전문적이고 도움이 되는 답변을 제공해주세요.
 """,
-
             PromptType.DATA_COLLECTION: """
 당신은 데이터 수집 및 분석 전문가입니다.
 
@@ -204,9 +200,9 @@ class PromptTemplates:
 5. 추가 수집 권장사항
 
 위 데이터를 바탕으로 전문적인 분석을 수행해주세요.
-"""
+""",
         }
-    
+
     def _initialize_system_prompts(self) -> Dict[str, str]:
         """시스템 프롬프트 초기화"""
         return {
@@ -233,7 +229,6 @@ class PromptTemplates:
 - 관련 법규나 정책 언급
 - 추가 학습 자료 제안
 """,
-
             "competency_expert": """
 당신은 역량진단 및 평가 전문가입니다.
 
@@ -249,7 +244,6 @@ class PromptTemplates:
 3. 구체적이고 실행 가능한 피드백
 4. 성장 지향적 접근
 """,
-
             "recommendation_expert": """
 당신은 개인화된 학습 추천 전문가입니다.
 
@@ -264,9 +258,9 @@ class PromptTemplates:
 2. 학습 목표와 연계
 3. 단계적 학습 경로 제시
 4. 지속적 학습 동기 부여
-"""
+""",
         }
-    
+
     def get_prompt(self, prompt_type: PromptType, **kwargs) -> str:
         """
         프롬프트 템플릿 조회 및 변수 치환
@@ -283,14 +277,16 @@ class PromptTemplates:
                 prompt_file_name = self._get_prompt_file_name(prompt_type)
                 try:
                     template = self.prompt_loader.load(
-                        agent_name=agent_name,
-                        prompt_type=prompt_file_name,
-                        **kwargs
+                        agent_name=agent_name, prompt_type=prompt_file_name, **kwargs
                     )
-                    logger.debug(f"Loaded prompt from markdown: {agent_name}/{prompt_file_name}")
+                    logger.debug(
+                        f"Loaded prompt from markdown: {agent_name}/{prompt_file_name}"
+                    )
                     return template
                 except FileNotFoundError:
-                    logger.debug(f"Markdown file not found, using fallback: {agent_name}/{prompt_file_name}")
+                    logger.debug(
+                        f"Markdown file not found, using fallback: {agent_name}/{prompt_file_name}"
+                    )
 
             # 2. Fallback: 인라인 템플릿 사용
             template = self.templates.get(prompt_type, "")
@@ -304,10 +300,10 @@ class PromptTemplates:
 
         except KeyError as e:
             logger.error(f"Missing template variable: {e}")
-            return template if 'template' in locals() else ""
+            return template if "template" in locals() else ""
         except Exception as e:
             logger.error(f"Error formatting prompt: {e}")
-            return template if 'template' in locals() else ""
+            return template if "template" in locals() else ""
 
     def _get_prompt_file_name(self, prompt_type: PromptType) -> str:
         """
@@ -330,8 +326,10 @@ class PromptTemplates:
             PromptType.DATA_COLLECTION: "analyze",
         }
         return mapping.get(prompt_type, prompt_type.value)
-    
-    def get_system_prompt(self, role: str = "default", agent_name: Optional[str] = None) -> str:
+
+    def get_system_prompt(
+        self, role: str = "default", agent_name: Optional[str] = None
+    ) -> str:
         """
         시스템 프롬프트 조회
 
@@ -347,26 +345,33 @@ class PromptTemplates:
         if agent_name:
             try:
                 system_prompt = self.prompt_loader.load(
-                    agent_name=agent_name,
-                    prompt_type="system"
+                    agent_name=agent_name, prompt_type="system"
                 )
                 logger.debug(f"Loaded system prompt from markdown: {agent_name}/system")
                 return system_prompt
             except FileNotFoundError:
-                logger.debug(f"System prompt markdown not found for {agent_name}, using fallback")
+                logger.debug(
+                    f"System prompt markdown not found for {agent_name}, using fallback"
+                )
 
         # 2. Fallback: 인라인 시스템 프롬프트
         return self.system_prompts.get(role, self.system_prompts["default"])
 
     # ===== 이름/버전 기반 단일 인터페이스 =====
-    def format_by_name(self, name: str, variables: Optional[Dict[str, Any]] = None, version: Optional[str] = None) -> str:
+    def format_by_name(
+        self,
+        name: str,
+        variables: Optional[Dict[str, Any]] = None,
+        version: Optional[str] = None,
+    ) -> str:
         """이름 기반 프롬프트 접근. version은 호환 목적으로 유지(현재 미사용)."""
         variables = variables or {}
         # 간단 A/B 실험: PROMPT_AB_TEST_ENABLED가 true이면 rag_answer의 지시문 강화 변형 사용 확률 50%
         try:
             from config.settings import get_settings
+
             st = get_settings()
-            ab_enabled = bool(getattr(st, 'PROMPT_AB_TEST_ENABLED', False))
+            ab_enabled = bool(getattr(st, "PROMPT_AB_TEST_ENABLED", False))
         except Exception:
             ab_enabled = False
         # 시스템 프롬프트: 'system_default' 또는 사전 정의 키 직접 사용 가능
@@ -382,6 +387,7 @@ class PromptTemplates:
                 if ab_enabled:
                     # A/B 변형: 출처 근거와 불확실성 명시 강조
                     import random
+
                     if random.random() < 0.5:
                         base = (
                             "You are a helpful assistant. Always cite sources from the context.\n"
@@ -398,47 +404,46 @@ class PromptTemplates:
 
         logger.warning("Unknown prompt name: %s", name)
         return ""
-    
+
     def create_rag_prompt(
-        self, 
+        self,
         prompt_type: PromptType,
         user_input: str,
         retrieved_documents: List[Dict[str, Any]],
         context: Optional[Dict[str, Any]] = None,
-        **kwargs
+        **kwargs,
     ) -> str:
         """RAG용 통합 프롬프트 생성"""
         try:
             # 검색된 문서 정보 포맷팅
             doc_context = self._format_retrieved_documents(retrieved_documents)
-            
+
             # 컨텍스트 정보 준비
             context_info = context or {}
-            context_info.update({
-                "retrieved_documents": doc_context,
-                "user_input": user_input
-            })
-            
+            context_info.update(
+                {"retrieved_documents": doc_context, "user_input": user_input}
+            )
+
             # 프롬프트 생성
             prompt = self.get_prompt(prompt_type, **context_info, **kwargs)
-            
+
             return prompt
-            
+
         except Exception as e:
             logger.error(f"Error creating RAG prompt: {e}")
             return user_input
-    
+
     def _format_retrieved_documents(self, documents: List[Dict[str, Any]]) -> str:
         """검색된 문서들을 프롬프트용으로 포맷팅"""
         if not documents:
             return "관련 문서가 없습니다."
-        
+
         formatted_docs = []
         for i, doc in enumerate(documents, 1):
-            content = doc.get('content', '')
-            score = doc.get('score', 0.0)
-            metadata = doc.get('metadata', {})
-            
+            content = doc.get("content", "")
+            score = doc.get("score", 0.0)
+            metadata = doc.get("metadata", {})
+
             doc_info = f"""
 문서 {i}:
 - 내용: {content[:500]}{'...' if len(content) > 500 else ''}
@@ -447,25 +452,25 @@ class PromptTemplates:
 - 날짜: {metadata.get('date', 'Unknown')}
 """
             formatted_docs.append(doc_info)
-        
+
         return "\n".join(formatted_docs)
-    
+
     def get_conversation_prompt(
         self,
         user_message: str,
         conversation_history: List[Dict[str, str]],
         retrieved_context: List[Dict[str, Any]],
-        user_profile: Optional[Dict[str, Any]] = None
+        user_profile: Optional[Dict[str, Any]] = None,
     ) -> str:
         """대화형 프롬프트 생성"""
         try:
             # 대화 히스토리 포맷팅
             history_text = ""
             for msg in conversation_history[-5:]:  # 최근 5개 메시지만
-                role = msg.get('role', 'user')
-                content = msg.get('content', '')
+                role = msg.get("role", "user")
+                content = msg.get("content", "")
                 history_text += f"{role}: {content}\n"
-            
+
             # 사용자 프로필 정보
             profile_info = ""
             if user_profile:
@@ -475,10 +480,10 @@ class PromptTemplates:
 - 관심사: {', '.join(user_profile.get('interests', []))}
 - 학습 선호도: {user_profile.get('learning_style', 'Unknown')}
 """
-            
+
             # 검색된 컨텍스트 포맷팅
             context_text = self._format_retrieved_documents(retrieved_context)
-            
+
             return f"""
 {self.get_system_prompt()}
 
@@ -494,7 +499,7 @@ class PromptTemplates:
 
 위 정보를 바탕으로 전문적이고 도움이 되는 답변을 제공해주세요.
 """
-            
+
         except Exception as e:
             logger.error(f"Error creating conversation prompt: {e}")
             return user_message

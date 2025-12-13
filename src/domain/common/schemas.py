@@ -9,12 +9,14 @@ from pydantic import BaseModel, Field
 
 class PaginationParams(BaseModel):
     """Pagination parameters."""
+
     page: int = Field(default=1, ge=1)
     page_size: int = Field(default=20, ge=1, le=100)
 
 
 class PaginatedResponse(BaseModel):
     """Paginated response wrapper."""
+
     items: List[Any]
     total: int
     page: int
@@ -24,6 +26,7 @@ class PaginatedResponse(BaseModel):
 
 class ErrorResponse(BaseModel):
     """Standard error response."""
+
     success: bool = False
     error_code: str
     message: str
@@ -33,6 +36,7 @@ class ErrorResponse(BaseModel):
 
 class SuccessResponse(BaseModel):
     """Standard success response."""
+
     success: bool = True
     message: str
     data: Optional[Dict[str, Any]] = None

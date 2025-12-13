@@ -1,6 +1,7 @@
 """
 감사 로그 API 라우터
 """
+
 import logging
 from datetime import datetime
 from typing import Dict, Any, Optional
@@ -34,7 +35,7 @@ async def get_audit_logs(
     success: Optional[bool] = Query(None, description="Filter by success status"),
     limit: int = Query(100, ge=1, le=1000, description="Number of results"),
     offset: int = Query(0, ge=0, description="Offset for pagination"),
-    current_user: TokenData = Depends(require_permission(Permission.AUDIT_READ))
+    current_user: TokenData = Depends(require_permission(Permission.AUDIT_READ)),
 ) -> AuditLogResponse:
     """감사 로그 조회"""
     audit_service = get_audit_service()
@@ -59,27 +60,23 @@ async def get_audit_logs(
 async def get_audit_stats(
     start_date: Optional[datetime] = Query(None, description="Start date"),
     end_date: Optional[datetime] = Query(None, description="End date"),
-    current_user: TokenData = Depends(require_permission(Permission.AUDIT_READ))
+    current_user: TokenData = Depends(require_permission(Permission.AUDIT_READ)),
 ) -> Dict[str, Any]:
     """감사 로그 통계 조회"""
     audit_service = get_audit_service()
     stats = await audit_service.get_stats(start_date, end_date)
 
-    return {
-        "success": True,
-        "stats": stats,
-        "timestamp": datetime.utcnow().isoformat()
-    }
+    return {"success": True, "stats": stats, "timestamp": datetime.utcnow().isoformat()}
 
 
 @router.get("/actions")
 async def get_available_actions(
-    current_user: TokenData = Depends(require_permission(Permission.AUDIT_READ))
+    current_user: TokenData = Depends(require_permission(Permission.AUDIT_READ)),
 ) -> Dict[str, Any]:
     """사용 가능한 감사 액션 목록"""
     return {
         "success": True,
         "actions": [action.value for action in AuditAction],
         "severities": [severity.value for severity in AuditSeverity],
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
     }

@@ -18,7 +18,9 @@ logger = logging.getLogger(__name__)
 
 
 @router.post("/recommend", response_model=MissionRecommendationResponse)
-async def recommend_missions(request: MissionRecommendRequest) -> MissionRecommendationResponse:
+async def recommend_missions(
+    request: MissionRecommendRequest,
+) -> MissionRecommendationResponse:
     """Creator-mission matching recommendation API (rule-based v0.1)."""
     op_id: Optional[str] = None
     deps = get_dependencies()
@@ -31,25 +33,29 @@ async def recommend_missions(request: MissionRecommendRequest) -> MissionRecomme
             )
 
         if not deps.orchestrator:
-            raise HTTPException(status_code=503, detail="시스템이 초기화되지 않았습니다.")
+            raise HTTPException(
+                status_code=503, detail="시스템이 초기화되지 않았습니다."
+            )
 
-        result = await deps.orchestrator.run({
-            "message": f"크리에이터 {request.creator_id}에게 적합한 미션을 추천해줘.",
-            "user_id": request.creator_id,
-            "session_id": request.creator_id,
-            "context": {
-                "workflow_type": "mission",
-                "creator_profile": {
-                    "creator_id": request.creator_id,
-                    **(request.creator_profile or {}),
+        result = await deps.orchestrator.run(
+            {
+                "message": f"크리에이터 {request.creator_id}에게 적합한 미션을 추천해줘.",
+                "user_id": request.creator_id,
+                "session_id": request.creator_id,
+                "context": {
+                    "workflow_type": "mission",
+                    "creator_profile": {
+                        "creator_id": request.creator_id,
+                        **(request.creator_profile or {}),
+                    },
+                    "onboarding_result": request.onboarding_result or {},
+                    "missions": [m.model_dump() for m in request.missions],
+                    "filters": request.filters or {},
+                    "report_type": "creator_mission_performance",
+                    "mcp": request.external_sources or {},
                 },
-                "onboarding_result": request.onboarding_result or {},
-                "missions": [m.model_dump() for m in request.missions],
-                "filters": request.filters or {},
-                "report_type": "creator_mission_performance",
-                "mcp": request.external_sources or {},
-            },
-        })
+            }
+        )
 
         if not result.get("success", False):
             raise HTTPException(
@@ -114,4 +120,6 @@ async def recommend_missions(request: MissionRecommendRequest) -> MissionRecomme
                 success=False,
                 error_message=str(e),
             )
-        raise HTTPException(status_code=500, detail="미션 추천 처리 중 오류가 발생했습니다.")
+        raise HTTPException(
+            status_code=500, detail="미션 추천 처리 중 오류가 발생했습니다."
+        )

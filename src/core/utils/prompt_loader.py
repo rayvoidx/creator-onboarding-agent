@@ -41,11 +41,7 @@ class PromptLoader:
         logger.info(f"PromptLoader initialized with base_path: {self.base_path}")
 
     def load(
-        self,
-        agent_name: str,
-        prompt_type: str,
-        use_cache: bool = True,
-        **variables
+        self, agent_name: str, prompt_type: str, use_cache: bool = True, **variables
     ) -> str:
         """
         특정 에이전트의 프롬프트 파일을 로드하고 변수를 치환합니다.
@@ -78,7 +74,7 @@ class PromptLoader:
 
             # 파일 읽기
             try:
-                with open(prompt_file, 'r', encoding='utf-8') as f:
+                with open(prompt_file, "r", encoding="utf-8") as f:
                     template = f.read()
 
                 # 캐시 저장
@@ -101,7 +97,7 @@ class PromptLoader:
                 class SafeFormatter(string.Formatter):
                     def get_value(self, key, args, kwargs):
                         if isinstance(key, str):
-                            return kwargs.get(key, '{' + key + '}')
+                            return kwargs.get(key, "{" + key + "}")
                         else:
                             return super().get_value(key, args, kwargs)
 
@@ -136,7 +132,9 @@ class PromptLoader:
         for prompt_file in prompts_dir.glob("*.md"):
             prompt_type = prompt_file.stem  # 파일명에서 확장자 제거
             try:
-                prompts[prompt_type] = self.load(agent_name, prompt_type, use_cache=True)
+                prompts[prompt_type] = self.load(
+                    agent_name, prompt_type, use_cache=True
+                )
             except Exception as e:
                 logger.error(f"Failed to load {agent_name}/{prompt_type}: {e}")
 

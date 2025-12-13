@@ -1,4 +1,5 @@
 """역량 진단 도구"""
+
 import hashlib
 import json
 from typing import List, Any, Dict, Optional
@@ -9,6 +10,7 @@ try:
     import numpy as np  # type: ignore
     from sklearn.preprocessing import StandardScaler  # type: ignore
     from sklearn.ensemble import RandomForestClassifier  # type: ignore
+
     ML_AVAILABLE = True
 except ImportError:
     np = None  # type: ignore
@@ -36,30 +38,30 @@ class CompetencyAnalyzer:
     async def analyze(self, data: Any) -> Dict[str, Any]:
         """역량 분석"""
         try:
-            if isinstance(data, dict) and 'responses' in data:
-                responses = data['responses']
+            if isinstance(data, dict) and "responses" in data:
+                responses = data["responses"]
                 if not responses:
                     return {"result": "no_data", "competency_score": 0.0}
-                
+
                 # 응답 데이터를 벡터로 변환
                 features = self._extract_features(responses)
-                
+
                 # 역량 점수 계산
                 competency_score = self._calculate_competency_score(features)
-                
+
                 # 분석 결과 생성
                 result = {
                     "competency_score": competency_score,
                     "level": self._get_competency_level(competency_score),
                     "strengths": self._identify_strengths(features),
                     "improvement_areas": self._identify_improvement_areas(features),
-                    "recommendations": self._generate_recommendations(competency_score)
+                    "recommendations": self._generate_recommendations(competency_score),
                 }
-                
+
                 return result
             else:
                 return {"result": "invalid_data", "competency_score": 0.0}
-                
+
         except Exception as e:
             logger.error(f"Competency analysis failed: {e}")
             return {"result": "error", "competency_score": 0.0, "error": str(e)}
@@ -68,10 +70,10 @@ class CompetencyAnalyzer:
         """응답에서 특징 추출"""
         features = []
         for response in responses:
-            if 'score' in response:
-                features.append(response['score'])
-            elif 'rating' in response:
-                features.append(response['rating'])
+            if "score" in response:
+                features.append(response["score"])
+            elif "rating" in response:
+                features.append(response["rating"])
             else:
                 features.append(0.5)  # 기본값
 
@@ -152,7 +154,7 @@ class CompetencyAnalyzer:
             # Simple std calculation
             mean = sum(flat) / len(flat) if flat else 0
             variance = sum((x - mean) ** 2 for x in flat) / len(flat) if flat else 0
-            std = variance ** 0.5
+            std = variance**0.5
             if std > 0.3:
                 areas.append("일관성 개선")
         return areas
@@ -169,7 +171,7 @@ class CompetencyAnalyzer:
         else:
             recommendations.append("전문가 수준 학습 자료 추천")
             recommendations.append("멘토링 프로그램 참여")
-        
+
         return recommendations
 
 
@@ -187,9 +189,11 @@ class SecurityTool:
                 if isinstance(item, dict):
                     anonymized_item = item.copy()
                     # 개인정보 필드 익명화
-                    for key in ['name', 'email', 'phone', 'id']:
+                    for key in ["name", "email", "phone", "id"]:
                         if key in anonymized_item:
-                            anonymized_item[key] = self._hash_value(str(anonymized_item[key]))
+                            anonymized_item[key] = self._hash_value(
+                                str(anonymized_item[key])
+                            )
                     anonymized_data.append(anonymized_item)
                 else:
                     anonymized_data.append(item)
@@ -203,7 +207,9 @@ class SecurityTool:
         try:
             # 간단한 해시 기반 암호화 (실제로는 더 강력한 암호화 사용)
             data_str = json.dumps(data, sort_keys=True)
-            encrypted = hashlib.sha256((data_str + self.encryption_key).encode()).hexdigest()
+            encrypted = hashlib.sha256(
+                (data_str + self.encryption_key).encode()
+            ).hexdigest()
             return encrypted
         except Exception as e:
             logger.error(f"Data encryption failed: {e}")

@@ -4,6 +4,7 @@ from typing import Any, Dict
 
 try:
     import structlog  # type: ignore
+
     _STRUCTLOG_AVAILABLE = True
 except Exception:  # pragma: no cover - optional dependency
     structlog = None  # type: ignore
@@ -25,13 +26,16 @@ def setup_logging(log_level: str = "INFO") -> None:
 
         handler = logging.StreamHandler(sys.stdout)
         handler.setLevel(getattr(logging, log_level.upper(), logging.INFO))
-        handler.setFormatter(structlog.stdlib.ProcessorFormatter(
-            processor=structlog.processors.JSONRenderer(),
-            foreign_pre_chain=[structlog.processors.add_log_level],
-        ))
+        handler.setFormatter(
+            structlog.stdlib.ProcessorFormatter(
+                processor=structlog.processors.JSONRenderer(),
+                foreign_pre_chain=[structlog.processors.add_log_level],
+            )
+        )
         try:
             # Attach PII masking filter if available
             from src.api.middleware.security_utils import PIILogFilter  # type: ignore
+
             handler.addFilter(PIILogFilter())
         except Exception:
             pass
@@ -57,9 +61,12 @@ def setup_logging(log_level: str = "INFO") -> None:
     else:
         # Fallback: stdlib logging with basic formatter
         handler = logging.StreamHandler(sys.stdout)
-        handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+        handler.setFormatter(
+            logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
+        )
         try:
             from src.api.middleware.security_utils import PIILogFilter  # type: ignore
+
             handler.addFilter(PIILogFilter())
         except Exception:
             pass
@@ -78,5 +85,3 @@ def clear_request() -> None:
     """Clear structlog contextvars after request is done."""
     if _STRUCTLOG_AVAILABLE:
         structlog.contextvars.clear_contextvars()  # type: ignore[attr-defined]
-
-

@@ -1,4 +1,5 @@
 """Vector store"""
+
 from __future__ import annotations
 
 from typing import Any, Optional
@@ -7,7 +8,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def get_or_create_collection(client: Any, name: str, metadata: Optional[dict] = None) -> Optional[Any]:
+def get_or_create_collection(
+    client: Any, name: str, metadata: Optional[dict] = None
+) -> Optional[Any]:
     """Get existing ChromaDB collection or create if missing.
 
     Returns None if client is falsy or operations fail.

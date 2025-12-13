@@ -1,6 +1,7 @@
 """
 인증 서비스 - OAuth2 + JWT 기반 인증/인가 처리
 """
+
 import logging
 import uuid
 from datetime import datetime, timedelta
@@ -55,9 +56,7 @@ class AuthService:
         if self._redis_client is None and self.redis_url:
             try:
                 self._redis_client = redis.from_url(
-                    self.redis_url,
-                    encoding="utf-8",
-                    decode_responses=True
+                    self.redis_url, encoding="utf-8", decode_responses=True
                 )
                 await self._redis_client.ping()
             except Exception as e:
@@ -107,9 +106,7 @@ class AuthService:
 
         return self._user_to_response(user)
 
-    async def authenticate_user(
-        self, username: str, password: str
-    ) -> Optional[User]:
+    async def authenticate_user(self, username: str, password: str) -> Optional[User]:
         """사용자 인증"""
         user_id = self._users_by_username.get(username)
         if not user_id:
@@ -247,8 +244,10 @@ class AuthService:
             if redis_client:
                 # Redis에 저장 (토큰 만료 시간까지만 유지)
                 payload = jwt.decode(
-                    token, self.secret_key, algorithms=[ALGORITHM],
-                    options={"verify_exp": False}
+                    token,
+                    self.secret_key,
+                    algorithms=[ALGORITHM],
+                    options={"verify_exp": False},
                 )
                 exp = payload.get("exp", 0)
                 ttl = max(0, exp - int(datetime.utcnow().timestamp()))
@@ -269,8 +268,10 @@ class AuthService:
             redis_client = await self.get_redis()
             if redis_client:
                 payload = jwt.decode(
-                    token, self.secret_key, algorithms=[ALGORITHM],
-                    options={"verify_exp": False}
+                    token,
+                    self.secret_key,
+                    algorithms=[ALGORITHM],
+                    options={"verify_exp": False},
                 )
                 jti = payload.get("jti", token)
                 result = await redis_client.get(f"blacklist:{jti}")

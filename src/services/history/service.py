@@ -1,12 +1,22 @@
 """
 크리에이터 프로필 이력 추적 서비스
 """
+
 import logging
 import uuid
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
 
-from sqlalchemy import create_engine, Column, String, DateTime, Float, Integer, JSON, Text
+from sqlalchemy import (
+    create_engine,
+    Column,
+    String,
+    DateTime,
+    Float,
+    Integer,
+    JSON,
+    Text,
+)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -27,6 +37,7 @@ Base = declarative_base()
 
 class CreatorSnapshotTable(Base):
     """크리에이터 스냅샷 SQLAlchemy 모델"""
+
     __tablename__ = "creator_snapshots"
 
     id = Column(String(36), primary_key=True)
@@ -55,6 +66,7 @@ class CreatorSnapshotTable(Base):
 
 class CreatorHistoryTable(Base):
     """크리에이터 이력 SQLAlchemy 모델"""
+
     __tablename__ = "creator_history"
 
     id = Column(String(36), primary_key=True)
@@ -102,7 +114,9 @@ class CreatorHistoryService:
                 engine.dispose()
                 logger.info("Creator history tables created successfully")
             except Exception as e:
-                logger.warning(f"Failed to create creator history tables, falling back to memory: {e}")
+                logger.warning(
+                    f"Failed to create creator history tables, falling back to memory: {e}"
+                )
                 self._use_memory = True
                 self._snapshots = {}
                 self._history = {}
@@ -115,7 +129,7 @@ class CreatorHistoryService:
         platform: str,
         handle: str,
         metrics: Dict[str, Any],
-        evaluation_result: Dict[str, Any]
+        evaluation_result: Dict[str, Any],
     ) -> CreatorSnapshot:
         """
         크리에이터 평가 결과 기록
@@ -159,12 +173,17 @@ class CreatorHistoryService:
 
         # 변화량 계산
         metrics_delta = {}
-        description = f"평가 수행: {snapshot.grade} 등급, {snapshot.score:.1f}점" if snapshot.score else "평가 수행"
+        description = (
+            f"평가 수행: {snapshot.grade} 등급, {snapshot.score:.1f}점"
+            if snapshot.score
+            else "평가 수행"
+        )
 
         if previous_snapshot:
             metrics_delta = {
                 "followers": snapshot.followers - previous_snapshot.followers,
-                "engagement_rate": snapshot.engagement_rate - previous_snapshot.engagement_rate,
+                "engagement_rate": snapshot.engagement_rate
+                - previous_snapshot.engagement_rate,
                 "score": (snapshot.score or 0) - (previous_snapshot.score or 0),
             }
             if metrics_delta.get("score", 0) > 0:
@@ -195,7 +214,7 @@ class CreatorHistoryService:
         creator_id: str,
         mission_id: str,
         mission_name: str,
-        performance_metrics: Dict[str, Any] = None
+        performance_metrics: Dict[str, Any] = None,
     ) -> CreatorHistoryEntry:
         """
         미션 완료 기록
@@ -224,14 +243,13 @@ class CreatorHistoryService:
 
         await self._save_history_entry(history_entry)
 
-        logger.info(f"Recorded mission completion for creator {creator_id}: {mission_name}")
+        logger.info(
+            f"Recorded mission completion for creator {creator_id}: {mission_name}"
+        )
 
         return history_entry
 
-    async def get_history(
-        self,
-        query: CreatorHistoryQuery
-    ) -> CreatorHistoryResponse:
+    async def get_history(self, query: CreatorHistoryQuery) -> CreatorHistoryResponse:
         """
         크리에이터 이력 조회
 
@@ -249,9 +267,7 @@ class CreatorHistoryService:
             return await self._get_history_database(query)
 
     async def get_trend(
-        self,
-        creator_id: str,
-        period_days: int = 30
+        self, creator_id: str, period_days: int = 30
     ) -> Optional[CreatorTrend]:
         """
         크리에이터 트렌드 분석
@@ -284,7 +300,9 @@ class CreatorHistoryService:
 
         # 참여율 변화
         engagement_change = last.engagement_rate - first.engagement_rate
-        engagement_change_pct = (engagement_change / max(first.engagement_rate, 0.001)) * 100
+        engagement_change_pct = (
+            engagement_change / max(first.engagement_rate, 0.001)
+        ) * 100
 
         # 점수 변화
         score_change = None
@@ -295,11 +313,17 @@ class CreatorHistoryService:
         grade_improved = False
         grade_order = {"S": 4, "A": 3, "B": 2, "C": 1}
         if first.grade and last.grade:
-            grade_improved = grade_order.get(last.grade, 0) > grade_order.get(first.grade, 0)
+            grade_improved = grade_order.get(last.grade, 0) > grade_order.get(
+                first.grade, 0
+            )
 
         # 완료 미션 수
-        history_entries = await self._get_history_in_range(creator_id, start_date, end_date)
-        missions_completed = len([e for e in history_entries if e.change_type == "mission_complete"])
+        history_entries = await self._get_history_in_range(
+            creator_id, start_date, end_date
+        )
+        missions_completed = len(
+            [e for e in history_entries if e.change_type == "mission_complete"]
+        )
 
         # 트렌드 요약
         if followers_change_pct > 5 and engagement_change > 0:
@@ -458,41 +482,28 @@ class CreatorHistoryService:
                 logger.error(f"Failed to save history entry: {e}")
 
     async def _get_snapshots_in_range(
-        self,
-        creator_id: str,
-        start_date: datetime,
-        end_date: datetime
+        self, creator_id: str, start_date: datetime, end_date: datetime
     ) -> List[CreatorSnapshot]:
         """기간 내 스냅샷 조회"""
         if self._use_memory:
             snapshots = self._snapshots.get(creator_id, [])
-            return [
-                s for s in snapshots
-                if start_date <= s.timestamp <= end_date
-            ]
+            return [s for s in snapshots if start_date <= s.timestamp <= end_date]
         else:
             # DB 조회 구현
             return []
 
     async def _get_history_in_range(
-        self,
-        creator_id: str,
-        start_date: datetime,
-        end_date: datetime
+        self, creator_id: str, start_date: datetime, end_date: datetime
     ) -> List[CreatorHistoryEntry]:
         """기간 내 이력 조회"""
         if self._use_memory:
             history = self._history.get(creator_id, [])
-            return [
-                h for h in history
-                if start_date <= h.timestamp <= end_date
-            ]
+            return [h for h in history if start_date <= h.timestamp <= end_date]
         else:
             return []
 
     async def _get_history_memory(
-        self,
-        query: CreatorHistoryQuery
+        self, query: CreatorHistoryQuery
     ) -> CreatorHistoryResponse:
         """메모리에서 이력 조회"""
         entries = self._history.get(query.creator_id, [])
@@ -509,7 +520,7 @@ class CreatorHistoryService:
         # 정렬 및 페이지네이션
         entries.sort(key=lambda x: x.timestamp, reverse=True)
         total = len(entries)
-        entries = entries[query.offset:query.offset + query.limit]
+        entries = entries[query.offset : query.offset + query.limit]
 
         # 트렌드 계산
         trend = await self.get_trend(query.creator_id)
@@ -523,8 +534,7 @@ class CreatorHistoryService:
         )
 
     async def _get_history_database(
-        self,
-        query: CreatorHistoryQuery
+        self, query: CreatorHistoryQuery
     ) -> CreatorHistoryResponse:
         """데이터베이스에서 이력 조회"""
         # 메모리 폴백

@@ -1,6 +1,7 @@
 """
 A/B 테스팅 API 라우터
 """
+
 import logging
 from datetime import datetime
 from typing import Dict, Any, List, Optional
@@ -19,6 +20,7 @@ router = APIRouter(prefix="/api/v1/experiments", tags=["A/B Testing"])
 
 class VariantCreate(BaseModel):
     """변형 생성 요청"""
+
     name: str
     type: str = "treatment"  # control 또는 treatment
     content: str
@@ -28,6 +30,7 @@ class VariantCreate(BaseModel):
 
 class ExperimentCreate(BaseModel):
     """실험 생성 요청"""
+
     name: str
     description: str
     target_prompt_type: str
@@ -39,6 +42,7 @@ class ExperimentCreate(BaseModel):
 
 class ResultRecord(BaseModel):
     """결과 기록 요청"""
+
     experiment_id: str
     variant_id: str
     user_id: str
@@ -55,7 +59,7 @@ class ResultRecord(BaseModel):
 @router.post("/create")
 async def create_experiment(
     request: ExperimentCreate,
-    current_user: TokenData = Depends(require_permission(Permission.SYSTEM_ADMIN))
+    current_user: TokenData = Depends(require_permission(Permission.SYSTEM_ADMIN)),
 ) -> Dict[str, Any]:
     """새 A/B 테스트 실험 생성"""
     ab_service = get_ab_testing_service()
@@ -70,7 +74,7 @@ async def create_experiment(
         variants=variants,
         user_percentage=request.user_percentage,
         primary_metric=request.primary_metric,
-        created_by=current_user.user_id
+        created_by=current_user.user_id,
     )
 
     return {
@@ -82,14 +86,14 @@ async def create_experiment(
             {"id": v.id, "name": v.name, "type": v.type.value, "weight": v.weight}
             for v in experiment.variants
         ],
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
     }
 
 
 @router.post("/{experiment_id}/start")
 async def start_experiment(
     experiment_id: str,
-    current_user: TokenData = Depends(require_permission(Permission.SYSTEM_ADMIN))
+    current_user: TokenData = Depends(require_permission(Permission.SYSTEM_ADMIN)),
 ) -> Dict[str, Any]:
     """실험 시작"""
     ab_service = get_ab_testing_service()
@@ -102,14 +106,14 @@ async def start_experiment(
     return {
         "success": True,
         "message": f"Experiment {experiment_id} started",
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
     }
 
 
 @router.post("/{experiment_id}/stop")
 async def stop_experiment(
     experiment_id: str,
-    current_user: TokenData = Depends(require_permission(Permission.SYSTEM_ADMIN))
+    current_user: TokenData = Depends(require_permission(Permission.SYSTEM_ADMIN)),
 ) -> Dict[str, Any]:
     """실험 중지"""
     ab_service = get_ab_testing_service()
@@ -122,14 +126,14 @@ async def stop_experiment(
     return {
         "success": True,
         "message": f"Experiment {experiment_id} stopped",
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
     }
 
 
 @router.get("/{experiment_id}")
 async def get_experiment(
     experiment_id: str,
-    current_user: TokenData = Depends(require_permission(Permission.ANALYTICS_READ))
+    current_user: TokenData = Depends(require_permission(Permission.ANALYTICS_READ)),
 ) -> Dict[str, Any]:
     """실험 정보 조회"""
     ab_service = get_ab_testing_service()
@@ -142,14 +146,14 @@ async def get_experiment(
     return {
         "success": True,
         "experiment": experiment.model_dump(),
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
     }
 
 
 @router.get("/{experiment_id}/stats")
 async def get_experiment_stats(
     experiment_id: str,
-    current_user: TokenData = Depends(require_permission(Permission.ANALYTICS_READ))
+    current_user: TokenData = Depends(require_permission(Permission.ANALYTICS_READ)),
 ) -> Dict[str, Any]:
     """실험 통계 조회"""
     ab_service = get_ab_testing_service()
@@ -159,17 +163,13 @@ async def get_experiment_stats(
     if "error" in stats:
         raise HTTPException(status_code=404, detail=stats["error"])
 
-    return {
-        "success": True,
-        "stats": stats,
-        "timestamp": datetime.utcnow().isoformat()
-    }
+    return {"success": True, "stats": stats, "timestamp": datetime.utcnow().isoformat()}
 
 
 @router.get("/")
 async def list_experiments(
     status: Optional[str] = Query(None, description="Filter by status"),
-    current_user: TokenData = Depends(require_permission(Permission.ANALYTICS_READ))
+    current_user: TokenData = Depends(require_permission(Permission.ANALYTICS_READ)),
 ) -> Dict[str, Any]:
     """실험 목록 조회"""
     ab_service = get_ab_testing_service()
@@ -192,19 +192,19 @@ async def list_experiments(
                 "status": e.status.value,
                 "target_prompt_type": e.target_prompt_type,
                 "created_at": e.created_at.isoformat(),
-                "variants_count": len(e.variants)
+                "variants_count": len(e.variants),
             }
             for e in experiments
         ],
         "total": len(experiments),
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
     }
 
 
 @router.post("/record-result")
 async def record_experiment_result(
     request: ResultRecord,
-    current_user: TokenData = Depends(require_permission(Permission.ANALYTICS_READ))
+    current_user: TokenData = Depends(require_permission(Permission.ANALYTICS_READ)),
 ) -> Dict[str, Any]:
     """실험 결과 기록"""
     ab_service = get_ab_testing_service()
@@ -220,13 +220,13 @@ async def record_experiment_result(
         user_feedback=request.user_feedback,
         token_count=request.token_count,
         session_id=request.session_id,
-        metrics=request.metrics
+        metrics=request.metrics,
     )
 
     return {
         "success": True,
         "recorded": True,
-        "timestamp": result.timestamp.isoformat()
+        "timestamp": result.timestamp.isoformat(),
     }
 
 
@@ -234,7 +234,7 @@ async def record_experiment_result(
 async def get_variant_for_prompt(
     prompt_type: str,
     user_id: str = Query(..., description="User ID for variant assignment"),
-    current_user: TokenData = Depends(require_permission(Permission.ANALYTICS_READ))
+    current_user: TokenData = Depends(require_permission(Permission.ANALYTICS_READ)),
 ) -> Dict[str, Any]:
     """특정 프롬프트 타입에 대한 사용자 변형 조회"""
     ab_service = get_ab_testing_service()
@@ -246,7 +246,7 @@ async def get_variant_for_prompt(
             "success": True,
             "variant": None,
             "message": "No active experiment for this prompt type",
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
     return {
@@ -255,7 +255,7 @@ async def get_variant_for_prompt(
             "id": variant.id,
             "name": variant.name,
             "type": variant.type.value,
-            "content": variant.content
+            "content": variant.content,
         },
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
     }

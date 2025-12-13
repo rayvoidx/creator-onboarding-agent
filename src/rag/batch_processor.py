@@ -5,6 +5,7 @@ from ..rag.generation_engine import GenerationEngine
 
 logger = logging.getLogger(__name__)
 
+
 class BatchProcessor:
     """
     Batch Processing Utility (Efficiency).
@@ -25,14 +26,14 @@ class BatchProcessor:
 
         tasks = []
         for req in requests:
-            prompt = req.get('prompt')
-            context = req.get('context')
+            prompt = req.get("prompt")
+            context = req.get("context")
             # Use engine's batch handling or individual generation
             tasks.append(self.engine.generate(prompt=prompt, context=context))
-        
+
         try:
             results = await asyncio.gather(*tasks, return_exceptions=True)
-            
+
             # Handle exceptions gracefully
             processed_results = []
             for res in results:
@@ -41,10 +42,9 @@ class BatchProcessor:
                     processed_results.append("Error processing request.")
                 else:
                     processed_results.append(res)
-                    
+
             return processed_results
-            
+
         except Exception as e:
             logger.error(f"Batch processing critical failure: {e}")
             return ["Error"] * len(requests)
-

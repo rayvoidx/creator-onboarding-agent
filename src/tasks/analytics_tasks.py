@@ -1,6 +1,7 @@
 """
 분석 및 리포팅 관련 Celery 작업
 """
+
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, Any
@@ -22,6 +23,7 @@ def generate_daily_report(self) -> Dict[str, Any]:
 
     try:
         import asyncio
+
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
@@ -52,7 +54,7 @@ def generate_daily_report(self) -> Dict[str, Any]:
                         sorted(
                             stats.get("user_counts", {}).items(),
                             key=lambda x: x[1],
-                            reverse=True
+                            reverse=True,
                         )[:10]
                     ),
                 },
@@ -77,7 +79,9 @@ def generate_daily_report(self) -> Dict[str, Any]:
         finally:
             loop.close()
 
-        logger.info(f"Daily report generated: {report['metrics']['total_requests']} requests")
+        logger.info(
+            f"Daily report generated: {report['metrics']['total_requests']} requests"
+        )
 
         return {
             "success": True,
@@ -98,10 +102,13 @@ def cleanup_old_audit_logs(self, days_to_keep: int = 90) -> Dict[str, Any]:
     Args:
         days_to_keep: 보관할 일수 (기본 90일)
     """
-    logger.info(f"Starting audit log cleanup. Task ID: {self.request.id}, Days to keep: {days_to_keep}")
+    logger.info(
+        f"Starting audit log cleanup. Task ID: {self.request.id}, Days to keep: {days_to_keep}"
+    )
 
     try:
         import asyncio
+
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
@@ -113,8 +120,7 @@ def cleanup_old_audit_logs(self, days_to_keep: int = 90) -> Dict[str, Any]:
                 cutoff_date = datetime.utcnow() - timedelta(days=days_to_keep)
                 original_count = len(audit_service._logs)
                 audit_service._logs = [
-                    log for log in audit_service._logs
-                    if log.timestamp >= cutoff_date
+                    log for log in audit_service._logs if log.timestamp >= cutoff_date
                 ]
                 deleted_count = original_count - len(audit_service._logs)
             else:
@@ -179,9 +185,7 @@ def cleanup_old_audit_logs(self, days_to_keep: int = 90) -> Dict[str, Any]:
     default_retry_delay=60,
 )
 def generate_creator_analytics(
-    self,
-    creator_id: str,
-    period_days: int = 30
+    self, creator_id: str, period_days: int = 30
 ) -> Dict[str, Any]:
     """
     특정 크리에이터에 대한 분석 리포트 생성
@@ -197,6 +201,7 @@ def generate_creator_analytics(
 
     try:
         import asyncio
+
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
@@ -220,7 +225,9 @@ def generate_creator_analytics(
             # 분석 집계
             action_counts: Dict[str, int] = {}
             for log in result.logs:
-                action_counts[log.action.value] = action_counts.get(log.action.value, 0) + 1
+                action_counts[log.action.value] = (
+                    action_counts.get(log.action.value, 0) + 1
+                )
 
             analytics = {
                 "creator_id": creator_id,
@@ -233,7 +240,9 @@ def generate_creator_analytics(
                     "total_activities": result.total,
                     "action_breakdown": action_counts,
                     "evaluations": action_counts.get("creator_evaluate", 0),
-                    "mission_recommendations": action_counts.get("mission_recommend", 0),
+                    "mission_recommendations": action_counts.get(
+                        "mission_recommend", 0
+                    ),
                 },
                 "generated_at": datetime.utcnow().isoformat(),
             }
@@ -241,7 +250,9 @@ def generate_creator_analytics(
         finally:
             loop.close()
 
-        logger.info(f"Creator analytics generated: {analytics['metrics']['total_activities']} activities")
+        logger.info(
+            f"Creator analytics generated: {analytics['metrics']['total_activities']} activities"
+        )
 
         return {
             "success": True,
@@ -256,10 +267,7 @@ def generate_creator_analytics(
 
 @shared_task(bind=True)
 def export_audit_logs(
-    self,
-    format: str = "json",
-    start_date: str = None,
-    end_date: str = None
+    self, format: str = "json", start_date: str = None, end_date: str = None
 ) -> Dict[str, Any]:
     """
     감사 로그 내보내기
@@ -269,11 +277,14 @@ def export_audit_logs(
         start_date: 시작 날짜 (ISO 형식)
         end_date: 종료 날짜 (ISO 형식)
     """
-    logger.info(f"Starting audit log export. Task ID: {self.request.id}, Format: {format}")
+    logger.info(
+        f"Starting audit log export. Task ID: {self.request.id}, Format: {format}"
+    )
 
     try:
         import asyncio
         import json
+
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
@@ -290,6 +301,7 @@ def export_audit_logs(
 
             # 파일 저장
             import os
+
             export_dir = "./exports"
             os.makedirs(export_dir, exist_ok=True)
 
@@ -307,6 +319,7 @@ def export_audit_logs(
                     json.dump(logs_data, f, indent=2, ensure_ascii=False, default=str)
             elif format == "csv":
                 import csv
+
                 with open(filename, "w", newline="") as f:
                     if result.logs:
                         fieldnames = list(result.logs[0].model_dump().keys())

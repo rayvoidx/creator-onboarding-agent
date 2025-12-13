@@ -66,7 +66,7 @@ async def evaluate_creator(request: Dict[str, Any]) -> CreatorEvaluationResponse
                     "decision": result.decision,
                     "tags": result.tags,
                     "risks": result.risks,
-                }
+                },
             )
         except Exception as history_error:
             logger.warning(f"Failed to record creator history: {history_error}")
@@ -83,7 +83,7 @@ async def evaluate_creator(request: Dict[str, Any]) -> CreatorEvaluationResponse
             risks=result.risks,
             report=result.report,
             raw_profile=result.raw_profile,
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
         )
 
     except HTTPException:
@@ -102,4 +102,6 @@ async def evaluate_creator(request: Dict[str, Any]) -> CreatorEvaluationResponse
                 success=False,
                 error_message=str(e),
             )
-        raise HTTPException(status_code=500, detail="크리에이터 평가 중 오류가 발생했습니다.")
+        raise HTTPException(
+            status_code=500, detail="크리에이터 평가 중 오류가 발생했습니다."
+        )

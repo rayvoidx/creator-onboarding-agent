@@ -16,12 +16,14 @@ from src.agents.deep_agents import UnifiedDeepAgents, DeepAgentsState
 # Lazy import orchestrator to avoid circular dependencies
 try:
     from src.graphs.main_orchestrator import MainOrchestrator, get_orchestrator
+
     _ORCHESTRATOR_AVAILABLE = True
 except ImportError as e:
     MainOrchestrator = None  # type: ignore
     get_orchestrator = None  # type: ignore
     _ORCHESTRATOR_AVAILABLE = False
     import logging
+
     logging.getLogger(__name__).warning(f"Orchestrator not available: {e}")
 
 __all__ = [

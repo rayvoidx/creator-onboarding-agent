@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class RAGEnhancedData:
     """RAG를 통해 수집된 향상된 데이터"""
+
     similar_creators: List[Dict[str, Any]] = field(default_factory=list)
     category_insights: str = ""
     risk_analysis: str = ""
@@ -64,7 +65,7 @@ class CreatorOnboardingAgent:
             try:
                 from src.rag.retrieval_engine import RetrievalEngine
 
-                retrieval_config = dict(self.config.get('retrieval', {}))
+                retrieval_config = dict(self.config.get("retrieval", {}))
                 embedding_model = self.agent_model_config.get("embedding_model")
                 vector_db = self.agent_model_config.get("vector_db")
                 if embedding_model:
@@ -83,7 +84,7 @@ class CreatorOnboardingAgent:
         handle: str,
         category: Optional[str],
         followers: int,
-        tags: List[str]
+        tags: List[str],
     ) -> List[Dict[str, Any]]:
         """유사 크리에이터 검색"""
         engine = self._get_retrieval_engine()
@@ -124,15 +125,17 @@ class CreatorOnboardingAgent:
                 if result_handle and result_handle == handle.lower():
                     continue
 
-                similar.append({
-                    "id": r.get("id", ""),
-                    "handle": metadata.get("handle", ""),
-                    "platform": metadata.get("platform", ""),
-                    "score": round(r.get("score", 0), 4),
-                    "followers": metadata.get("followers", 0),
-                    "grade": metadata.get("grade", ""),
-                    "tags": metadata.get("tags", [])
-                })
+                similar.append(
+                    {
+                        "id": r.get("id", ""),
+                        "handle": metadata.get("handle", ""),
+                        "platform": metadata.get("platform", ""),
+                        "score": round(r.get("score", 0), 4),
+                        "followers": metadata.get("followers", 0),
+                        "grade": metadata.get("grade", ""),
+                        "tags": metadata.get("tags", []),
+                    }
+                )
 
                 if len(similar) >= 5:
                     break
@@ -168,7 +171,9 @@ class CreatorOnboardingAgent:
             logger.warning(f"Category insights search failed: {e}")
             return ""
 
-    async def _analyze_risks_with_rag(self, handle: str, platform: str, risk_tags: List[str]) -> str:
+    async def _analyze_risks_with_rag(
+        self, handle: str, platform: str, risk_tags: List[str]
+    ) -> str:
         """RAG 기반 리스크 분석"""
         engine = self._get_retrieval_engine()
         if not engine or not risk_tags:
@@ -241,6 +246,7 @@ class CreatorOnboardingAgent:
         if profile_url and profile_url.startswith("http"):
             try:
                 from src.mcp import HttpMCP  # lazy import
+
                 hmcp = HttpMCP()
                 fetched = hmcp.fetch(profile_url)
                 profile = {
@@ -254,7 +260,9 @@ class CreatorOnboardingAgent:
         profile.update(provided_metrics)
 
         # 2) derive signals (robust defaults)
-        followers = _to_num(profile.get("followers") or profile.get("followers_count"), default=0)
+        followers = _to_num(
+            profile.get("followers") or profile.get("followers_count"), default=0
+        )
         avg_likes = _to_num(profile.get("avg_likes"), default=0)
         avg_comments = _to_num(profile.get("avg_comments"), default=0)
         posts_30d = _to_num(profile.get("posts_30d"), default=0)
@@ -267,9 +275,9 @@ class CreatorOnboardingAgent:
 
         # 3) scoring (simple heuristic)
         s_followers = _zclip(followers / 1_000_000, 0, 0.4)  # 100만 팔로워→0.4
-        s_engage = _zclip(engagement_rate * 10, 0, 0.3)      # 10%→0.3
-        s_freq = _zclip(frequency, 0, 0.15)                  # 하루 1회→0.15
-        s_fit = _zclip(brand_fit * 0.15, 0, 0.15)            # 도메인 적합도
+        s_engage = _zclip(engagement_rate * 10, 0, 0.3)  # 10%→0.3
+        s_freq = _zclip(frequency, 0, 0.15)  # 하루 1회→0.15
+        s_fit = _zclip(brand_fit * 0.15, 0, 0.15)  # 도메인 적합도
         base_score = s_followers + s_engage + s_freq + s_fit
 
         # risk penalties
@@ -302,14 +310,21 @@ class CreatorOnboardingAgent:
                 risk_task = self._analyze_risks_with_rag(handle, platform, risk_tags)
                 market_task = self._get_market_context(platform, followers)
 
-                similar_creators, category_insights, risk_analysis, market_context = await asyncio.gather(
-                    similar_task, insights_task, risk_task, market_task,
-                    return_exceptions=True
+                similar_creators, category_insights, risk_analysis, market_context = (
+                    await asyncio.gather(
+                        similar_task,
+                        insights_task,
+                        risk_task,
+                        market_task,
+                        return_exceptions=True,
+                    )
                 )
 
                 # 예외 처리
                 if isinstance(similar_creators, Exception):
-                    logger.warning(f"Similar creators search failed: {similar_creators}")
+                    logger.warning(
+                        f"Similar creators search failed: {similar_creators}"
+                    )
                     similar_creators = []
                 if isinstance(category_insights, Exception):
                     category_insights = ""
@@ -321,20 +336,30 @@ class CreatorOnboardingAgent:
                 # 유사 크리에이터 기반 추천 컨텍스트 생성
                 recommendation_context = ""
                 if similar_creators:
-                    avg_score = sum(c.get("score", 0) for c in similar_creators) / len(similar_creators)
+                    avg_score = sum(c.get("score", 0) for c in similar_creators) / len(
+                        similar_creators
+                    )
                     recommendation_context = f"유사 크리에이터 {len(similar_creators)}명 발견 (평균 유사도: {avg_score:.2f})"
 
                     # 유사 크리에이터의 성공 사례 참고
-                    successful = [c for c in similar_creators if c.get("grade") in ("S", "A")]
+                    successful = [
+                        c for c in similar_creators if c.get("grade") in ("S", "A")
+                    ]
                     if successful:
-                        recommendation_context += f" | 성공 사례 {len(successful)}건 참고 가능"
+                        recommendation_context += (
+                            f" | 성공 사례 {len(successful)}건 참고 가능"
+                        )
 
                 rag_enhanced = RAGEnhancedData(
-                    similar_creators=similar_creators if isinstance(similar_creators, list) else [],
-                    category_insights=str(category_insights) if category_insights else "",
+                    similar_creators=(
+                        similar_creators if isinstance(similar_creators, list) else []
+                    ),
+                    category_insights=(
+                        str(category_insights) if category_insights else ""
+                    ),
                     risk_analysis=str(risk_analysis) if risk_analysis else "",
                     market_context=str(market_context) if market_context else "",
-                    recommendation_context=recommendation_context
+                    recommendation_context=recommendation_context,
                 )
 
                 # RAG 인사이트를 기반으로 추가 태그 생성
@@ -369,7 +394,9 @@ class CreatorOnboardingAgent:
             report_parts.append("=== RAG-Enhanced Insights ===")
 
             if rag_enhanced.similar_creators:
-                report_parts.append(f"Similar Creators Found: {len(rag_enhanced.similar_creators)}")
+                report_parts.append(
+                    f"Similar Creators Found: {len(rag_enhanced.similar_creators)}"
+                )
                 for i, sc in enumerate(rag_enhanced.similar_creators[:3], 1):
                     report_parts.append(
                         f"  {i}. @{sc.get('handle', 'unknown')} ({sc.get('platform', '')}) - "
@@ -377,16 +404,24 @@ class CreatorOnboardingAgent:
                     )
 
             if rag_enhanced.category_insights:
-                report_parts.append(f"Category Insights: {rag_enhanced.category_insights[:200]}")
+                report_parts.append(
+                    f"Category Insights: {rag_enhanced.category_insights[:200]}"
+                )
 
             if rag_enhanced.market_context:
-                report_parts.append(f"Market Context: {rag_enhanced.market_context[:200]}")
+                report_parts.append(
+                    f"Market Context: {rag_enhanced.market_context[:200]}"
+                )
 
             if rag_enhanced.risk_analysis and risk_tags:
-                report_parts.append(f"Risk Analysis: {rag_enhanced.risk_analysis[:200]}")
+                report_parts.append(
+                    f"Risk Analysis: {rag_enhanced.risk_analysis[:200]}"
+                )
 
             if rag_enhanced.recommendation_context:
-                report_parts.append(f"Recommendation: {rag_enhanced.recommendation_context}")
+                report_parts.append(
+                    f"Recommendation: {rag_enhanced.recommendation_context}"
+                )
 
         report = "\n".join(report_parts)
 
@@ -462,5 +497,3 @@ def _grade_and_decide(score: float, risk_tags: List[str]) -> tuple[str, str, Lis
         tags.append("needs_activation")
 
     return grade, decision, tags
-
-

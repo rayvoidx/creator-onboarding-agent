@@ -15,23 +15,25 @@ logger = logging.getLogger(__name__)
 
 class ErrorSeverity(str, Enum):
     """에러 심각도"""
-    LOW = "low"           # 복구 가능, 사용자에게 영향 없음
-    MEDIUM = "medium"     # 부분적 기능 저하
-    HIGH = "high"         # 주요 기능 실패
-    CRITICAL = "critical" # 시스템 전체 영향
+
+    LOW = "low"  # 복구 가능, 사용자에게 영향 없음
+    MEDIUM = "medium"  # 부분적 기능 저하
+    HIGH = "high"  # 주요 기능 실패
+    CRITICAL = "critical"  # 시스템 전체 영향
 
 
 class ErrorCategory(str, Enum):
     """에러 카테고리"""
-    VALIDATION = "validation"     # 입력 검증 오류
-    AUTHENTICATION = "auth"       # 인증 오류
-    AUTHORIZATION = "authz"       # 권한 오류
-    DATABASE = "database"         # 데이터베이스 오류
-    EXTERNAL_API = "external_api" # 외부 API 오류
-    BUSINESS_LOGIC = "business"   # 비즈니스 로직 오류
-    SYSTEM = "system"             # 시스템 오류
-    NETWORK = "network"           # 네트워크 오류
-    TIMEOUT = "timeout"           # 타임아웃 오류
+
+    VALIDATION = "validation"  # 입력 검증 오류
+    AUTHENTICATION = "auth"  # 인증 오류
+    AUTHORIZATION = "authz"  # 권한 오류
+    DATABASE = "database"  # 데이터베이스 오류
+    EXTERNAL_API = "external_api"  # 외부 API 오류
+    BUSINESS_LOGIC = "business"  # 비즈니스 로직 오류
+    SYSTEM = "system"  # 시스템 오류
+    NETWORK = "network"  # 네트워크 오류
+    TIMEOUT = "timeout"  # 타임아웃 오류
 
 
 class BaseApplicationException(Exception):
@@ -47,7 +49,7 @@ class BaseApplicationException(Exception):
         category: ErrorCategory = ErrorCategory.SYSTEM,
         severity: ErrorSeverity = ErrorSeverity.MEDIUM,
         details: Optional[Dict[str, Any]] = None,
-        original_exception: Optional[Exception] = None
+        original_exception: Optional[Exception] = None,
     ):
         super().__init__(message)
         self.message = message
@@ -101,7 +103,7 @@ class ValidationError(BaseApplicationException):
         message: str,
         field: Optional[str] = None,
         value: Any = None,
-        details: Optional[Dict[str, Any]] = None
+        details: Optional[Dict[str, Any]] = None,
     ):
         error_details = details or {}
         if field:
@@ -114,7 +116,7 @@ class ValidationError(BaseApplicationException):
             error_code="VALIDATION_ERROR",
             category=ErrorCategory.VALIDATION,
             severity=ErrorSeverity.LOW,
-            details=error_details
+            details=error_details,
         )
 
 
@@ -122,10 +124,7 @@ class MissingFieldError(ValidationError):
     """필수 필드 누락"""
 
     def __init__(self, field: str):
-        super().__init__(
-            message=f"필수 필드가 누락되었습니다: {field}",
-            field=field
-        )
+        super().__init__(message=f"필수 필드가 누락되었습니다: {field}", field=field)
         self.error_code = "MISSING_FIELD"
 
 
@@ -137,7 +136,7 @@ class InvalidFormatError(ValidationError):
             message=f"'{field}' 필드의 형식이 올바르지 않습니다. 예상 형식: {expected_format}",
             field=field,
             value=value,
-            details={"expected_format": expected_format}
+            details={"expected_format": expected_format},
         )
         self.error_code = "INVALID_FORMAT"
 
@@ -146,13 +145,17 @@ class InvalidFormatError(ValidationError):
 class AuthenticationError(BaseApplicationException):
     """인증 오류"""
 
-    def __init__(self, message: str = "인증에 실패했습니다", details: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        message: str = "인증에 실패했습니다",
+        details: Optional[Dict[str, Any]] = None,
+    ):
         super().__init__(
             message=message,
             error_code="AUTH_ERROR",
             category=ErrorCategory.AUTHENTICATION,
             severity=ErrorSeverity.MEDIUM,
-            details=details
+            details=details,
         )
 
 
@@ -160,10 +163,7 @@ class InvalidTokenError(AuthenticationError):
     """유효하지 않은 토큰"""
 
     def __init__(self, reason: str = "토큰이 유효하지 않습니다"):
-        super().__init__(
-            message=reason,
-            details={"reason": reason}
-        )
+        super().__init__(message=reason, details={"reason": reason})
         self.error_code = "INVALID_TOKEN"
 
 
@@ -171,10 +171,7 @@ class TokenExpiredError(AuthenticationError):
     """만료된 토큰"""
 
     def __init__(self):
-        super().__init__(
-            message="토큰이 만료되었습니다",
-            details={"reason": "expired"}
-        )
+        super().__init__(message="토큰이 만료되었습니다", details={"reason": "expired"})
         self.error_code = "TOKEN_EXPIRED"
 
 
@@ -185,7 +182,7 @@ class AuthorizationError(BaseApplicationException):
         self,
         message: str = "권한이 없습니다",
         required_permission: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None
+        details: Optional[Dict[str, Any]] = None,
     ):
         error_details = details or {}
         if required_permission:
@@ -196,7 +193,7 @@ class AuthorizationError(BaseApplicationException):
             error_code="AUTHZ_ERROR",
             category=ErrorCategory.AUTHORIZATION,
             severity=ErrorSeverity.MEDIUM,
-            details=error_details
+            details=error_details,
         )
 
 
@@ -209,7 +206,7 @@ class DatabaseError(BaseApplicationException):
         message: str,
         operation: Optional[str] = None,
         table: Optional[str] = None,
-        original_exception: Optional[Exception] = None
+        original_exception: Optional[Exception] = None,
     ):
         details = {}
         if operation:
@@ -223,7 +220,7 @@ class DatabaseError(BaseApplicationException):
             category=ErrorCategory.DATABASE,
             severity=ErrorSeverity.HIGH,
             details=details,
-            original_exception=original_exception
+            original_exception=original_exception,
         )
 
 
@@ -232,11 +229,11 @@ class RecordNotFoundError(DatabaseError):
 
     def __init__(self, entity: str, identifier: Any):
         super().__init__(
-            message=f"{entity}을(를) 찾을 수 없습니다: {identifier}",
-            operation="SELECT"
+            message=f"{entity}을(를) 찾을 수 없습니다: {identifier}", operation="SELECT"
         )
         self.error_code = "NOT_FOUND"
         self.severity = ErrorSeverity.LOW
+
 
 # Backwards compatibility: 일부 코드에서는 NotFoundError 이름을 사용
 NotFoundError = RecordNotFoundError
@@ -248,7 +245,7 @@ class DuplicateRecordError(DatabaseError):
     def __init__(self, entity: str, field: str, value: Any):
         super().__init__(
             message=f"{entity}의 {field} 값이 이미 존재합니다: {value}",
-            operation="INSERT"
+            operation="INSERT",
         )
         self.error_code = "DUPLICATE_RECORD"
         self.severity = ErrorSeverity.LOW
@@ -264,7 +261,7 @@ class ExternalAPIError(BaseApplicationException):
         api_name: str,
         status_code: Optional[int] = None,
         response_body: Optional[str] = None,
-        original_exception: Optional[Exception] = None
+        original_exception: Optional[Exception] = None,
     ):
         details = {"api_name": api_name}
         if status_code:
@@ -278,7 +275,7 @@ class ExternalAPIError(BaseApplicationException):
             category=ErrorCategory.EXTERNAL_API,
             severity=ErrorSeverity.MEDIUM,
             details=details,
-            original_exception=original_exception
+            original_exception=original_exception,
         )
 
 
@@ -288,7 +285,7 @@ class APITimeoutError(ExternalAPIError):
     def __init__(self, api_name: str, timeout_seconds: int):
         super().__init__(
             message=f"{api_name} API 요청이 {timeout_seconds}초 후 타임아웃되었습니다",
-            api_name=api_name
+            api_name=api_name,
         )
         self.error_code = "API_TIMEOUT"
         self.category = ErrorCategory.TIMEOUT
@@ -302,7 +299,7 @@ class APIRateLimitError(ExternalAPIError):
         super().__init__(
             message=f"{api_name} API 요청 속도 제한에 도달했습니다",
             api_name=api_name,
-            status_code=429
+            status_code=429,
         )
         self.error_code = "API_RATE_LIMIT"
         if retry_after:
@@ -318,12 +315,12 @@ class AgentError(BaseApplicationException):
         message: str,
         agent_name: str,
         state: Optional[Dict[str, Any]] = None,
-        original_exception: Optional[Exception] = None
+        original_exception: Optional[Exception] = None,
     ):
         details = {"agent_name": agent_name}
         if state:
             # 민감 정보 제외
-            safe_state = {k: v for k, v in state.items() if not k.startswith('_')}
+            safe_state = {k: v for k, v in state.items() if not k.startswith("_")}
             details["state"] = safe_state
 
         super().__init__(
@@ -332,18 +329,20 @@ class AgentError(BaseApplicationException):
             category=ErrorCategory.BUSINESS_LOGIC,
             severity=ErrorSeverity.MEDIUM,
             details=details,
-            original_exception=original_exception
+            original_exception=original_exception,
         )
 
 
 class AgentExecutionError(AgentError):
     """에이전트 실행 오류"""
 
-    def __init__(self, agent_name: str, step: str, original_exception: Optional[Exception] = None):
+    def __init__(
+        self, agent_name: str, step: str, original_exception: Optional[Exception] = None
+    ):
         super().__init__(
             message=f"{agent_name}의 '{step}' 단계에서 실행 오류가 발생했습니다",
             agent_name=agent_name,
-            original_exception=original_exception
+            original_exception=original_exception,
         )
         self.error_code = "AGENT_EXECUTION_ERROR"
         self.details["step"] = step
@@ -355,7 +354,7 @@ class AgentStateError(AgentError):
     def __init__(self, agent_name: str, reason: str):
         super().__init__(
             message=f"{agent_name}의 상태가 올바르지 않습니다: {reason}",
-            agent_name=agent_name
+            agent_name=agent_name,
         )
         self.error_code = "AGENT_STATE_ERROR"
 
@@ -370,7 +369,7 @@ class DataCollectionError(BaseApplicationException):
         source: str,
         items_collected: int = 0,
         items_failed: int = 0,
-        original_exception: Optional[Exception] = None
+        original_exception: Optional[Exception] = None,
     ):
         super().__init__(
             message=message,
@@ -380,9 +379,9 @@ class DataCollectionError(BaseApplicationException):
             details={
                 "source": source,
                 "items_collected": items_collected,
-                "items_failed": items_failed
+                "items_failed": items_failed,
             },
-            original_exception=original_exception
+            original_exception=original_exception,
         )
 
 
@@ -394,7 +393,7 @@ class DataProcessingError(BaseApplicationException):
         message: str,
         processor: str,
         item_id: Optional[str] = None,
-        original_exception: Optional[Exception] = None
+        original_exception: Optional[Exception] = None,
     ):
         details = {"processor": processor}
         if item_id:
@@ -406,7 +405,7 @@ class DataProcessingError(BaseApplicationException):
             category=ErrorCategory.BUSINESS_LOGIC,
             severity=ErrorSeverity.MEDIUM,
             details=details,
-            original_exception=original_exception
+            original_exception=original_exception,
         )
 
 
@@ -424,15 +423,13 @@ class ConfigurationError(BaseApplicationException):
             error_code="CONFIG_ERROR",
             category=ErrorCategory.SYSTEM,
             severity=ErrorSeverity.HIGH,
-            details=details
+            details=details,
         )
 
 
 # Error Handler Helper Functions
 def handle_exception(
-    exception: Exception,
-    context: Optional[Dict[str, Any]] = None,
-    reraise: bool = True
+    exception: Exception, context: Optional[Dict[str, Any]] = None, reraise: bool = True
 ) -> BaseApplicationException:
     """예외를 표준화된 형식으로 처리
 
@@ -448,9 +445,7 @@ def handle_exception(
         app_exception = exception
     else:
         app_exception = BaseApplicationException(
-            message=str(exception),
-            original_exception=exception,
-            details=context or {}
+            message=str(exception), original_exception=exception, details=context or {}
         )
 
     app_exception.log()
@@ -469,12 +464,13 @@ def create_error_response(exception: BaseApplicationException) -> Dict[str, Any]
             "code": exception.error_code,
             "message": exception.message,
             "category": exception.category.value,
-        }
+        },
     }
 
     # 개발 환경에서만 상세 정보 포함
     try:
         from config.settings import get_settings
+
         if get_settings().DEBUG:
             response["error"]["details"] = exception.details
             if exception.traceback:
@@ -499,19 +495,19 @@ class ErrorAggregator:
         self.errors.append(error)
 
     def add_exception(
-        self,
-        exception: Exception,
-        context: Optional[Dict[str, Any]] = None
+        self, exception: Exception, context: Optional[Dict[str, Any]] = None
     ):
         """일반 예외를 변환하여 추가"""
         if isinstance(exception, BaseApplicationException):
             self.errors.append(exception)
         else:
-            self.errors.append(BaseApplicationException(
-                message=str(exception),
-                original_exception=exception,
-                details=context or {}
-            ))
+            self.errors.append(
+                BaseApplicationException(
+                    message=str(exception),
+                    original_exception=exception,
+                    details=context or {},
+                )
+            )
 
     def has_errors(self) -> bool:
         """에러 존재 여부"""
@@ -519,7 +515,10 @@ class ErrorAggregator:
 
     def has_critical_errors(self) -> bool:
         """중요 에러 존재 여부"""
-        return any(e.severity in (ErrorSeverity.HIGH, ErrorSeverity.CRITICAL) for e in self.errors)
+        return any(
+            e.severity in (ErrorSeverity.HIGH, ErrorSeverity.CRITICAL)
+            for e in self.errors
+        )
 
     def get_summary(self) -> Dict[str, Any]:
         """에러 요약"""
@@ -540,7 +539,7 @@ class ErrorAggregator:
             "total": len(self.errors),
             "by_category": by_category,
             "by_severity": by_severity,
-            "errors": [e.to_dict() for e in self.errors[:10]]  # 최대 10개
+            "errors": [e.to_dict() for e in self.errors[:10]],  # 최대 10개
         }
 
     def log_all(self):

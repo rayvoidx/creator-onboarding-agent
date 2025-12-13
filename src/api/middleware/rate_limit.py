@@ -1,4 +1,5 @@
 """Rate Limiting 미들웨어"""
+
 from __future__ import annotations
 
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -28,7 +29,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         window_seconds: int = 60,
         redis_url: Optional[str] = None,
         use_redis: bool = False,
-        redis_prefix: str = "ratelimit"
+        redis_prefix: str = "ratelimit",
     ) -> None:
         super().__init__(app)
         self.enabled = enabled
@@ -44,9 +45,13 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if self._use_redis:
             try:
                 self.redis = AsyncRedis.from_url(self.redis_url)  # type: ignore
-                logger.info("RateLimitMiddleware: Using Redis backend for rate limiting")
+                logger.info(
+                    "RateLimitMiddleware: Using Redis backend for rate limiting"
+                )
             except Exception as e:
-                logger.warning(f"RateLimitMiddleware: Failed to init Redis backend: {e}. Falling back to in-memory.")
+                logger.warning(
+                    f"RateLimitMiddleware: Failed to init Redis backend: {e}. Falling back to in-memory."
+                )
                 self._use_redis = False
 
     def _get_client_ip(self, request: Request) -> str:
@@ -61,15 +66,14 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         """Rate limit 확인 (토큰 버킷 알고리즘)"""
         if self._use_redis and self.redis is not None:
             # 이 메서드는 sync 시그니처지만, Redis 모드는 async 필요 -> dispatch에서 별도 경로 처리
-            raise RuntimeError("Redis mode requires async check; call _check_rate_limit_redis instead")
+            raise RuntimeError(
+                "Redis mode requires async check; call _check_rate_limit_redis instead"
+            )
         now = datetime.now()
 
         # 클라이언트 IP가 처음 요청하는 경우
         if client_ip not in self.request_counts:
-            self.request_counts[client_ip] = {
-                "count": 1,
-                "window_start": now
-            }
+            self.request_counts[client_ip] = {"count": 1, "window_start": now}
             return True, self.max_requests - 1
 
         client_data = self.request_counts[client_ip]
@@ -78,10 +82,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         # 시간 창이 지났으면 초기화
         if elapsed > self.window_seconds:
-            self.request_counts[client_ip] = {
-                "count": 1,
-                "window_start": now
-            }
+            self.request_counts[client_ip] = {"count": 1, "window_start": now}
             return True, self.max_requests - 1
 
         # 현재 시간 창 내에서 요청 수 확인
@@ -99,6 +100,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         assert self.redis is not None
         try:
             import math
+
             now = datetime.now()
             epoch = int(now.timestamp())
             window_id = epoch // self.window_seconds
@@ -108,19 +110,24 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             if count == 1:
                 await self.redis.expire(key, self.window_seconds)
             if count > self.max_requests:
-                remaining_secs = int(self.window_seconds - (epoch % self.window_seconds))
+                remaining_secs = int(
+                    self.window_seconds - (epoch % self.window_seconds)
+                )
                 return False, remaining_secs
             remaining = max(0, self.max_requests - int(count))
             return True, remaining
         except Exception as e:
-            logger.warning(f"RateLimitMiddleware: Redis check failed: {e}. Falling back to in-memory for this request.")
+            logger.warning(
+                f"RateLimitMiddleware: Redis check failed: {e}. Falling back to in-memory for this request."
+            )
             return self._check_rate_limit(client_ip)
 
     def _cleanup_old_entries(self) -> None:
         """오래된 요청 기록 정리 (메모리 관리)"""
         now = datetime.now()
         expired_ips = [
-            ip for ip, data in self.request_counts.items()
+            ip
+            for ip, data in self.request_counts.items()
             if (now - data["window_start"]).total_seconds() > self.window_seconds * 2
         ]
         for ip in expired_ips:
@@ -149,14 +156,14 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 content={
                     "success": False,
                     "error": "Too many requests",
-                    "retry_after": remaining
+                    "retry_after": remaining,
                 },
                 headers={
                     "X-RateLimit-Limit": str(self.max_requests),
                     "X-RateLimit-Remaining": "0",
                     "X-RateLimit-Reset": str(remaining),
-                    "Retry-After": str(remaining)
-                }
+                    "Retry-After": str(remaining),
+                },
             )
 
         # 정상 요청 처리
@@ -174,6 +181,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         # 주기적으로 오래된 항목 정리 (10% 확률로)
         if len(self.request_counts) > 1000:
             import random
+
             if random.random() < 0.1:
                 self._cleanup_old_entries()
 

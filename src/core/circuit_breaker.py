@@ -1,6 +1,7 @@
 """
 Circuit Breaker 패턴 구현 - 외부 API 장애 격리
 """
+
 import logging
 import time
 from datetime import datetime
@@ -15,8 +16,9 @@ logger = logging.getLogger(__name__)
 
 class CircuitState(str, Enum):
     """서킷 브레이커 상태"""
-    CLOSED = "closed"      # 정상 상태
-    OPEN = "open"          # 장애 상태 (요청 차단)
+
+    CLOSED = "closed"  # 정상 상태
+    OPEN = "open"  # 장애 상태 (요청 차단)
     HALF_OPEN = "half_open"  # 복구 테스트 중
 
 
@@ -35,9 +37,7 @@ class CircuitBreakerListener(pybreaker.CircuitBreakerListener):
 
     def failure(self, cb, exc):
         """실패 시 로깅"""
-        logger.error(
-            f"Circuit breaker '{self.name}' recorded failure: {exc}"
-        )
+        logger.error(f"Circuit breaker '{self.name}' recorded failure: {exc}")
 
     def success(self, cb):
         """성공 시 로깅"""
@@ -56,7 +56,7 @@ class CircuitBreakerManager:
         name: str,
         fail_max: int = 5,
         reset_timeout: int = 30,
-        exclude: tuple = None
+        exclude: tuple = None,
     ) -> pybreaker.CircuitBreaker:
         """
         서킷 브레이커 가져오기 (없으면 생성)
@@ -172,7 +172,7 @@ def circuit_breaker(
     fail_max: int = 5,
     reset_timeout: int = 30,
     fallback: Callable = None,
-    exclude: tuple = None
+    exclude: tuple = None,
 ):
     """
     서킷 브레이커 데코레이터
@@ -189,6 +189,7 @@ def circuit_breaker(
         async def call_external_api():
             ...
     """
+
     def decorator(func: Callable):
         @wraps(func)
         async def async_wrapper(*args, **kwargs):
@@ -200,7 +201,11 @@ def circuit_breaker(
                 if breaker.current_state == pybreaker.STATE_OPEN:
                     logger.warning(f"Circuit '{name}' is OPEN, using fallback")
                     if fallback:
-                        return await fallback(*args, **kwargs) if callable(fallback) else fallback
+                        return (
+                            await fallback(*args, **kwargs)
+                            if callable(fallback)
+                            else fallback
+                        )
                     raise pybreaker.CircuitBreakerError(
                         f"Circuit breaker '{name}' is open"
                     )
@@ -214,7 +219,11 @@ def circuit_breaker(
             except pybreaker.CircuitBreakerError:
                 manager.record_call(name, False)
                 if fallback:
-                    return await fallback(*args, **kwargs) if callable(fallback) else fallback
+                    return (
+                        await fallback(*args, **kwargs)
+                        if callable(fallback)
+                        else fallback
+                    )
                 raise
 
             except Exception as e:
@@ -223,7 +232,11 @@ def circuit_breaker(
 
                 # 서킷이 열린 경우 폴백 시도
                 if breaker.current_state == pybreaker.STATE_OPEN and fallback:
-                    return await fallback(*args, **kwargs) if callable(fallback) else fallback
+                    return (
+                        await fallback(*args, **kwargs)
+                        if callable(fallback)
+                        else fallback
+                    )
                 raise
 
         @wraps(func)
@@ -235,7 +248,11 @@ def circuit_breaker(
                 if breaker.current_state == pybreaker.STATE_OPEN:
                     logger.warning(f"Circuit '{name}' is OPEN, using fallback")
                     if fallback:
-                        return fallback(*args, **kwargs) if callable(fallback) else fallback
+                        return (
+                            fallback(*args, **kwargs)
+                            if callable(fallback)
+                            else fallback
+                        )
                     raise pybreaker.CircuitBreakerError(
                         f"Circuit breaker '{name}' is open"
                     )
@@ -261,6 +278,7 @@ def circuit_breaker(
 
         # 비동기 함수인지 확인
         import asyncio
+
         if asyncio.iscoroutinefunction(func):
             return async_wrapper
         return sync_wrapper
@@ -286,9 +304,7 @@ def init_circuit_breakers() -> None:
 
     for name, config in CIRCUIT_BREAKER_CONFIGS.items():
         manager.get_breaker(
-            name,
-            fail_max=config["fail_max"],
-            reset_timeout=config["reset_timeout"]
+            name, fail_max=config["fail_max"], reset_timeout=config["reset_timeout"]
         )
 
     logger.info(f"Initialized {len(CIRCUIT_BREAKER_CONFIGS)} circuit breakers")

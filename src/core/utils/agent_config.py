@@ -33,4 +33,3 @@ def attach_agent_config_to_context(
     ctx = dict(context or {})
     ctx["agent_model_config"] = get_settings().get_agent_config(agent_name)
     return ctx
-

@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 class MCPErrorCode(Enum):
     """MCP 에러 코드"""
+
     PARSE_ERROR = -32700
     INVALID_REQUEST = -32600
     METHOD_NOT_FOUND = -32601
@@ -28,6 +29,7 @@ class MCPErrorCode(Enum):
 @dataclass
 class MCPTool:
     """MCP 도구 정의"""
+
     name: str
     description: str
     input_schema: Dict[str, Any]
@@ -37,6 +39,7 @@ class MCPTool:
 @dataclass
 class MCPRequest:
     """MCP 요청"""
+
     jsonrpc: str = "2.0"
     id: Optional[str] = None
     method: str = ""
@@ -46,6 +49,7 @@ class MCPRequest:
 @dataclass
 class MCPResponse:
     """MCP 응답"""
+
     jsonrpc: str = "2.0"
     id: Optional[str] = None
     result: Optional[Any] = None
@@ -93,18 +97,15 @@ class MCPServer(ABC):
                     id=request.id,
                     error={
                         "code": MCPErrorCode.METHOD_NOT_FOUND.value,
-                        "message": f"Method not found: {method}"
-                    }
+                        "message": f"Method not found: {method}",
+                    },
                 )
 
         except Exception as e:
             self.logger.error(f"Request handling error: {e}")
             return MCPResponse(
                 id=request.id,
-                error={
-                    "code": MCPErrorCode.INTERNAL_ERROR.value,
-                    "message": str(e)
-                }
+                error={"code": MCPErrorCode.INTERNAL_ERROR.value, "message": str(e)},
             )
 
     async def _handle_initialize(self, request: MCPRequest) -> MCPResponse:
@@ -113,30 +114,24 @@ class MCPServer(ABC):
             id=request.id,
             result={
                 "protocolVersion": "2024-11-05",
-                "capabilities": {
-                    "tools": {"listChanged": True}
-                },
-                "serverInfo": {
-                    "name": self.name,
-                    "version": self.version
-                }
-            }
+                "capabilities": {"tools": {"listChanged": True}},
+                "serverInfo": {"name": self.name, "version": self.version},
+            },
         )
 
     async def _handle_tools_list(self, request: MCPRequest) -> MCPResponse:
         """도구 목록 요청 처리"""
         tools_list = []
         for tool in self.tools.values():
-            tools_list.append({
-                "name": tool.name,
-                "description": tool.description,
-                "inputSchema": tool.input_schema
-            })
+            tools_list.append(
+                {
+                    "name": tool.name,
+                    "description": tool.description,
+                    "inputSchema": tool.input_schema,
+                }
+            )
 
-        return MCPResponse(
-            id=request.id,
-            result={"tools": tools_list}
-        )
+        return MCPResponse(id=request.id, result={"tools": tools_list})
 
     async def _handle_tools_call(self, request: MCPRequest) -> MCPResponse:
         """도구 호출 요청 처리"""
@@ -149,8 +144,8 @@ class MCPServer(ABC):
                 id=request.id,
                 error={
                     "code": MCPErrorCode.METHOD_NOT_FOUND.value,
-                    "message": f"Tool not found: {tool_name}"
-                }
+                    "message": f"Tool not found: {tool_name}",
+                },
             )
 
         tool = self.tools[tool_name]
@@ -162,15 +157,24 @@ class MCPServer(ABC):
             if isinstance(result, str):
                 content = [{"type": "text", "text": result}]
             elif isinstance(result, dict):
-                content = [{"type": "text", "text": json.dumps(result, ensure_ascii=False, indent=2)}]
+                content = [
+                    {
+                        "type": "text",
+                        "text": json.dumps(result, ensure_ascii=False, indent=2),
+                    }
+                ]
             elif isinstance(result, list):
-                content = [{"type": "text", "text": json.dumps(result, ensure_ascii=False, indent=2)}]
+                content = [
+                    {
+                        "type": "text",
+                        "text": json.dumps(result, ensure_ascii=False, indent=2),
+                    }
+                ]
             else:
                 content = [{"type": "text", "text": str(result)}]
 
             return MCPResponse(
-                id=request.id,
-                result={"content": content, "isError": False}
+                id=request.id, result={"content": content, "isError": False}
             )
 
         except Exception as e:
@@ -179,8 +183,8 @@ class MCPServer(ABC):
                 id=request.id,
                 result={
                     "content": [{"type": "text", "text": f"Error: {str(e)}"}],
-                    "isError": True
-                }
+                    "isError": True,
+                },
             )
 
     async def run_stdio(self) -> None:
@@ -210,17 +214,14 @@ class MCPServer(ABC):
                         jsonrpc=data.get("jsonrpc", "2.0"),
                         id=data.get("id"),
                         method=data.get("method", ""),
-                        params=data.get("params", {})
+                        params=data.get("params", {}),
                     )
 
                     # 요청 처리
                     response = await self.handle_request(request)
 
                     # 응답 전송
-                    response_data = {
-                        "jsonrpc": response.jsonrpc,
-                        "id": response.id
-                    }
+                    response_data = {"jsonrpc": response.jsonrpc, "id": response.id}
                     if response.error:
                         response_data["error"] = response.error
                     else:
@@ -234,8 +235,8 @@ class MCPServer(ABC):
                         "id": None,
                         "error": {
                             "code": MCPErrorCode.PARSE_ERROR.value,
-                            "message": f"Parse error: {str(e)}"
-                        }
+                            "message": f"Parse error: {str(e)}",
+                        },
                     }
                     print(json.dumps(error_response), flush=True)
 
@@ -269,7 +270,7 @@ class HTTPMCPServer(MCPServer):
         app = FastAPI(
             title=f"MCP Server - {self.name}",
             version=self.version,
-            description=f"MCP Protocol Server for {self.name}"
+            description=f"MCP Protocol Server for {self.name}",
         )
 
         class JSONRPCRequest(BaseModel):
@@ -284,15 +285,12 @@ class HTTPMCPServer(MCPServer):
                 jsonrpc=request.jsonrpc,
                 id=request.id,
                 method=request.method,
-                params=request.params
+                params=request.params,
             )
 
             response = await self.handle_request(mcp_request)
 
-            result = {
-                "jsonrpc": response.jsonrpc,
-                "id": response.id
-            }
+            result = {"jsonrpc": response.jsonrpc, "id": response.id}
 
             if response.error:
                 result["error"] = response.error
@@ -309,11 +307,13 @@ class HTTPMCPServer(MCPServer):
         async def list_tools():
             tools = []
             for tool in self.tools.values():
-                tools.append({
-                    "name": tool.name,
-                    "description": tool.description,
-                    "inputSchema": tool.input_schema
-                })
+                tools.append(
+                    {
+                        "name": tool.name,
+                        "description": tool.description,
+                        "inputSchema": tool.input_schema,
+                    }
+                )
             return {"tools": tools}
 
         self.app = app

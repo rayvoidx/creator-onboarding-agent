@@ -1,6 +1,7 @@
 """
 OpenTelemetry 분산 트레이싱 설정
 """
+
 import logging
 from typing import Optional
 
@@ -30,7 +31,7 @@ _tracer: Optional[trace.Tracer] = None
 def setup_tracing(
     service_name: str = "creator-onboarding-agent",
     otlp_endpoint: str = None,
-    enable_console_export: bool = False
+    enable_console_export: bool = False,
 ) -> trace.Tracer:
     """
     OpenTelemetry 트레이싱 설정
@@ -46,11 +47,13 @@ def setup_tracing(
     global _tracer
 
     # 리소스 정의
-    resource = Resource(attributes={
-        SERVICE_NAME: service_name,
-        "service.version": "1.0.0",
-        "deployment.environment": settings.ENV,
-    })
+    resource = Resource(
+        attributes={
+            SERVICE_NAME: service_name,
+            "service.version": "1.0.0",
+            "deployment.environment": settings.ENV,
+        }
+    )
 
     # TracerProvider 설정
     provider = TracerProvider(resource=resource)
@@ -58,8 +61,7 @@ def setup_tracing(
     # OTLP Exporter 설정
     if otlp_endpoint:
         otlp_exporter = OTLPSpanExporter(
-            endpoint=otlp_endpoint,
-            insecure=True  # 개발 환경에서는 insecure
+            endpoint=otlp_endpoint, insecure=True  # 개발 환경에서는 insecure
         )
         provider.add_span_processor(BatchSpanProcessor(otlp_exporter))
         logger.info(f"OTLP exporter configured: {otlp_endpoint}")
@@ -67,6 +69,7 @@ def setup_tracing(
     # 콘솔 출력 (디버깅용)
     if enable_console_export:
         from opentelemetry.sdk.trace.export import ConsoleSpanExporter
+
         provider.add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))
         logger.info("Console span exporter enabled")
 
@@ -127,10 +130,8 @@ def get_tracer() -> trace.Tracer:
 
 # 데코레이터와 컨텍스트 매니저
 
-def traced(
-    name: str = None,
-    attributes: dict = None
-):
+
+def traced(name: str = None, attributes: dict = None):
     """
     함수에 트레이싱 적용하는 데코레이터
 
@@ -143,6 +144,7 @@ def traced(
         async def process_data():
             ...
     """
+
     def decorator(func):
         import functools
         import asyncio
@@ -246,7 +248,7 @@ def get_current_trace_id() -> Optional[str]:
     if span:
         context = span.get_span_context()
         if context.is_valid:
-            return format(context.trace_id, '032x')
+            return format(context.trace_id, "032x")
     return None
 
 
@@ -256,5 +258,5 @@ def get_current_span_id() -> Optional[str]:
     if span:
         context = span.get_span_context()
         if context.is_valid:
-            return format(context.span_id, '016x')
+            return format(context.span_id, "016x")
     return None

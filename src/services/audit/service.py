@@ -1,12 +1,22 @@
 """
 감사 추적 서비스 - 모든 중요 작업을 기록
 """
+
 import logging
 import uuid
 from datetime import datetime
 from typing import Optional, Dict, Any, List
 
-from sqlalchemy import create_engine, Column, String, DateTime, Boolean, Text, JSON, Enum as SQLEnum
+from sqlalchemy import (
+    create_engine,
+    Column,
+    String,
+    DateTime,
+    Boolean,
+    Text,
+    JSON,
+    Enum as SQLEnum,
+)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
@@ -31,6 +41,7 @@ Base = declarative_base()
 
 class AuditLogTable(Base):
     """감사 로그 SQLAlchemy 모델"""
+
     __tablename__ = "audit_logs"
 
     id = Column(String(36), primary_key=True)
@@ -89,14 +100,18 @@ class AuditService:
         if not self._use_memory:
             try:
                 # 동기 엔진으로 테이블 생성
-                sync_url = self.database_url.replace("+asyncpg", "").replace("postgresql://", "postgresql://")
+                sync_url = self.database_url.replace("+asyncpg", "").replace(
+                    "postgresql://", "postgresql://"
+                )
                 engine = create_engine(sync_url)
                 Base.metadata.create_all(engine)
                 engine.dispose()
 
                 logger.info("Audit tables created successfully")
             except Exception as e:
-                logger.warning(f"Failed to create audit tables, falling back to memory: {e}")
+                logger.warning(
+                    f"Failed to create audit tables, falling back to memory: {e}"
+                )
                 self._use_memory = True
                 self._logs = []
 
@@ -205,7 +220,7 @@ class AuditService:
         except Exception as e:
             logger.error(f"Failed to persist audit log: {e}")
             # 폴백으로 메모리에 저장
-            if not hasattr(self, '_logs'):
+            if not hasattr(self, "_logs"):
                 self._logs = []
             self._logs.append(audit_log)
 
@@ -244,7 +259,7 @@ class AuditService:
         filtered.sort(key=lambda x: x.timestamp, reverse=True)
 
         total = len(filtered)
-        paginated = filtered[query.offset:query.offset + query.limit]
+        paginated = filtered[query.offset : query.offset + query.limit]
 
         return AuditLogResponse(
             logs=paginated,
@@ -272,7 +287,9 @@ class AuditService:
                 if query.severity:
                     conditions.append(AuditLogTable.severity == query.severity.value)
                 if query.resource_type:
-                    conditions.append(AuditLogTable.resource_type == query.resource_type)
+                    conditions.append(
+                        AuditLogTable.resource_type == query.resource_type
+                    )
                 if query.resource_id:
                     conditions.append(AuditLogTable.resource_id == query.resource_id)
                 if query.start_date:
@@ -290,8 +307,9 @@ class AuditService:
 
                 # 페이지네이션
                 results = (
-                    session.query(AuditLogTable)
-                    .filter(and_(*conditions)) if conditions else session.query(AuditLogTable)
+                    session.query(AuditLogTable).filter(and_(*conditions))
+                    if conditions
+                    else session.query(AuditLogTable)
                 )
                 results = (
                     results.order_by(desc(AuditLogTable.timestamp))
@@ -341,9 +359,7 @@ class AuditService:
             return await self._query_memory(query)
 
     async def get_stats(
-        self,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        self, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None
     ) -> Dict[str, Any]:
         """감사 로그 통계"""
         query = AuditLogQuery(
@@ -364,7 +380,9 @@ class AuditService:
             # 액션별
             action_counts[log.action.value] = action_counts.get(log.action.value, 0) + 1
             # 심각도별
-            severity_counts[log.severity.value] = severity_counts.get(log.severity.value, 0) + 1
+            severity_counts[log.severity.value] = (
+                severity_counts.get(log.severity.value, 0) + 1
+            )
             # 사용자별
             if log.username:
                 user_counts[log.username] = user_counts.get(log.username, 0) + 1

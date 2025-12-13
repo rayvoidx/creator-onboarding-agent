@@ -1,6 +1,7 @@
 """
 데이터 수집 관련 Celery 작업
 """
+
 import logging
 from datetime import datetime
 from typing import Dict, Any, List
@@ -40,6 +41,7 @@ def collect_nile_data(self, params: Dict[str, Any] = None) -> Dict[str, Any]:
 
         # 동기적으로 실행
         import asyncio
+
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
@@ -50,7 +52,9 @@ def collect_nile_data(self, params: Dict[str, Any] = None) -> Dict[str, Any]:
         finally:
             loop.close()
 
-        logger.info(f"NILE data collection completed: {result.get('collected_count', 0)} items")
+        logger.info(
+            f"NILE data collection completed: {result.get('collected_count', 0)} items"
+        )
 
         return {
             "success": True,
@@ -84,6 +88,7 @@ def collect_mohw_data(self, params: Dict[str, Any] = None) -> Dict[str, Any]:
         agent = DataCollectionAgent()
 
         import asyncio
+
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
@@ -94,7 +99,9 @@ def collect_mohw_data(self, params: Dict[str, Any] = None) -> Dict[str, Any]:
         finally:
             loop.close()
 
-        logger.info(f"MOHW data collection completed: {result.get('collected_count', 0)} items")
+        logger.info(
+            f"MOHW data collection completed: {result.get('collected_count', 0)} items"
+        )
 
         return {
             "success": True,
@@ -128,6 +135,7 @@ def collect_kicce_data(self, params: Dict[str, Any] = None) -> Dict[str, Any]:
         agent = DataCollectionAgent()
 
         import asyncio
+
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
@@ -138,7 +146,9 @@ def collect_kicce_data(self, params: Dict[str, Any] = None) -> Dict[str, Any]:
         finally:
             loop.close()
 
-        logger.info(f"KICCE data collection completed: {result.get('collected_count', 0)} items")
+        logger.info(
+            f"KICCE data collection completed: {result.get('collected_count', 0)} items"
+        )
 
         return {
             "success": True,
@@ -167,21 +177,28 @@ def collect_all_external_data(self) -> Dict[str, Any]:
     mohw_task = collect_mohw_data.delay()
     kicce_task = collect_kicce_data.delay()
 
-    results.append({
-        "source": "NILE",
-        "task_id": nile_task.id,
-    })
-    results.append({
-        "source": "MOHW",
-        "task_id": mohw_task.id,
-    })
-    results.append({
-        "source": "KICCE",
-        "task_id": kicce_task.id,
-    })
+    results.append(
+        {
+            "source": "NILE",
+            "task_id": nile_task.id,
+        }
+    )
+    results.append(
+        {
+            "source": "MOHW",
+            "task_id": mohw_task.id,
+        }
+    )
+    results.append(
+        {
+            "source": "KICCE",
+            "task_id": kicce_task.id,
+        }
+    )
 
     # 감사 로그 기록
     import asyncio
+
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
@@ -216,8 +233,7 @@ def collect_all_external_data(self) -> Dict[str, Any]:
     default_retry_delay=300,
 )
 def index_documents_to_vector_db(
-    self,
-    documents: List[Dict[str, Any]]
+    self, documents: List[Dict[str, Any]]
 ) -> Dict[str, Any]:
     """
     문서를 벡터 DB에 인덱싱
@@ -228,7 +244,9 @@ def index_documents_to_vector_db(
     Returns:
         인덱싱 결과
     """
-    logger.info(f"Starting document indexing. Task ID: {self.request.id}, Documents: {len(documents)}")
+    logger.info(
+        f"Starting document indexing. Task ID: {self.request.id}, Documents: {len(documents)}"
+    )
 
     try:
         from src.rag.rag_pipeline import RAGPipeline
@@ -236,21 +254,24 @@ def index_documents_to_vector_db(
 
         settings = get_settings()
 
-        pipeline = RAGPipeline({
-            'retrieval': {
-                'vector_weight': 0.7,
-                'keyword_weight': 0.3,
-                'max_results': 10
-            },
-            'generation': {
-                'default_model': settings.DEFAULT_LLM_MODEL,
-                'fallback_model': settings.FALLBACK_LLM_MODEL,
-                'openai_api_key': settings.OPENAI_API_KEY,
-                'anthropic_api_key': settings.ANTHROPIC_API_KEY
+        pipeline = RAGPipeline(
+            {
+                "retrieval": {
+                    "vector_weight": 0.7,
+                    "keyword_weight": 0.3,
+                    "max_results": 10,
+                },
+                "generation": {
+                    "default_model": settings.DEFAULT_LLM_MODEL,
+                    "fallback_model": settings.FALLBACK_LLM_MODEL,
+                    "openai_api_key": settings.OPENAI_API_KEY,
+                    "anthropic_api_key": settings.ANTHROPIC_API_KEY,
+                },
             }
-        })
+        )
 
         import asyncio
+
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 

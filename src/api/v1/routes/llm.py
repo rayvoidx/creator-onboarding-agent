@@ -19,14 +19,16 @@ async def get_llm_status() -> Dict[str, Any]:
     try:
         deps = get_dependencies()
         if not deps.orchestrator or not deps.orchestrator.llm_manager:
-            raise HTTPException(status_code=503, detail="LLM 관리자가 초기화되지 않았습니다.")
+            raise HTTPException(
+                status_code=503, detail="LLM 관리자가 초기화되지 않았습니다."
+            )
 
         status = await deps.orchestrator.llm_manager.get_model_status()
 
         return {
             "success": True,
             "models": status,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
 
     except HTTPException:
@@ -57,4 +59,6 @@ async def get_agent_model_configs() -> Dict[str, Any]:
         raise
     except Exception as e:
         logger.error(f"Failed to load agent model configs: {e}")
-        raise HTTPException(status_code=500, detail="에이전트 모델 정보를 불러오지 못했습니다.")
+        raise HTTPException(
+            status_code=500, detail="에이전트 모델 정보를 불러오지 못했습니다."
+        )

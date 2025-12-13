@@ -14,6 +14,7 @@ from src.agents.creator_onboarding_agent import CreatorOnboardingAgent
 try:
     from src.monitoring.performance_monitor import PerformanceMonitor
     from src.monitoring.metrics_collector import MetricsCollector
+
     MONITORING_AVAILABLE = True
 except ImportError:
     PerformanceMonitor = None  # type: ignore

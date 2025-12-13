@@ -51,24 +51,40 @@ class LLMManagerAgent:
                 if not isinstance(text, str):
                     text = str(text)
 
-            plan = state.context.get("plan") if isinstance(state.context, dict) else None
+            plan = (
+                state.context.get("plan") if isinstance(state.context, dict) else None
+            )
             if not isinstance(plan, dict):
                 plan = {}
 
-            cost_preference = plan.get("cost_preference") or state.context.get("cost_preference") or "balanced"
+            cost_preference = (
+                plan.get("cost_preference")
+                or state.context.get("cost_preference")
+                or "balanced"
+            )
             if cost_preference not in ("budget", "balanced", "performance", "speed"):
                 cost_preference = "balanced"
 
-            complexity = plan.get("complexity") or ("high" if len(text) > 200 else "medium")
+            complexity = plan.get("complexity") or (
+                "high" if len(text) > 200 else "medium"
+            )
             if complexity not in ("simple", "medium", "high"):
                 complexity = "medium"
 
             # heuristic token estimate (very rough)
-            max_tokens = 1200 if complexity == "simple" else (2400 if complexity == "medium" else 6000)
+            max_tokens = (
+                1200
+                if complexity == "simple"
+                else (2400 if complexity == "medium" else 6000)
+            )
 
             criteria = {
                 "task_type": state.task_type or plan.get("workflow_type") or "general",
-                "priority": "cost" if cost_preference == "budget" else ("speed" if cost_preference == "speed" else "balanced"),
+                "priority": (
+                    "cost"
+                    if cost_preference == "budget"
+                    else ("speed" if cost_preference == "speed" else "balanced")
+                ),
                 "max_tokens": max_tokens,
             }
 
@@ -87,11 +103,11 @@ class LLMManagerAgent:
             state.context["execution_time"] = round((time.time() - start) * 1000)
             return state
         except Exception as exc:
-            state.selected_model = state.selected_model or self.settings.DEFAULT_LLM_MODEL
+            state.selected_model = (
+                state.selected_model or self.settings.DEFAULT_LLM_MODEL
+            )
             state.model_selection_reason = f"fallback_due_to_error: {exc}"
             state.context = dict(state.context or {})
             state.context["selected_llm_model"] = state.selected_model
             state.context["execution_time"] = round((time.time() - start) * 1000)
             return state
-
-

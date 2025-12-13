@@ -1,4 +1,5 @@
 """API 응답 스키마"""
+
 from typing import Dict, Any, List
 from datetime import datetime
 from pydantic import BaseModel
@@ -6,6 +7,7 @@ from pydantic import BaseModel
 
 class CompetencyAssessmentResponse(BaseModel):
     """역량진단 응답"""
+
     success: bool
     assessment_id: str
     user_id: str
@@ -17,6 +19,7 @@ class CompetencyAssessmentResponse(BaseModel):
 
 class RecommendationResponse(BaseModel):
     """추천 응답"""
+
     success: bool
     user_id: str
     recommendations: List[Dict[str, Any]]
@@ -27,6 +30,7 @@ class RecommendationResponse(BaseModel):
 
 class SearchResponse(BaseModel):
     """검색 응답"""
+
     success: bool
     query: str
     results: List[Dict[str, Any]]
@@ -37,6 +41,7 @@ class SearchResponse(BaseModel):
 
 class AnalyticsResponse(BaseModel):
     """분석 응답"""
+
     success: bool
     report_id: str
     report_type: str
@@ -49,6 +54,7 @@ class AnalyticsResponse(BaseModel):
 
 class HealthCheckResponse(BaseModel):
     """헬스 체크 응답"""
+
     status: str
     timestamp: datetime
     components: Dict[str, str]
@@ -57,6 +63,7 @@ class HealthCheckResponse(BaseModel):
 
 class CreatorEvaluationResponse(BaseModel):
     """Creator evaluation response"""
+
     success: bool
     platform: str
     handle: str

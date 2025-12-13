@@ -64,7 +64,9 @@ async def get_current_active_user(token: str = Depends(oauth2_scheme)) -> TokenD
 def require_permission(required: Permission) -> Callable[[TokenData], TokenData]:
     """특정 Permission이 필요한 엔드포인트에 사용하는 의존성 팩토리."""
 
-    async def dependency(user: TokenData = Depends(get_current_active_user)) -> TokenData:
+    async def dependency(
+        user: TokenData = Depends(get_current_active_user),
+    ) -> TokenData:
         if required.value not in user.permissions:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -105,9 +107,13 @@ class AuthMiddleware(BaseHTTPMiddleware):
             "/api/v1/auth/refresh",
         ]
 
-    async def dispatch(self, request: StarletteRequest, call_next: Callable) -> Response:
+    async def dispatch(
+        self, request: StarletteRequest, call_next: Callable
+    ) -> Response:
         # 인증이 비활성화되어 있거나 제외 경로인 경우 통과
-        if not self.enabled or any(request.url.path.startswith(path) for path in self.exempt_paths):
+        if not self.enabled or any(
+            request.url.path.startswith(path) for path in self.exempt_paths
+        ):
             return await call_next(request)
 
         # Authorization 헤더 확인
@@ -124,12 +130,18 @@ class AuthMiddleware(BaseHTTPMiddleware):
             if scheme.lower() != "bearer":
                 return JSONResponse(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    content={"success": False, "error": "Invalid authentication scheme"},
+                    content={
+                        "success": False,
+                        "error": "Invalid authentication scheme",
+                    },
                 )
         except ValueError:
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                content={"success": False, "error": "Invalid authorization header format"},
+                content={
+                    "success": False,
+                    "error": "Invalid authorization header format",
+                },
             )
 
         # JWT 토큰 검증 (payload는 필요 시 state에 붙일 수 있음)

@@ -20,14 +20,16 @@ async def get_circuit_breaker_status(name: Optional[str] = None) -> Dict[str, An
         status = manager.get_status(name)
 
         return {
-            'success': True,
-            'circuit_breakers': status,
-            'timestamp': datetime.now().isoformat()
+            "success": True,
+            "circuit_breakers": status,
+            "timestamp": datetime.now().isoformat(),
         }
 
     except Exception as e:
         logger.error(f"Circuit breaker status retrieval failed: {e}")
-        raise HTTPException(status_code=500, detail="서킷 브레이커 상태 조회 중 오류가 발생했습니다.")
+        raise HTTPException(
+            status_code=500, detail="서킷 브레이커 상태 조회 중 오류가 발생했습니다."
+        )
 
 
 @router.post("/reset/{name}")
@@ -38,16 +40,20 @@ async def reset_circuit_breaker(name: str) -> Dict[str, Any]:
         success = manager.reset(name)
 
         if not success:
-            raise HTTPException(status_code=404, detail=f"서킷 브레이커 '{name}'을 찾을 수 없습니다.")
+            raise HTTPException(
+                status_code=404, detail=f"서킷 브레이커 '{name}'을 찾을 수 없습니다."
+            )
 
         return {
-            'success': True,
-            'message': f"서킷 브레이커 '{name}'이 리셋되었습니다.",
-            'timestamp': datetime.now().isoformat()
+            "success": True,
+            "message": f"서킷 브레이커 '{name}'이 리셋되었습니다.",
+            "timestamp": datetime.now().isoformat(),
         }
 
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Circuit breaker reset failed: {e}")
-        raise HTTPException(status_code=500, detail="서킷 브레이커 리셋 중 오류가 발생했습니다.")
+        raise HTTPException(
+            status_code=500, detail="서킷 브레이커 리셋 중 오류가 발생했습니다."
+        )

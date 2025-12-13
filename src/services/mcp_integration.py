@@ -18,6 +18,7 @@ from config.settings import get_settings
 
 logger = logging.getLogger(__name__)
 
+
 class MCPIntegrationService:
     """Collects external data via MCP utilities to enrich agent contexts."""
 
@@ -101,11 +102,18 @@ class MCPIntegrationService:
         prefer_supadata_first = False
         prefer_parallel = False
         try:
-            if isinstance(tool_priority, str) and tool_priority.lower() == "supadata_first":
+            if (
+                isinstance(tool_priority, str)
+                and tool_priority.lower() == "supadata_first"
+            ):
                 prefer_supadata_first = True
             elif isinstance(tool_priority, str) and tool_priority.lower() == "parallel":
                 prefer_parallel = True
-            elif isinstance(tool_priority, list) and tool_priority and tool_priority[0] == "supadata":
+            elif (
+                isinstance(tool_priority, list)
+                and tool_priority
+                and tool_priority[0] == "supadata"
+            ):
                 prefer_supadata_first = True
         except Exception:
             prefer_supadata_first = False
@@ -121,10 +129,17 @@ class MCPIntegrationService:
             labels = []
             if web_spec:
                 labels.append("web")
-                tasks.append(self._run_tool("web", lambda: self._fetch_web_data(web_spec)))
+                tasks.append(
+                    self._run_tool("web", lambda: self._fetch_web_data(web_spec))
+                )
             if supadata_spec:
                 labels.append("supadata")
-                tasks.append(self._run_tool("supadata", lambda: self._fetch_supadata(supadata_spec, user_context)))
+                tasks.append(
+                    self._run_tool(
+                        "supadata",
+                        lambda: self._fetch_supadata(supadata_spec, user_context),
+                    )
+                )
 
             if tasks:
                 gathered = await asyncio.gather(*tasks, return_exceptions=True)
@@ -143,7 +158,8 @@ class MCPIntegrationService:
         else:
             if prefer_supadata_first and supadata_spec:
                 supadata_data, tool_policy["supadata"] = await self._run_tool(
-                    "supadata", lambda: self._fetch_supadata(supadata_spec, user_context)
+                    "supadata",
+                    lambda: self._fetch_supadata(supadata_spec, user_context),
                 )
             if (not supadata_data) and web_spec:
                 web_data, tool_policy["web"] = await self._run_tool(
@@ -156,7 +172,12 @@ class MCPIntegrationService:
                 "urls": web_data.get("urls"),
             }
 
-        if (not supadata_data) and supadata_spec and (not prefer_supadata_first) and (not prefer_parallel):
+        if (
+            (not supadata_data)
+            and supadata_spec
+            and (not prefer_supadata_first)
+            and (not prefer_parallel)
+        ):
             supadata_data, tool_policy["supadata"] = await self._run_tool(
                 "supadata", lambda: self._fetch_supadata(supadata_spec, user_context)
             )
@@ -171,7 +192,9 @@ class MCPIntegrationService:
     def _get_policy(self, tool_name: str) -> Dict[str, Any]:
         return dict(self._tool_policies.get(tool_name, {}))
 
-    async def _run_tool(self, tool_name: str, coro_factory: Any) -> tuple[Any, Dict[str, Any]]:
+    async def _run_tool(
+        self, tool_name: str, coro_factory: Any
+    ) -> tuple[Any, Dict[str, Any]]:
         """
         Execute tool with:
         - circuit breaker (cooldown via reset_timeout)
@@ -222,7 +245,9 @@ class MCPIntegrationService:
                 self.cb_manager.record_call(breaker_name, True)
                 status["ok"] = True
                 status["breaker_state"] = str(breaker.current_state)
-                status["duration_ms"] = int(time.time() * 1000) - status["started_at_ms"]
+                status["duration_ms"] = (
+                    int(time.time() * 1000) - status["started_at_ms"]
+                )
                 return result, status
 
             except pybreaker.CircuitBreakerError as exc:
@@ -230,7 +255,9 @@ class MCPIntegrationService:
                 status["last_error"] = str(exc)
                 self.cb_manager.record_call(breaker_name, False)
                 status["breaker_state"] = str(breaker.current_state)
-                status["duration_ms"] = int(time.time() * 1000) - status["started_at_ms"]
+                status["duration_ms"] = (
+                    int(time.time() * 1000) - status["started_at_ms"]
+                )
                 return None, status
 
             except Exception as exc:
@@ -250,7 +277,9 @@ class MCPIntegrationService:
                     await asyncio.sleep(sleep_s)
                     continue
 
-                status["duration_ms"] = int(time.time() * 1000) - status["started_at_ms"]
+                status["duration_ms"] = (
+                    int(time.time() * 1000) - status["started_at_ms"]
+                )
                 return None, status
 
     def _sanitize_spec(self, spec: Dict[str, Any]) -> Dict[str, Any]:
@@ -403,7 +432,11 @@ class MCPIntegrationService:
                         youtube_client.search_videos,
                         search_query,
                         spec.get("search_max_results", 5),
-                        resolved_channel if restrict_to_channel else spec.get("channel_id"),
+                        (
+                            resolved_channel
+                            if restrict_to_channel
+                            else spec.get("channel_id")
+                        ),
                         spec.get("search_order", "relevance"),
                     ),
                 )
@@ -511,4 +544,3 @@ def get_mcp_service() -> MCPIntegrationService:
     if _MCP_SERVICE is None:
         _MCP_SERVICE = MCPIntegrationService()
     return _MCP_SERVICE
-

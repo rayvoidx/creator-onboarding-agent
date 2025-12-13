@@ -52,7 +52,9 @@ class MissionAgent(BaseAgent[MissionRecommendationState]):
         super().__init__("MissionAgent", merged_config)
         self.agent_model_config = merged_config
         scoring_config = {
-            "min_score_for_recommendation": merged_config.get("min_score_for_recommendation", 50.0),
+            "min_score_for_recommendation": merged_config.get(
+                "min_score_for_recommendation", 50.0
+            ),
             "top_k": merged_config.get("top_k", 5),
         }
         self.cfg = MissionAgentConfig(**scoring_config)
@@ -82,9 +84,7 @@ class MissionAgent(BaseAgent[MissionRecommendationState]):
             category = str(creator.get("category", "")).lower()
             completed_missions = _to_int(creator.get("completed_missions"), 0)
             avg_quality_score = float(creator.get("avg_quality_score") or 0.0)
-            current_active_missions = _to_int(
-                creator.get("current_active_missions"), 0
-            )
+            current_active_missions = _to_int(creator.get("current_active_missions"), 0)
             recent_mission_types: List[str] = list(
                 creator.get("recent_mission_types", [])
             )
@@ -104,7 +104,9 @@ class MissionAgent(BaseAgent[MissionRecommendationState]):
             )
 
             # 추가 필터 (API에서 전달한 mission_types, min_reward 등)
-            filters: Dict[str, Any] = state.context.get("filters", {}) if state.context else {}
+            filters: Dict[str, Any] = (
+                state.context.get("filters", {}) if state.context else {}
+            )
             filter_types: List[str] = [str(t) for t in filters.get("mission_types", [])]
             min_reward = float(filters.get("min_reward") or 0.0)
 
@@ -149,13 +151,17 @@ class MissionAgent(BaseAgent[MissionRecommendationState]):
                             "reward_type": m.reward_type.value,
                             "external_signals": {
                                 "youtube_channel": channel_info.get("title"),
-                                "latest_video": {
-                                    "title": latest_video.get("title"),
-                                    "view_count": latest_video.get("view_count"),
-                                    "published_at": latest_video.get("published_at"),
-                                }
-                                if latest_video
-                                else None,
+                                "latest_video": (
+                                    {
+                                        "title": latest_video.get("title"),
+                                        "view_count": latest_video.get("view_count"),
+                                        "published_at": latest_video.get(
+                                            "published_at"
+                                        ),
+                                    }
+                                    if latest_video
+                                    else None
+                                ),
                             },
                         },
                     )
@@ -207,13 +213,21 @@ class MissionAgent(BaseAgent[MissionRecommendationState]):
         # 최소 등급 체크
         if req.min_grade:
             if _grade_rank(grade) < _grade_rank(req.min_grade):
-                return 0.0, [f"온보딩 등급이 미션 최소 요구 등급({req.min_grade})에 미치지 못합니다."]
+                return 0.0, [
+                    f"온보딩 등급이 미션 최소 요구 등급({req.min_grade})에 미치지 못합니다."
+                ]
 
         # 카테고리 필터
         if req.excluded_categories and category in req.excluded_categories:
             return 0.0, ["크리에이터 카테고리가 미션에서 제외됩니다."]
-        if req.allowed_categories and category and category not in req.allowed_categories:
-            return 0.0, ["크리에이터 카테고리가 미션 허용 카테고리에 포함되지 않습니다."]
+        if (
+            req.allowed_categories
+            and category
+            and category not in req.allowed_categories
+        ):
+            return 0.0, [
+                "크리에이터 카테고리가 미션 허용 카테고리에 포함되지 않습니다."
+            ]
 
         # 리스크 필터
         if req.exclude_risks:
@@ -290,7 +304,10 @@ class MissionAgent(BaseAgent[MissionRecommendationState]):
         if "high_reports" in risks:
             score -= 20.0
             reasons.append("최근 신고 이력이 많아 감점되었습니다.")
-        if "low_engagement" in risks and mission.reward_type.value in {"performance", "hybrid"}:
+        if "low_engagement" in risks and mission.reward_type.value in {
+            "performance",
+            "hybrid",
+        }:
             score -= 10.0
             reasons.append("낮은 참여율 리스크로 성과 기반 미션에서 감점되었습니다.")
         if "low_activity" in risks:
@@ -317,5 +334,3 @@ def _grade_rank(grade: str) -> int:
     """등급을 정수 랭크로 변환 (높을수록 좋은 등급)."""
     mapping = {"S": 4, "A": 3, "B": 2, "C": 1}
     return mapping.get(grade.upper(), 0)
-
-

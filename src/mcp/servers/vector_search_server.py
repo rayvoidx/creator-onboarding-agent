@@ -19,10 +19,7 @@ class VectorSearchMCPServer(HTTPMCPServer):
     """
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-        super().__init__(
-            name="vector-search",
-            version="1.0.0"
-        )
+        super().__init__(name="vector-search", version="1.0.0")
         self.config = config or {}
         self._retrieval_engine = None
 
@@ -30,184 +27,184 @@ class VectorSearchMCPServer(HTTPMCPServer):
         """RetrievalEngine 인스턴스 가져오기 (지연 로딩)"""
         if self._retrieval_engine is None:
             from src.rag.retrieval_engine import RetrievalEngine
-            self._retrieval_engine = RetrievalEngine(self.config.get('retrieval', {}))
+
+            self._retrieval_engine = RetrievalEngine(self.config.get("retrieval", {}))
         return self._retrieval_engine
 
     async def initialize(self) -> None:
         """서버 초기화 - 검색 도구 등록"""
 
         # 벡터 검색 도구
-        self.register_tool(MCPTool(
-            name="vector_search",
-            description="ChromaDB를 사용한 시맨틱 벡터 검색. 질의와 의미적으로 유사한 문서를 검색합니다.",
-            input_schema={
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "검색 질의 텍스트"
+        self.register_tool(
+            MCPTool(
+                name="vector_search",
+                description="ChromaDB를 사용한 시맨틱 벡터 검색. 질의와 의미적으로 유사한 문서를 검색합니다.",
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "query": {"type": "string", "description": "검색 질의 텍스트"},
+                        "limit": {
+                            "type": "integer",
+                            "description": "반환할 최대 결과 수",
+                            "default": 10,
+                        },
+                        "filters": {
+                            "type": "object",
+                            "description": "메타데이터 필터",
+                            "default": {},
+                        },
                     },
-                    "limit": {
-                        "type": "integer",
-                        "description": "반환할 최대 결과 수",
-                        "default": 10
-                    },
-                    "filters": {
-                        "type": "object",
-                        "description": "메타데이터 필터",
-                        "default": {}
-                    }
+                    "required": ["query"],
                 },
-                "required": ["query"]
-            },
-            handler=self._vector_search
-        ))
+                handler=self._vector_search,
+            )
+        )
 
         # 키워드 검색 도구
-        self.register_tool(MCPTool(
-            name="keyword_search",
-            description="BM25 기반 키워드 검색. 정확한 키워드 매칭이 필요할 때 사용합니다.",
-            input_schema={
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "검색 키워드"
+        self.register_tool(
+            MCPTool(
+                name="keyword_search",
+                description="BM25 기반 키워드 검색. 정확한 키워드 매칭이 필요할 때 사용합니다.",
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "query": {"type": "string", "description": "검색 키워드"},
+                        "limit": {
+                            "type": "integer",
+                            "description": "반환할 최대 결과 수",
+                            "default": 10,
+                        },
                     },
-                    "limit": {
-                        "type": "integer",
-                        "description": "반환할 최대 결과 수",
-                        "default": 10
-                    }
+                    "required": ["query"],
                 },
-                "required": ["query"]
-            },
-            handler=self._keyword_search
-        ))
+                handler=self._keyword_search,
+            )
+        )
 
         # 하이브리드 검색 도구
-        self.register_tool(MCPTool(
-            name="hybrid_search",
-            description="벡터 검색과 키워드 검색을 결합한 하이브리드 검색. 가장 정확한 결과를 제공합니다.",
-            input_schema={
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "검색 질의 텍스트"
+        self.register_tool(
+            MCPTool(
+                name="hybrid_search",
+                description="벡터 검색과 키워드 검색을 결합한 하이브리드 검색. 가장 정확한 결과를 제공합니다.",
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "query": {"type": "string", "description": "검색 질의 텍스트"},
+                        "limit": {
+                            "type": "integer",
+                            "description": "반환할 최대 결과 수",
+                            "default": 10,
+                        },
+                        "filters": {
+                            "type": "object",
+                            "description": "메타데이터 필터",
+                            "default": {},
+                        },
+                        "vector_weight": {
+                            "type": "number",
+                            "description": "벡터 검색 가중치 (0-1)",
+                            "default": 0.7,
+                        },
                     },
-                    "limit": {
-                        "type": "integer",
-                        "description": "반환할 최대 결과 수",
-                        "default": 10
-                    },
-                    "filters": {
-                        "type": "object",
-                        "description": "메타데이터 필터",
-                        "default": {}
-                    },
-                    "vector_weight": {
-                        "type": "number",
-                        "description": "벡터 검색 가중치 (0-1)",
-                        "default": 0.7
-                    }
+                    "required": ["query"],
                 },
-                "required": ["query"]
-            },
-            handler=self._hybrid_search
-        ))
+                handler=self._hybrid_search,
+            )
+        )
 
         # 문서 추가 도구
-        self.register_tool(MCPTool(
-            name="add_documents",
-            description="벡터 스토어에 문서를 추가합니다.",
-            input_schema={
-                "type": "object",
-                "properties": {
-                    "documents": {
-                        "type": "array",
-                        "description": "추가할 문서 배열",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "id": {"type": "string"},
-                                "content": {"type": "string"},
-                                "metadata": {"type": "object"}
+        self.register_tool(
+            MCPTool(
+                name="add_documents",
+                description="벡터 스토어에 문서를 추가합니다.",
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "documents": {
+                            "type": "array",
+                            "description": "추가할 문서 배열",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {"type": "string"},
+                                    "content": {"type": "string"},
+                                    "metadata": {"type": "object"},
+                                },
+                                "required": ["content"],
                             },
-                            "required": ["content"]
-                        }
-                    }
-                },
-                "required": ["documents"]
-            },
-            handler=self._add_documents
-        ))
-
-        # 문서 삭제 도구
-        self.register_tool(MCPTool(
-            name="delete_documents",
-            description="벡터 스토어에서 문서를 삭제합니다.",
-            input_schema={
-                "type": "object",
-                "properties": {
-                    "document_ids": {
-                        "type": "array",
-                        "description": "삭제할 문서 ID 배열",
-                        "items": {"type": "string"}
-                    }
-                },
-                "required": ["document_ids"]
-            },
-            handler=self._delete_documents
-        ))
-
-        # 검색 통계 도구
-        self.register_tool(MCPTool(
-            name="get_search_stats",
-            description="검색 엔진 통계 정보를 반환합니다.",
-            input_schema={
-                "type": "object",
-                "properties": {}
-            },
-            handler=self._get_search_stats
-        ))
-
-        # 유사 크리에이터 검색 도구
-        self.register_tool(MCPTool(
-            name="find_similar_creators",
-            description="주어진 크리에이터와 유사한 크리에이터를 검색합니다.",
-            input_schema={
-                "type": "object",
-                "properties": {
-                    "creator_profile": {
-                        "type": "object",
-                        "description": "기준 크리에이터 프로필",
-                        "properties": {
-                            "platform": {"type": "string"},
-                            "handle": {"type": "string"},
-                            "category": {"type": "string"},
-                            "followers": {"type": "integer"},
-                            "tags": {"type": "array", "items": {"type": "string"}}
                         }
                     },
-                    "limit": {
-                        "type": "integer",
-                        "description": "반환할 최대 결과 수",
-                        "default": 5
-                    }
+                    "required": ["documents"],
                 },
-                "required": ["creator_profile"]
-            },
-            handler=self._find_similar_creators
-        ))
+                handler=self._add_documents,
+            )
+        )
+
+        # 문서 삭제 도구
+        self.register_tool(
+            MCPTool(
+                name="delete_documents",
+                description="벡터 스토어에서 문서를 삭제합니다.",
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "document_ids": {
+                            "type": "array",
+                            "description": "삭제할 문서 ID 배열",
+                            "items": {"type": "string"},
+                        }
+                    },
+                    "required": ["document_ids"],
+                },
+                handler=self._delete_documents,
+            )
+        )
+
+        # 검색 통계 도구
+        self.register_tool(
+            MCPTool(
+                name="get_search_stats",
+                description="검색 엔진 통계 정보를 반환합니다.",
+                input_schema={"type": "object", "properties": {}},
+                handler=self._get_search_stats,
+            )
+        )
+
+        # 유사 크리에이터 검색 도구
+        self.register_tool(
+            MCPTool(
+                name="find_similar_creators",
+                description="주어진 크리에이터와 유사한 크리에이터를 검색합니다.",
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "creator_profile": {
+                            "type": "object",
+                            "description": "기준 크리에이터 프로필",
+                            "properties": {
+                                "platform": {"type": "string"},
+                                "handle": {"type": "string"},
+                                "category": {"type": "string"},
+                                "followers": {"type": "integer"},
+                                "tags": {"type": "array", "items": {"type": "string"}},
+                            },
+                        },
+                        "limit": {
+                            "type": "integer",
+                            "description": "반환할 최대 결과 수",
+                            "default": 5,
+                        },
+                    },
+                    "required": ["creator_profile"],
+                },
+                handler=self._find_similar_creators,
+            )
+        )
 
         self.logger.info("Vector Search MCP Server initialized with 7 tools")
 
     async def _vector_search(
-        self,
-        query: str,
-        limit: int = 10,
-        filters: Optional[Dict[str, Any]] = None
+        self, query: str, limit: int = 10, filters: Optional[Dict[str, Any]] = None
     ) -> List[Dict[str, Any]]:
         """벡터 검색 실행"""
         engine = self._get_retrieval_engine()
@@ -216,20 +213,20 @@ class VectorSearchMCPServer(HTTPMCPServer):
         # 결과 포맷팅
         formatted = []
         for r in results:
-            formatted.append({
-                "id": r.get("id", ""),
-                "content": r.get("content", "")[:500],  # 최대 500자
-                "score": round(r.get("score", 0), 4),
-                "metadata": r.get("metadata", {}),
-                "search_type": "vector"
-            })
+            formatted.append(
+                {
+                    "id": r.get("id", ""),
+                    "content": r.get("content", "")[:500],  # 최대 500자
+                    "score": round(r.get("score", 0), 4),
+                    "metadata": r.get("metadata", {}),
+                    "search_type": "vector",
+                }
+            )
 
         return formatted
 
     async def _keyword_search(
-        self,
-        query: str,
-        limit: int = 10
+        self, query: str, limit: int = 10
     ) -> List[Dict[str, Any]]:
         """키워드 검색 실행"""
         engine = self._get_retrieval_engine()
@@ -237,13 +234,15 @@ class VectorSearchMCPServer(HTTPMCPServer):
 
         formatted = []
         for r in results:
-            formatted.append({
-                "id": r.get("id", ""),
-                "content": r.get("content", "")[:500],
-                "score": round(r.get("score", 0), 4),
-                "metadata": r.get("metadata", {}),
-                "search_type": "keyword"
-            })
+            formatted.append(
+                {
+                    "id": r.get("id", ""),
+                    "content": r.get("content", "")[:500],
+                    "score": round(r.get("score", 0), 4),
+                    "metadata": r.get("metadata", {}),
+                    "search_type": "keyword",
+                }
+            )
 
         return formatted
 
@@ -252,7 +251,7 @@ class VectorSearchMCPServer(HTTPMCPServer):
         query: str,
         limit: int = 10,
         filters: Optional[Dict[str, Any]] = None,
-        vector_weight: float = 0.7
+        vector_weight: float = 0.7,
     ) -> List[Dict[str, Any]]:
         """하이브리드 검색 실행"""
         engine = self._get_retrieval_engine()
@@ -271,22 +270,21 @@ class VectorSearchMCPServer(HTTPMCPServer):
 
         formatted = []
         for r in results:
-            formatted.append({
-                "id": r.get("id", ""),
-                "content": r.get("content", "")[:500],
-                "score": round(r.get("score", 0), 4),
-                "vector_score": round(r.get("vector_score", 0), 4),
-                "keyword_score": round(r.get("keyword_score", 0), 4),
-                "metadata": r.get("metadata", {}),
-                "search_type": "hybrid"
-            })
+            formatted.append(
+                {
+                    "id": r.get("id", ""),
+                    "content": r.get("content", "")[:500],
+                    "score": round(r.get("score", 0), 4),
+                    "vector_score": round(r.get("vector_score", 0), 4),
+                    "keyword_score": round(r.get("keyword_score", 0), 4),
+                    "metadata": r.get("metadata", {}),
+                    "search_type": "hybrid",
+                }
+            )
 
         return formatted
 
-    async def _add_documents(
-        self,
-        documents: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+    async def _add_documents(self, documents: List[Dict[str, Any]]) -> Dict[str, Any]:
         """문서 추가"""
         engine = self._get_retrieval_engine()
         success = await engine.add_documents(documents)
@@ -294,13 +292,14 @@ class VectorSearchMCPServer(HTTPMCPServer):
         return {
             "success": success,
             "added_count": len(documents) if success else 0,
-            "message": f"Successfully added {len(documents)} documents" if success else "Failed to add documents"
+            "message": (
+                f"Successfully added {len(documents)} documents"
+                if success
+                else "Failed to add documents"
+            ),
         }
 
-    async def _delete_documents(
-        self,
-        document_ids: List[str]
-    ) -> Dict[str, Any]:
+    async def _delete_documents(self, document_ids: List[str]) -> Dict[str, Any]:
         """문서 삭제"""
         engine = self._get_retrieval_engine()
         success = await engine.delete_documents(document_ids)
@@ -308,7 +307,11 @@ class VectorSearchMCPServer(HTTPMCPServer):
         return {
             "success": success,
             "deleted_count": len(document_ids) if success else 0,
-            "message": f"Successfully deleted {len(document_ids)} documents" if success else "Failed to delete documents"
+            "message": (
+                f"Successfully deleted {len(document_ids)} documents"
+                if success
+                else "Failed to delete documents"
+            ),
         }
 
     async def _get_search_stats(self) -> Dict[str, Any]:
@@ -317,9 +320,7 @@ class VectorSearchMCPServer(HTTPMCPServer):
         return await engine.get_search_stats()
 
     async def _find_similar_creators(
-        self,
-        creator_profile: Dict[str, Any],
-        limit: int = 5
+        self, creator_profile: Dict[str, Any], limit: int = 5
     ) -> List[Dict[str, Any]]:
         """유사 크리에이터 검색"""
         # 프로필 정보를 검색 쿼리로 변환
@@ -363,13 +364,15 @@ class VectorSearchMCPServer(HTTPMCPServer):
             if handle and handle == current_handle:
                 continue
 
-            similar.append({
-                "id": r.get("id", ""),
-                "content": r.get("content", "")[:300],
-                "score": round(r.get("score", 0), 4),
-                "metadata": metadata,
-                "similarity_reason": f"Similar based on: {query}"
-            })
+            similar.append(
+                {
+                    "id": r.get("id", ""),
+                    "content": r.get("content", "")[:300],
+                    "score": round(r.get("score", 0), 4),
+                    "metadata": metadata,
+                    "similarity_reason": f"Similar based on: {query}",
+                }
+            )
 
             if len(similar) >= limit:
                 break
@@ -397,4 +400,5 @@ async def main():
 
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(main())

@@ -19,10 +19,7 @@ class HttpFetchMCPServer(HTTPMCPServer):
     """
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-        super().__init__(
-            name="http-fetch",
-            version="1.0.0"
-        )
+        super().__init__(name="http-fetch", version="1.0.0")
         self.config = config or {}
         self._http_mcp = None
         self._web_search_mcp = None
@@ -31,9 +28,10 @@ class HttpFetchMCPServer(HTTPMCPServer):
         """HttpMCP 인스턴스 가져오기"""
         if self._http_mcp is None:
             from src.mcp import HttpMCP
+
             self._http_mcp = HttpMCP(
-                timeout=self.config.get('timeout', 5.0),
-                max_bytes=self.config.get('max_bytes', 200_000)
+                timeout=self.config.get("timeout", 5.0),
+                max_bytes=self.config.get("max_bytes", 200_000),
             )
         return self._http_mcp
 
@@ -41,129 +39,129 @@ class HttpFetchMCPServer(HTTPMCPServer):
         """WebSearchMCP 인스턴스 가져오기"""
         if self._web_search_mcp is None:
             from src.mcp import WebSearchMCP
-            self._web_search_mcp = WebSearchMCP(
-                timeout=self.config.get('timeout', 5.0)
-            )
+
+            self._web_search_mcp = WebSearchMCP(timeout=self.config.get("timeout", 5.0))
         return self._web_search_mcp
 
     async def initialize(self) -> None:
         """서버 초기화 - HTTP 도구 등록"""
 
         # URL 가져오기 도구
-        self.register_tool(MCPTool(
-            name="fetch_url",
-            description="지정된 URL에서 콘텐츠를 가져옵니다. HTML, JSON, 텍스트 콘텐츠를 지원합니다.",
-            input_schema={
-                "type": "object",
-                "properties": {
-                    "url": {
-                        "type": "string",
-                        "description": "가져올 URL"
-                    }
+        self.register_tool(
+            MCPTool(
+                name="fetch_url",
+                description="지정된 URL에서 콘텐츠를 가져옵니다. HTML, JSON, 텍스트 콘텐츠를 지원합니다.",
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "url": {"type": "string", "description": "가져올 URL"}
+                    },
+                    "required": ["url"],
                 },
-                "required": ["url"]
-            },
-            handler=self._fetch_url
-        ))
+                handler=self._fetch_url,
+            )
+        )
 
         # 다중 URL 가져오기 도구
-        self.register_tool(MCPTool(
-            name="fetch_urls",
-            description="여러 URL에서 동시에 콘텐츠를 가져옵니다.",
-            input_schema={
-                "type": "object",
-                "properties": {
-                    "urls": {
-                        "type": "array",
-                        "description": "가져올 URL 배열",
-                        "items": {"type": "string"}
+        self.register_tool(
+            MCPTool(
+                name="fetch_urls",
+                description="여러 URL에서 동시에 콘텐츠를 가져옵니다.",
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "urls": {
+                            "type": "array",
+                            "description": "가져올 URL 배열",
+                            "items": {"type": "string"},
+                        },
+                        "limit": {
+                            "type": "integer",
+                            "description": "처리할 최대 URL 수",
+                            "default": 3,
+                        },
                     },
-                    "limit": {
-                        "type": "integer",
-                        "description": "처리할 최대 URL 수",
-                        "default": 3
-                    }
+                    "required": ["urls"],
                 },
-                "required": ["urls"]
-            },
-            handler=self._fetch_urls
-        ))
+                handler=self._fetch_urls,
+            )
+        )
 
         # 웹 검색 도구
-        self.register_tool(MCPTool(
-            name="web_search",
-            description="Brave Search 또는 SerpAPI를 사용하여 웹 검색을 수행합니다. 정부 사이트(.go.kr, .gov)를 우선합니다.",
-            input_schema={
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "검색 질의"
+        self.register_tool(
+            MCPTool(
+                name="web_search",
+                description="Brave Search 또는 SerpAPI를 사용하여 웹 검색을 수행합니다. 정부 사이트(.go.kr, .gov)를 우선합니다.",
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "query": {"type": "string", "description": "검색 질의"},
+                        "top_k": {
+                            "type": "integer",
+                            "description": "반환할 최대 URL 수",
+                            "default": 5,
+                        },
+                        "prioritize_gov": {
+                            "type": "boolean",
+                            "description": "정부 사이트 우선 여부",
+                            "default": True,
+                        },
                     },
-                    "top_k": {
-                        "type": "integer",
-                        "description": "반환할 최대 URL 수",
-                        "default": 5
-                    },
-                    "prioritize_gov": {
-                        "type": "boolean",
-                        "description": "정부 사이트 우선 여부",
-                        "default": True
-                    }
+                    "required": ["query"],
                 },
-                "required": ["query"]
-            },
-            handler=self._web_search
-        ))
+                handler=self._web_search,
+            )
+        )
 
         # 검색 후 콘텐츠 가져오기 도구
-        self.register_tool(MCPTool(
-            name="search_and_fetch",
-            description="웹 검색을 수행하고 결과 URL의 콘텐츠를 가져옵니다.",
-            input_schema={
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "검색 질의"
+        self.register_tool(
+            MCPTool(
+                name="search_and_fetch",
+                description="웹 검색을 수행하고 결과 URL의 콘텐츠를 가져옵니다.",
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "query": {"type": "string", "description": "검색 질의"},
+                        "top_k": {
+                            "type": "integer",
+                            "description": "검색할 최대 URL 수",
+                            "default": 3,
+                        },
+                        "fetch_limit": {
+                            "type": "integer",
+                            "description": "콘텐츠를 가져올 최대 URL 수",
+                            "default": 2,
+                        },
                     },
-                    "top_k": {
-                        "type": "integer",
-                        "description": "검색할 최대 URL 수",
-                        "default": 3
-                    },
-                    "fetch_limit": {
-                        "type": "integer",
-                        "description": "콘텐츠를 가져올 최대 URL 수",
-                        "default": 2
-                    }
+                    "required": ["query"],
                 },
-                "required": ["query"]
-            },
-            handler=self._search_and_fetch
-        ))
+                handler=self._search_and_fetch,
+            )
+        )
 
         # 크리에이터 프로필 가져오기 도구
-        self.register_tool(MCPTool(
-            name="fetch_creator_profile",
-            description="소셜 미디어 크리에이터 프로필 URL에서 정보를 가져옵니다.",
-            input_schema={
-                "type": "object",
-                "properties": {
-                    "profile_url": {
-                        "type": "string",
-                        "description": "크리에이터 프로필 URL"
+        self.register_tool(
+            MCPTool(
+                name="fetch_creator_profile",
+                description="소셜 미디어 크리에이터 프로필 URL에서 정보를 가져옵니다.",
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "profile_url": {
+                            "type": "string",
+                            "description": "크리에이터 프로필 URL",
+                        },
+                        "platform": {
+                            "type": "string",
+                            "description": "플랫폼 (tiktok, instagram, youtube 등)",
+                            "default": "unknown",
+                        },
                     },
-                    "platform": {
-                        "type": "string",
-                        "description": "플랫폼 (tiktok, instagram, youtube 등)",
-                        "default": "unknown"
-                    }
+                    "required": ["profile_url"],
                 },
-                "required": ["profile_url"]
-            },
-            handler=self._fetch_creator_profile
-        ))
+                handler=self._fetch_creator_profile,
+            )
+        )
 
         self.logger.info("HTTP Fetch MCP Server initialized with 5 tools")
 
@@ -179,13 +177,11 @@ class HttpFetchMCPServer(HTTPMCPServer):
             "site_name": result.get("site_name", ""),
             "text": result.get("text", "")[:5000] if result.get("text") else None,
             "json": result.get("json"),
-            "error": result.get("error")
+            "error": result.get("error"),
         }
 
     async def _fetch_urls(
-        self,
-        urls: List[str],
-        limit: int = 3
+        self, urls: List[str], limit: int = 3
     ) -> List[Dict[str, Any]]:
         """다중 URL 가져오기"""
         http_mcp = self._get_http_mcp()
@@ -193,23 +189,22 @@ class HttpFetchMCPServer(HTTPMCPServer):
 
         formatted = []
         for r in results:
-            formatted.append({
-                "url": r.get("url", ""),
-                "status": r.get("status", 0),
-                "content_type": r.get("content_type", ""),
-                "site_name": r.get("site_name", ""),
-                "text_preview": r.get("text", "")[:1000] if r.get("text") else None,
-                "has_json": r.get("json") is not None,
-                "error": r.get("error")
-            })
+            formatted.append(
+                {
+                    "url": r.get("url", ""),
+                    "status": r.get("status", 0),
+                    "content_type": r.get("content_type", ""),
+                    "site_name": r.get("site_name", ""),
+                    "text_preview": r.get("text", "")[:1000] if r.get("text") else None,
+                    "has_json": r.get("json") is not None,
+                    "error": r.get("error"),
+                }
+            )
 
         return formatted
 
     async def _web_search(
-        self,
-        query: str,
-        top_k: int = 5,
-        prioritize_gov: bool = True
+        self, query: str, top_k: int = 5, prioritize_gov: bool = True
     ) -> Dict[str, Any]:
         """웹 검색"""
         try:
@@ -220,22 +215,14 @@ class HttpFetchMCPServer(HTTPMCPServer):
                 "query": query,
                 "urls": urls,
                 "count": len(urls),
-                "prioritize_gov": prioritize_gov
+                "prioritize_gov": prioritize_gov,
             }
         except Exception as e:
             logger.error(f"Web search failed: {e}")
-            return {
-                "query": query,
-                "urls": [],
-                "count": 0,
-                "error": str(e)
-            }
+            return {"query": query, "urls": [], "count": 0, "error": str(e)}
 
     async def _search_and_fetch(
-        self,
-        query: str,
-        top_k: int = 3,
-        fetch_limit: int = 2
+        self, query: str, top_k: int = 3, fetch_limit: int = 2
     ) -> Dict[str, Any]:
         """검색 후 콘텐츠 가져오기"""
         # 먼저 검색
@@ -251,7 +238,7 @@ class HttpFetchMCPServer(HTTPMCPServer):
                 "query": query,
                 "search_results": 0,
                 "fetched": [],
-                "message": "No search results found"
+                "message": "No search results found",
             }
 
         # 검색 결과 URL에서 콘텐츠 가져오기
@@ -261,13 +248,11 @@ class HttpFetchMCPServer(HTTPMCPServer):
             "query": query,
             "search_results": len(urls),
             "fetched": fetch_results,
-            "all_urls": urls
+            "all_urls": urls,
         }
 
     async def _fetch_creator_profile(
-        self,
-        profile_url: str,
-        platform: str = "unknown"
+        self, profile_url: str, platform: str = "unknown"
     ) -> Dict[str, Any]:
         """크리에이터 프로필 가져오기"""
         http_mcp = self._get_http_mcp()
@@ -291,7 +276,7 @@ class HttpFetchMCPServer(HTTPMCPServer):
             "fetched": not bool(result.get("error")),
             "content_type": result.get("content_type", ""),
             "site_name": result.get("site_name", ""),
-            "error": result.get("error")
+            "error": result.get("error"),
         }
 
         # HTML 콘텐츠가 있으면 기본 메타데이터 추출 시도
@@ -303,8 +288,8 @@ class HttpFetchMCPServer(HTTPMCPServer):
 
             # 팔로워 수 추출 시도 (다양한 패턴)
             follower_patterns = [
-                r'(\d+(?:,\d{3})*(?:\.\d+)?[KkMm]?)\s*(?:followers?|팔로워)',
-                r'followers?[:\s]*(\d+(?:,\d{3})*(?:\.\d+)?[KkMm]?)',
+                r"(\d+(?:,\d{3})*(?:\.\d+)?[KkMm]?)\s*(?:followers?|팔로워)",
+                r"followers?[:\s]*(\d+(?:,\d{3})*(?:\.\d+)?[KkMm]?)",
             ]
 
             for pattern in follower_patterns:
@@ -314,7 +299,9 @@ class HttpFetchMCPServer(HTTPMCPServer):
                     break
 
             # 설명 추출 시도
-            desc_match = re.search(r'<meta\s+name="description"\s+content="([^"]*)"', text, re.IGNORECASE)
+            desc_match = re.search(
+                r'<meta\s+name="description"\s+content="([^"]*)"', text, re.IGNORECASE
+            )
             if desc_match:
                 profile_data["description"] = desc_match.group(1)[:200]
 
@@ -341,4 +328,5 @@ async def main():
 
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(main())

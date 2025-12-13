@@ -147,4 +147,3 @@ class SupadataMCPClient:
             return {"content": blocks}
 
         return {}
-

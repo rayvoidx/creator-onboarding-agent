@@ -1,4 +1,5 @@
 """DER-003: 검색 에이전트 - RAG 기반 하이브리드 검색"""
+
 from typing import Dict, Any, List, Optional
 import logging
 from pydantic import Field
@@ -10,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 class SearchState(BaseState):
     """검색 상태 관리"""
+
     query: Optional[str] = None
     results: List[Dict[str, Any]] = Field(default_factory=list)
     total_count: int = 0
@@ -33,8 +35,8 @@ class SearchAgent(BaseAgent[SearchState]):
         merged_config = get_agent_runtime_config("search", config)
         super().__init__("SearchAgent", merged_config)
         self.agent_model_config = merged_config
-        self.vector_weight = merged_config.get('vector_weight', 0.7)
-        self.keyword_weight = merged_config.get('keyword_weight', 0.3)
+        self.vector_weight = merged_config.get("vector_weight", 0.7)
+        self.keyword_weight = merged_config.get("keyword_weight", 0.3)
 
     async def execute(self, state: SearchState) -> SearchState:
         """
@@ -56,7 +58,7 @@ class SearchAgent(BaseAgent[SearchState]):
             logger.info(f"검색 시작 - 쿼리: {state.query}, 타입: {state.search_type}")
 
             # RAG 파이프라인이 설정되어 있으면 사용
-            if hasattr(self, 'rag_pipeline') and self.rag_pipeline:
+            if hasattr(self, "rag_pipeline") and self.rag_pipeline:
                 results = await self._search_with_rag(state)
             else:
                 # 폴백: 간단한 검색 시뮬레이션
@@ -79,23 +81,23 @@ class SearchAgent(BaseAgent[SearchState]):
         """RAG 파이프라인을 사용한 검색"""
         try:
             # retrieval_engine을 통한 검색
-            if hasattr(self.rag_pipeline, 'retrieval_engine'):
+            if hasattr(self.rag_pipeline, "retrieval_engine"):
                 documents = await self.rag_pipeline.retrieval_engine.retrieve(
-                    query=state.query,
-                    limit=state.limit,
-                    filters=state.filters
+                    query=state.query, limit=state.limit, filters=state.filters
                 )
 
                 # 결과 포맷팅
                 results = []
                 for doc in documents:
-                    results.append({
-                        'id': doc.get('id', ''),
-                        'content': doc.get('content', ''),
-                        'metadata': doc.get('metadata', {}),
-                        'score': doc.get('score', 0.0),
-                        'source': doc.get('source', 'unknown')
-                    })
+                    results.append(
+                        {
+                            "id": doc.get("id", ""),
+                            "content": doc.get("content", ""),
+                            "metadata": doc.get("metadata", {}),
+                            "score": doc.get("score", 0.0),
+                            "source": doc.get("source", "unknown"),
+                        }
+                    )
 
                 return results
 
@@ -115,39 +117,37 @@ class SearchAgent(BaseAgent[SearchState]):
         # 샘플 결과 반환 (실제로는 DB나 검색 엔진 사용)
         sample_results = [
             {
-                'id': 'doc_001',
-                'content': f"'{state.query}'에 대한 검색 결과입니다.",
-                'metadata': {
-                    'title': '검색 결과 1',
-                    'category': 'general',
-                    'date': '2025-01-01'
+                "id": "doc_001",
+                "content": f"'{state.query}'에 대한 검색 결과입니다.",
+                "metadata": {
+                    "title": "검색 결과 1",
+                    "category": "general",
+                    "date": "2025-01-01",
                 },
-                'score': 0.85,
-                'source': 'fallback'
+                "score": 0.85,
+                "source": "fallback",
             },
             {
-                'id': 'doc_002',
-                'content': f"'{state.query}' 관련 문서입니다.",
-                'metadata': {
-                    'title': '검색 결과 2',
-                    'category': 'reference',
-                    'date': '2025-01-02'
+                "id": "doc_002",
+                "content": f"'{state.query}' 관련 문서입니다.",
+                "metadata": {
+                    "title": "검색 결과 2",
+                    "category": "reference",
+                    "date": "2025-01-02",
                 },
-                'score': 0.72,
-                'source': 'fallback'
-            }
+                "score": 0.72,
+                "source": "fallback",
+            },
         ]
 
         # 필터 적용
         filtered_results = self._apply_filters(sample_results, state.filters)
 
         # limit 적용
-        return filtered_results[:state.limit]
+        return filtered_results[: state.limit]
 
     def _apply_filters(
-        self,
-        results: List[Dict[str, Any]],
-        filters: Dict[str, Any]
+        self, results: List[Dict[str, Any]], filters: Dict[str, Any]
     ) -> List[Dict[str, Any]]:
         """검색 결과에 필터 적용"""
         if not filters:
@@ -155,7 +155,7 @@ class SearchAgent(BaseAgent[SearchState]):
 
         filtered = []
         for result in results:
-            metadata = result.get('metadata', {})
+            metadata = result.get("metadata", {})
             match = True
 
             for key, value in filters.items():
@@ -172,5 +172,3 @@ class SearchAgent(BaseAgent[SearchState]):
         """RAG 파이프라인 설정 (의존성 주입)"""
         self.rag_pipeline = rag_pipeline
         logger.info("RAG 파이프라인이 SearchAgent에 연결되었습니다")
-
-

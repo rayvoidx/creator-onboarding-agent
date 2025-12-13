@@ -1,6 +1,7 @@
 """
 인증 API 라우터
 """
+
 import logging
 from datetime import datetime
 from typing import Dict, Any
@@ -25,7 +26,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/auth", tags=["Authentication"])
 
 
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED
+)
 async def register_user(user_data: UserCreate) -> UserResponse:
     """새 사용자 등록"""
     try:
@@ -34,15 +37,12 @@ async def register_user(user_data: UserCreate) -> UserResponse:
         logger.info(f"User registered: {user.username}")
         return user
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         logger.error(f"User registration failed: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Registration failed"
+            detail="Registration failed",
         )
 
 
@@ -50,10 +50,7 @@ async def register_user(user_data: UserCreate) -> UserResponse:
 async def login(form_data: OAuth2PasswordRequestForm = Depends()) -> Token:
     """사용자 로그인 (OAuth2 form 형식)"""
     auth_service = get_auth_service()
-    user = await auth_service.authenticate_user(
-        form_data.username,
-        form_data.password
-    )
+    user = await auth_service.authenticate_user(form_data.username, form_data.password)
 
     if not user:
         raise HTTPException(
@@ -71,10 +68,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()) -> Token:
 async def login_json(request: LoginRequest) -> Token:
     """사용자 로그인 (JSON 형식)"""
     auth_service = get_auth_service()
-    user = await auth_service.authenticate_user(
-        request.username,
-        request.password
-    )
+    user = await auth_service.authenticate_user(request.username, request.password)
 
     if not user:
         raise HTTPException(
@@ -107,7 +101,7 @@ async def refresh_token(request: RefreshTokenRequest) -> Token:
 
 @router.post("/logout")
 async def logout(
-    current_user: TokenData = Depends(get_current_active_user)
+    current_user: TokenData = Depends(get_current_active_user),
 ) -> Dict[str, Any]:
     """사용자 로그아웃 (토큰 무효화)"""
     # 현재 요청의 토큰을 블랙리스트에 추가
@@ -117,13 +111,13 @@ async def logout(
     return {
         "success": True,
         "message": "Successfully logged out",
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
     }
 
 
 @router.get("/me", response_model=UserResponse)
 async def get_current_user_info(
-    current_user: TokenData = Depends(get_current_active_user)
+    current_user: TokenData = Depends(get_current_active_user),
 ) -> UserResponse:
     """현재 로그인한 사용자 정보 조회"""
     auth_service = get_auth_service()
@@ -131,8 +125,7 @@ async def get_current_user_info(
 
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
 
     return user
@@ -141,20 +134,17 @@ async def get_current_user_info(
 @router.post("/change-password")
 async def change_password(
     request: PasswordChangeRequest,
-    current_user: TokenData = Depends(get_current_active_user)
+    current_user: TokenData = Depends(get_current_active_user),
 ) -> Dict[str, Any]:
     """비밀번호 변경"""
     auth_service = get_auth_service()
     success = await auth_service.update_password(
-        current_user.user_id,
-        request.current_password,
-        request.new_password
+        current_user.user_id, request.current_password, request.new_password
     )
 
     if not success:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid current password"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid current password"
         )
 
     logger.info(f"Password changed for user: {current_user.username}")
@@ -162,13 +152,13 @@ async def change_password(
     return {
         "success": True,
         "message": "Password changed successfully",
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
     }
 
 
 @router.get("/users", response_model=Dict[str, Any])
 async def list_users(
-    current_user: TokenData = Depends(require_permission(Permission.USER_MANAGE))
+    current_user: TokenData = Depends(require_permission(Permission.USER_MANAGE)),
 ) -> Dict[str, Any]:
     """사용자 목록 조회 (관리자 전용)"""
     auth_service = get_auth_service()
@@ -184,13 +174,13 @@ async def list_users(
         "success": True,
         "users": users,
         "total": len(users),
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
     }
 
 
 @router.get("/permissions")
 async def get_my_permissions(
-    current_user: TokenData = Depends(get_current_active_user)
+    current_user: TokenData = Depends(get_current_active_user),
 ) -> Dict[str, Any]:
     """현재 사용자의 권한 목록 조회"""
     return {
@@ -199,5 +189,5 @@ async def get_my_permissions(
         "username": current_user.username,
         "role": current_user.role.value,
         "permissions": current_user.permissions,
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
     }

@@ -19,30 +19,39 @@ async def vector_search(request: SearchRequest) -> SearchResponse:
     try:
         deps = get_dependencies()
         if not deps.orchestrator:
-            raise HTTPException(status_code=503, detail="시스템이 초기화되지 않았습니다.")
+            raise HTTPException(
+                status_code=503, detail="시스템이 초기화되지 않았습니다."
+            )
 
-        result = await deps.orchestrator.run({
-            "message": f"다음 내용을 검색해주세요: {request.query}",
-            "user_id": request.user_id,
-            "session_id": request.session_id or f"search_{datetime.now().timestamp()}",
-            "context": {
-                "search_query": request.query,
-                "filters": request.filters,
-                "limit": request.limit,
-                "workflow_type": "search"
+        result = await deps.orchestrator.run(
+            {
+                "message": f"다음 내용을 검색해주세요: {request.query}",
+                "user_id": request.user_id,
+                "session_id": request.session_id
+                or f"search_{datetime.now().timestamp()}",
+                "context": {
+                    "search_query": request.query,
+                    "filters": request.filters,
+                    "limit": request.limit,
+                    "workflow_type": "search",
+                },
             }
-        })
+        )
 
         if not result.get("success", False):
-            raise HTTPException(status_code=500, detail=result.get("error", "검색 실행 실패"))
+            raise HTTPException(
+                status_code=500, detail=result.get("error", "검색 실행 실패")
+            )
 
         return SearchResponse(
             success=True,
             query=request.query,
             results=result.get("search_results", []),
             total_count=len(result.get("search_results", [])),
-            search_time=result.get("performance_metrics", {}).get("total_execution_time", 0),
-            timestamp=datetime.now()
+            search_time=result.get("performance_metrics", {}).get(
+                "total_execution_time", 0
+            ),
+            timestamp=datetime.now(),
         )
 
     except HTTPException:

@@ -1,4 +1,5 @@
 """Competency assessment models"""
+
 from enum import Enum
 from typing import Optional, List, Dict, Any
 from datetime import datetime
@@ -7,6 +8,7 @@ from pydantic import BaseModel, Field
 
 class CompetencyLevel(str, Enum):
     """역량 수준"""
+
     BEGINNER = "beginner"
     INTERMEDIATE = "intermediate"
     ADVANCED = "advanced"
@@ -15,6 +17,7 @@ class CompetencyLevel(str, Enum):
 
 class CompetencyDomain(str, Enum):
     """역량 도메인"""
+
     CHILDCARE_POLICY = "childcare_policy"
     EDUCATION = "education"
     TECHNOLOGY = "technology"
@@ -25,6 +28,7 @@ class CompetencyDomain(str, Enum):
 
 class SkillGap(BaseModel):
     """역량 격차"""
+
     skill_name: str
     current_level: CompetencyLevel
     target_level: CompetencyLevel
@@ -34,6 +38,7 @@ class SkillGap(BaseModel):
 
 class LearningPath(BaseModel):
     """학습 경로"""
+
     id: str
     title: str
     description: Optional[str] = None
@@ -46,6 +51,7 @@ class LearningPath(BaseModel):
 
 class CompetencyQuestion(BaseModel):
     """역량진단 문항"""
+
     id: str  # Alias for question_id for backwards compatibility
     question_id: str
     question_text: str
@@ -58,15 +64,16 @@ class CompetencyQuestion(BaseModel):
 
     def __init__(self, **data):
         # id와 question_id 동기화
-        if 'id' in data and 'question_id' not in data:
-            data['question_id'] = data['id']
-        elif 'question_id' in data and 'id' not in data:
-            data['id'] = data['question_id']
+        if "id" in data and "question_id" not in data:
+            data["question_id"] = data["id"]
+        elif "question_id" in data and "id" not in data:
+            data["id"] = data["question_id"]
         super().__init__(**data)
 
 
 class UserResponse(BaseModel):
     """사용자 응답"""
+
     id: str  # Alias for response_id
     response_id: str
     question_id: str
@@ -80,15 +87,16 @@ class UserResponse(BaseModel):
 
     def __init__(self, **data):
         # id와 response_id 동기화
-        if 'id' in data and 'response_id' not in data:
-            data['response_id'] = data['id']
-        elif 'response_id' in data and 'id' not in data:
-            data['id'] = data['response_id']
+        if "id" in data and "response_id" not in data:
+            data["response_id"] = data["id"]
+        elif "response_id" in data and "id" not in data:
+            data["id"] = data["response_id"]
         super().__init__(**data)
 
 
 class CompetencyProfile(BaseModel):
     """역량 프로필"""
+
     user_id: str
     assessed_at: datetime
     domain: CompetencyDomain

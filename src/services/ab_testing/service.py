@@ -1,6 +1,7 @@
 """
 A/B 테스팅 프레임워크 - 프롬프트 버전 관리 및 실험 추적
 """
+
 import logging
 import uuid
 import random
@@ -19,6 +20,7 @@ settings = get_settings()
 
 class ExperimentStatus(str, Enum):
     """실험 상태"""
+
     DRAFT = "draft"
     RUNNING = "running"
     PAUSED = "paused"
@@ -28,12 +30,14 @@ class ExperimentStatus(str, Enum):
 
 class VariantType(str, Enum):
     """변형 타입"""
+
     CONTROL = "control"
     TREATMENT = "treatment"
 
 
 class PromptVariant(BaseModel):
     """프롬프트 변형"""
+
     id: str
     name: str
     type: VariantType
@@ -44,6 +48,7 @@ class PromptVariant(BaseModel):
 
 class Experiment(BaseModel):
     """A/B 테스트 실험"""
+
     id: str
     name: str
     description: str
@@ -75,6 +80,7 @@ class Experiment(BaseModel):
 
 class ExperimentResult(BaseModel):
     """실험 결과"""
+
     experiment_id: str
     variant_id: str
     user_id: str
@@ -101,7 +107,9 @@ class ABTestingService:
     def __init__(self):
         self._experiments: Dict[str, Experiment] = {}
         self._results: List[ExperimentResult] = []
-        self._user_assignments: Dict[str, Dict[str, str]] = {}  # user_id -> {exp_id: variant_id}
+        self._user_assignments: Dict[str, Dict[str, str]] = (
+            {}
+        )  # user_id -> {exp_id: variant_id}
 
         # 설정에서 A/B 테스트 활성화 여부 확인
         self.enabled = settings.PROMPT_AB_TEST_ENABLED
@@ -114,7 +122,7 @@ class ABTestingService:
         variants: List[Dict[str, Any]],
         user_percentage: float = 100.0,
         primary_metric: str = "response_quality",
-        created_by: Optional[str] = None
+        created_by: Optional[str] = None,
     ) -> Experiment:
         """새 실험 생성"""
         experiment_id = str(uuid.uuid4())
@@ -128,7 +136,7 @@ class ABTestingService:
                 type=VariantType(v.get("type", "treatment" if i > 0 else "control")),
                 content=v.get("content", ""),
                 weight=v.get("weight", 1.0 / len(variants)),
-                metadata=v.get("metadata", {})
+                metadata=v.get("metadata", {}),
             )
             variant_objects.append(variant)
 
@@ -146,7 +154,7 @@ class ABTestingService:
             variants=variant_objects,
             user_percentage=user_percentage,
             primary_metric=primary_metric,
-            created_by=created_by
+            created_by=created_by,
         )
 
         self._experiments[experiment_id] = experiment
@@ -181,9 +189,7 @@ class ABTestingService:
         return True
 
     def get_variant_for_user(
-        self,
-        user_id: str,
-        prompt_type: str
+        self, user_id: str, prompt_type: str
     ) -> Optional[PromptVariant]:
         """
         사용자에게 할당할 변형 결정
@@ -200,7 +206,8 @@ class ABTestingService:
 
         # 해당 프롬프트 타입의 실행 중인 실험 찾기
         active_experiments = [
-            exp for exp in self._experiments.values()
+            exp
+            for exp in self._experiments.values()
             if exp.status == ExperimentStatus.RUNNING
             and exp.target_prompt_type == prompt_type
         ]
@@ -236,7 +243,9 @@ class ABTestingService:
     def _is_user_in_experiment(self, user_id: str, experiment: Experiment) -> bool:
         """사용자가 실험 대상인지 확인"""
         # 사용자 ID를 해시하여 일관된 결정
-        hash_value = int(hashlib.md5(f"{user_id}:{experiment.id}".encode()).hexdigest(), 16)
+        hash_value = int(
+            hashlib.md5(f"{user_id}:{experiment.id}".encode()).hexdigest(), 16
+        )
         percentage = (hash_value % 10000) / 100.0
 
         return percentage < experiment.user_percentage
@@ -244,7 +253,9 @@ class ABTestingService:
     def _assign_variant(self, user_id: str, experiment: Experiment) -> PromptVariant:
         """변형 할당"""
         # 사용자 ID 기반 일관된 할당
-        hash_value = int(hashlib.md5(f"{user_id}:{experiment.id}:variant".encode()).hexdigest(), 16)
+        hash_value = int(
+            hashlib.md5(f"{user_id}:{experiment.id}:variant".encode()).hexdigest(), 16
+        )
         random_value = (hash_value % 10000) / 10000.0
 
         cumulative = 0.0
@@ -268,7 +279,7 @@ class ABTestingService:
         user_feedback: Optional[int] = None,
         token_count: int = 0,
         session_id: Optional[str] = None,
-        metrics: Optional[Dict[str, Any]] = None
+        metrics: Optional[Dict[str, Any]] = None,
     ) -> ExperimentResult:
         """실험 결과 기록"""
         result = ExperimentResult(
@@ -282,7 +293,7 @@ class ABTestingService:
             quality_score=quality_score,
             user_feedback=user_feedback,
             success=success,
-            metrics=metrics or {}
+            metrics=metrics or {},
         )
 
         self._results.append(result)
@@ -307,19 +318,31 @@ class ABTestingService:
                     "name": variant.name,
                     "type": variant.type.value,
                     "sample_size": 0,
-                    "metrics": {}
+                    "metrics": {},
                 }
                 continue
 
             # 메트릭 계산
-            success_rate = sum(1 for r in variant_results if r.success) / len(variant_results)
-            avg_response_time = sum(r.response_time_ms for r in variant_results) / len(variant_results)
+            success_rate = sum(1 for r in variant_results if r.success) / len(
+                variant_results
+            )
+            avg_response_time = sum(r.response_time_ms for r in variant_results) / len(
+                variant_results
+            )
 
-            quality_scores = [r.quality_score for r in variant_results if r.quality_score is not None]
-            avg_quality = sum(quality_scores) / len(quality_scores) if quality_scores else None
+            quality_scores = [
+                r.quality_score for r in variant_results if r.quality_score is not None
+            ]
+            avg_quality = (
+                sum(quality_scores) / len(quality_scores) if quality_scores else None
+            )
 
-            feedback_scores = [r.user_feedback for r in variant_results if r.user_feedback is not None]
-            avg_feedback = sum(feedback_scores) / len(feedback_scores) if feedback_scores else None
+            feedback_scores = [
+                r.user_feedback for r in variant_results if r.user_feedback is not None
+            ]
+            avg_feedback = (
+                sum(feedback_scores) / len(feedback_scores) if feedback_scores else None
+            )
 
             variant_stats[variant.id] = {
                 "name": variant.name,
@@ -330,8 +353,8 @@ class ABTestingService:
                     "avg_response_time_ms": avg_response_time,
                     "avg_quality_score": avg_quality,
                     "avg_user_feedback": avg_feedback,
-                    "total_tokens": sum(r.token_count for r in variant_results)
-                }
+                    "total_tokens": sum(r.token_count for r in variant_results),
+                },
             }
 
         # 통계적 유의성 계산 (간단한 버전)
@@ -340,7 +363,7 @@ class ABTestingService:
             sorted_variants = sorted(
                 variant_stats.items(),
                 key=lambda x: x[1]["metrics"].get("avg_quality_score") or 0,
-                reverse=True
+                reverse=True,
             )
             if sorted_variants[0][1]["sample_size"] >= 30:  # 최소 샘플 크기
                 winner = sorted_variants[0][1]["name"]
@@ -353,7 +376,7 @@ class ABTestingService:
             "variant_stats": variant_stats,
             "winner": winner,
             "is_significant": winner is not None,
-            "generated_at": datetime.utcnow().isoformat()
+            "generated_at": datetime.utcnow().isoformat(),
         }
 
     def get_experiment(self, experiment_id: str) -> Optional[Experiment]:
@@ -361,8 +384,7 @@ class ABTestingService:
         return self._experiments.get(experiment_id)
 
     def list_experiments(
-        self,
-        status: Optional[ExperimentStatus] = None
+        self, status: Optional[ExperimentStatus] = None
     ) -> List[Experiment]:
         """실험 목록 조회"""
         experiments = list(self._experiments.values())
@@ -373,10 +395,7 @@ class ABTestingService:
         return sorted(experiments, key=lambda x: x.created_at, reverse=True)
 
     def get_prompt_with_experiment(
-        self,
-        user_id: str,
-        prompt_type: str,
-        default_prompt: str
+        self, user_id: str, prompt_type: str, default_prompt: str
     ) -> tuple[str, Optional[str], Optional[str]]:
         """
         실험이 적용된 프롬프트 반환
@@ -389,10 +408,13 @@ class ABTestingService:
         if variant:
             # 활성 실험의 변형 프롬프트 사용
             experiment = next(
-                (e for e in self._experiments.values()
-                 if e.status == ExperimentStatus.RUNNING
-                 and any(v.id == variant.id for v in e.variants)),
-                None
+                (
+                    e
+                    for e in self._experiments.values()
+                    if e.status == ExperimentStatus.RUNNING
+                    and any(v.id == variant.id for v in e.variants)
+                ),
+                None,
             )
             if experiment:
                 return variant.content, experiment.id, variant.id

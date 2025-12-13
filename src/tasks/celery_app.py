@@ -1,6 +1,7 @@
 """
 Celery 애플리케이션 설정
 """
+
 import os
 from celery import Celery
 
@@ -17,7 +18,7 @@ celery_app = Celery(
         "src.tasks.data_collection_tasks",
         "src.tasks.analytics_tasks",
         "src.tasks.notification_tasks",
-    ]
+    ],
 )
 
 # Celery 설정
@@ -28,18 +29,14 @@ celery_app.conf.update(
     result_serializer="json",
     timezone="Asia/Seoul",
     enable_utc=True,
-
     # 작업 결과 만료 시간 (24시간)
     result_expires=86400,
-
     # 워커 설정
     worker_prefetch_multiplier=1,
     worker_max_tasks_per_child=1000,
-
     # 재시도 설정
     task_acks_late=True,
     task_reject_on_worker_lost=True,
-
     # Beat 스케줄러 (주기적 작업)
     beat_schedule={
         "collect-external-data-hourly": {
@@ -55,14 +52,12 @@ celery_app.conf.update(
             "schedule": 86400.0,  # 24시간마다
         },
     },
-
     # 작업 라우팅
     task_routes={
         "src.tasks.data_collection_tasks.*": {"queue": "data_collection"},
         "src.tasks.analytics_tasks.*": {"queue": "analytics"},
         "src.tasks.notification_tasks.*": {"queue": "notifications"},
     },
-
     # 동시성 제한
     task_default_rate_limit="100/m",
 )
