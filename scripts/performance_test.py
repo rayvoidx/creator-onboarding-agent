@@ -45,8 +45,8 @@ class PerformanceTester:
                 'llm_configs': {
                     'openai_api_key': os.getenv('OPENAI_API_KEY', ''),
                     'anthropic_api_key': os.getenv('ANTHROPIC_API_KEY', ''),
-                    'default_model': 'gpt-5.1',
-                    'fallback_model': 'claude-3-sonnet'
+                    'default_model': 'gpt-5.2',
+                    'fallback_model': 'claude-sonnet-4-5-20250929'
                 }
             })
             
@@ -58,8 +58,8 @@ class PerformanceTester:
                     'max_results': 10
                 },
                 'generation': {
-                    'default_model': 'gpt-5.1',
-                    'fallback_model': 'claude-3-sonnet',
+                    'default_model': 'gpt-5.2',
+                    'fallback_model': 'claude-sonnet-4-5-20250929',
                     'openai_api_key': os.getenv('OPENAI_API_KEY', ''),
                     'anthropic_api_key': os.getenv('ANTHROPIC_API_KEY', '')
                 }

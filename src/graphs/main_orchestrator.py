@@ -34,6 +34,8 @@ from ..agents.data_collection_agent import DataCollectionAgent, DataCollectionSt
 from ..agents.deep_agents import UnifiedDeepAgents, DeepAgentsState
 from ..rag.rag_pipeline import RAGPipeline
 from ..rag.prompt_templates import PromptType
+from ..rag.intent_analyzer import IntentAnalyzer, UserIntent
+from ..rag.generation_engine import GenerationEngine
 from ..services.mcp_integration import get_mcp_service
 from ..utils.agent_config import (
     attach_agent_config_to_context,
@@ -90,6 +92,18 @@ class MainOrchestratorState(BaseState):
     deep_agents_state: Optional[DeepAgentsState] = None
     use_deep_agents: bool = False
     deep_agents_result: Optional[Dict[str, Any]] = None
+
+    # Router/Planner (Compound AI System)
+    routing: Dict[str, Any] = {}
+    plan: Optional[Dict[str, Any]] = None
+
+    # Loop safety (Compound system often needs 1-2 corrective loops)
+    loop_count: int = 0
+    max_loops: int = 2
+
+    # Tool Worker
+    tool_enrichment_result: Dict[str, Any] = {}
+    replan_result: Dict[str, Any] = {}
     
     # 보안 및 모니터링
     security_level: str = "standard"
@@ -136,6 +150,24 @@ class MainOrchestrator:
         self.rag_pipeline = RAGPipeline(
             get_agent_runtime_config("rag", self.config.get('rag'))
         )
+
+        # Router (SLM) + Planner (System 2) 엔진
+        # - Router: fast_model 기반 intent classification
+        # - Planner: deep_model 기반 JSON plan 생성
+        self.intent_analyzer = IntentAnalyzer(self.rag_pipeline.generation_engine)
+        self.planner_engine = GenerationEngine(
+            {
+                "default_model": self.settings.DEFAULT_LLM_MODEL,
+                "fast_model": self.settings.FAST_LLM_MODEL,
+                "deep_model": self.settings.DEEP_LLM_MODEL,
+                "fallback_model": self.settings.FALLBACK_LLM_MODEL,
+                "openai_api_key": self.settings.OPENAI_API_KEY,
+                "anthropic_api_key": self.settings.ANTHROPIC_API_KEY,
+                "google_api_key": self.settings.GOOGLE_API_KEY,
+                # planning은 determinism 우선
+                "temperature": 0.0,
+            }
+        )
         
         # Deep Agents 초기화 (통합)
         self.deep_agents = UnifiedDeepAgents(
@@ -151,6 +183,9 @@ class MainOrchestrator:
     def _with_agent_context(self, state: MainOrchestratorState, agent_key: str) -> Dict[str, Any]:
         """상태 컨텍스트에 에이전트별 모델 구성을 포함."""
         context = attach_agent_config_to_context(state.context, agent_key)
+        # Compound system metadata (Router/Planner outputs)
+        context["routing"] = state.routing
+        context["plan"] = state.plan
         state.agent_model_config = context.get("agent_model_config")
         return context
 
@@ -288,6 +323,9 @@ class MainOrchestrator:
         
         # 노드 추가
         workflow.add_node("route_request", self._route_request)
+        workflow.add_node("plan_request", self._plan_request)
+        workflow.add_node("tool_enrichment", self._tool_enrichment)
+        workflow.add_node("replan_request", self._replan_request)
         workflow.add_node("deep_agents_processing", self._deep_agents_processing)
         workflow.add_node("rag_processing", self._rag_processing)
         workflow.add_node("llm_manager", self._manage_llm)
@@ -302,12 +340,21 @@ class MainOrchestrator:
         
         # 시작점 설정
         workflow.set_entry_point("route_request")
+
+        # Router -> Planner (Planner는 필요할 때만 작동, 아니면 pass-through)
+        workflow.add_edge("route_request", "plan_request")
+
+        # Planner -> Tool Worker (필요할 때만 MCP 호출, 아니면 no-op)
+        workflow.add_edge("plan_request", "tool_enrichment")
+        # Replan -> Tool Worker (replan 결과에 따라 재시도 or no-op)
+        workflow.add_edge("replan_request", "tool_enrichment")
         
         # 조건부 엣지 추가
         workflow.add_conditional_edges(
-            "route_request",
-            self._route_condition,
+            "tool_enrichment",
+            self._post_tool_enrichment_condition,
             {
+                "replan": "replan_request",
                 "deep_agents": "deep_agents_processing",
                 "rag": "rag_processing",
                 "competency": "competency_diagnosis",
@@ -325,6 +372,7 @@ class MainOrchestrator:
             "rag_processing",
             self._rag_route_condition,
             {
+                "replan": "replan_request",
                 "competency": "competency_diagnosis",
                 "recommendation": "recommendation",
                 "search": "vector_search",
@@ -349,9 +397,15 @@ class MainOrchestrator:
         workflow.add_edge("competency_diagnosis", "recommendation")
         workflow.add_edge("recommendation", "final_synthesis")
         workflow.add_edge("vector_search", "external_integration")
-        workflow.add_edge("external_integration", "final_synthesis")
+        # Tool/action 단계 이후: 필요하면 RAG로 한 번 더 보강하고, 아니면 종료
+        workflow.add_conditional_edges(
+            "external_integration",
+            self._post_tool_route_condition,
+            {"rag": "rag_processing", "final": "final_synthesis"},
+        )
         workflow.add_edge("analytics", "final_synthesis")
         workflow.add_edge("data_collection", "final_synthesis")
+        workflow.add_edge("llm_manager", "final_synthesis")
         workflow.add_edge("final_synthesis", END)
         
         if getattr(self, 'checkpointer', None) is not None:
@@ -375,27 +429,38 @@ class MainOrchestrator:
             if not isinstance(message_content, str):
                 message_content = str(message_content)
             
-            # Deep Agents 사용 여부 판단
+            # 1) Fast Router (SLM) — 비용/레이턴시 최적화
+            # 2) Hard override: deep_agents는 별도 게이트로 유지(복잡도/루프 기반)
             if self.deep_agents.should_use_deep_agents(message_content):
                 state.workflow_type = "deep_agents"
                 state.use_deep_agents = True
-            # RAG 기반 지능형 라우팅
-            elif self._should_use_rag(message_content):
-                state.workflow_type = "rag"
-            elif any(keyword in message_content.lower() for keyword in ['역량', '진단', '평가', 'competency']):
-                state.workflow_type = "competency"
-            elif any(keyword in message_content.lower() for keyword in ['추천', '학습자료', 'recommend']):
-                state.workflow_type = "recommendation"
-            elif any(keyword in message_content.lower() for keyword in ['미션', 'mission']):
-                state.workflow_type = "mission"
-            elif any(keyword in message_content.lower() for keyword in ['검색', '찾기', 'search']):
-                state.workflow_type = "search"
-            elif any(keyword in message_content.lower() for keyword in ['분석', '리포트', 'analytics']):
-                state.workflow_type = "analytics"
-            elif any(keyword in message_content.lower() for keyword in ['수집', '데이터', 'collection', 'api']):
-                state.workflow_type = "data_collection"
+                state.routing = {"strategy": "deep_agents_gate", "confidence": 1.0}
             else:
-                state.workflow_type = "general"
+                intent_result = await self.intent_analyzer.analyze_intent(message_content)
+                intent_str = intent_result.get("intent")
+                confidence = float(intent_result.get("confidence") or 0.0)
+                state.routing = {
+                    "strategy": "slm_intent",
+                    "intent": intent_str,
+                    "confidence": confidence,
+                    "raw": intent_result,
+                }
+
+                if intent_str == UserIntent.COMPETENCY_ASSESSMENT.value:
+                    state.workflow_type = "competency"
+                elif intent_str == UserIntent.RECOMMENDATION.value:
+                    state.workflow_type = "recommendation"
+                elif intent_str == UserIntent.MISSION_MATCHING.value:
+                    state.workflow_type = "mission"
+                elif intent_str == UserIntent.SEARCH.value:
+                    state.workflow_type = "search"
+                elif intent_str == UserIntent.ANALYTICS.value:
+                    state.workflow_type = "analytics"
+                elif intent_str == UserIntent.DATA_COLLECTION.value:
+                    state.workflow_type = "data_collection"
+                else:
+                    # Ambiguous / general: RAG 필요성 재확인
+                    state.workflow_type = "rag" if self._should_use_rag(message_content) else "general"
             
             try:
                 state.agent_model_config = self.settings.get_agent_config(state.workflow_type)
@@ -419,6 +484,372 @@ class MainOrchestrator:
             state.add_error(f"요청 라우팅 실패: {str(e)}")
             state.workflow_type = "general"  # 기본값으로 설정
         
+        return state
+
+    async def _plan_request(self, state: MainOrchestratorState) -> MainOrchestratorState:
+        """
+        System-2 Planner 단계.
+        - 목적: 고비용 추론 모델은 "계획서(JSON)"만 만들고, 실제 답변/실행은 다음 단계에서 수행
+        - 트리거: 라우팅 confidence 낮음, 멀티 인텐트/복잡 요청, RAG+툴 혼합 가능성
+        """
+        try:
+            if not state.messages:
+                return state
+
+            latest = state.messages[-1]
+            text = latest.content if hasattr(latest, "content") else str(latest)
+            if not isinstance(text, str):
+                text = str(text)
+
+            routing_conf = float((state.routing or {}).get("confidence") or 0.0)
+
+            # 매우 단순한 요청(짧고 확신 높음)은 Planner 스킵
+            should_plan = False
+            if state.workflow_type in ("general", "rag"):
+                should_plan = True
+            if routing_conf < 0.65:
+                should_plan = True
+            if len(text) > 200:
+                should_plan = True
+            if any(k in text for k in ["설계", "아키텍처", "구현", "리팩터링", "최적", "전략", "완성해줘"]):
+                should_plan = True
+
+            if not should_plan:
+                state.plan = None
+                return state
+
+            system_prompt = """
+You are a System-2 Planner for an agentic, compound AI system.
+Create a concise execution plan ONLY in JSON (no markdown, no prose).
+
+Output schema:
+{
+  "workflow_type": "general|rag|competency|recommendation|mission|search|analytics|data_collection|deep_agents",
+  "needs_rag": boolean,
+  "needs_tools": boolean,
+  "complexity": "simple|medium|high",
+  "cost_preference": "budget|balanced|performance|speed",
+  "notes": "short string"
+}
+Rules:
+- Do NOT answer the user. Only produce the plan JSON.
+- Prefer low cost: routing/summary uses fast models; planning only when needed.
+"""
+            resp = await self.planner_engine.generate(
+                prompt=f"User request:\n{text}\n\nCurrent route: {state.workflow_type}\nRouter confidence: {routing_conf}",
+                system_prompt=system_prompt,
+                model_name=getattr(self.planner_engine, "deep_model", None),
+                temperature=0.0,
+            )
+            cleaned = str(resp).replace("```json", "").replace("```", "").strip()
+            plan = None
+            try:
+                import json as _json
+                plan = _json.loads(cleaned)
+            except Exception:
+                # 실패 시 최소 plan
+                plan = {
+                    "workflow_type": state.workflow_type,
+                    "needs_rag": state.workflow_type == "rag",
+                    "needs_tools": state.workflow_type in ("data_collection", "mission"),
+                    "complexity": "high" if len(text) > 200 else "medium",
+                    "cost_preference": "balanced",
+                    "notes": "planner_parse_failed",
+                }
+
+            if isinstance(plan, dict):
+                state.plan = plan
+                # planner가 workflow_type을 더 명확히 판단했으면 반영
+                wf = plan.get("workflow_type")
+                if isinstance(wf, str) and wf:
+                    state.workflow_type = wf
+                # deep_agents는 planner가 명시했을 때만 켬
+                state.use_deep_agents = state.workflow_type == "deep_agents"
+
+                # 감사 추적
+                state.audit_trail.append(
+                    {
+                        "step": "plan_request",
+                        "timestamp": datetime.now().isoformat(),
+                        "plan": plan,
+                    }
+                )
+
+        except Exception as e:
+            self.logger.warning("Planner step failed: %s", e)
+            state.plan = None
+        return state
+
+    async def _tool_enrichment(self, state: MainOrchestratorState) -> MainOrchestratorState:
+        """
+        Tool Worker 단계 (2025 Compound AI).
+        - Planner의 needs_tools에 근거해 MCP enrichment를 '조건부' 수행
+        - 목표: 불필요한 외부 호출 최소화 + 사고 구간(툴)을 중앙에서 통제
+        """
+        try:
+            plan = state.plan if isinstance(state.plan, dict) else {}
+            needs_tools = bool(plan.get("needs_tools", False))
+            cost_pref = str(plan.get("cost_preference") or "balanced")
+
+            # workflow 자체가 외부 데이터를 기대하는 경우엔 plan이 없어도 실행 가능
+            toolish_workflows = {"mission", "analytics", "data_collection"}
+            should_run = needs_tools or (state.workflow_type in toolish_workflows)
+
+            if not should_run:
+                state.tool_enrichment_result = {"ran": False, "reason": "not_needed"}
+                return state
+
+            agent_key = state.workflow_type or "general"
+            ctx = self._with_agent_context(state, agent_key)
+            spec = self._build_mcp_spec(agent_key, ctx)
+            if not spec or not self.mcp_service:
+                state.tool_enrichment_result = {"ran": False, "reason": "no_spec_or_service"}
+                return state
+
+            # More aggressive tool usage when planner asks for tools (and budget allows)
+            # - ensure search_query exists to drive web_mcp
+            # - increase web_limit
+            try:
+                latest = state.messages[-1] if state.messages else None
+                user_text = latest.content if hasattr(latest, "content") else str(latest)
+                if not isinstance(user_text, str):
+                    user_text = str(user_text)
+            except Exception:
+                user_text = ""
+
+            if needs_tools and cost_pref != "budget":
+                if user_text and not spec.get("search_query"):
+                    spec["search_query"] = user_text
+                spec.setdefault("web_limit", 6)
+                # allow caller override, but keep it within sanitize cap
+                try:
+                    spec["web_limit"] = max(1, min(int(spec.get("web_limit") or 6), 6))
+                except Exception:
+                    spec["web_limit"] = 6
+                # Tool priority policy (planner-driven):
+                # - speed: web + supadata parallel (best latency when both are meaningful)
+                # - otherwise: supadata-first when URLs exist; web fallback
+                if cost_pref == "speed":
+                    spec.setdefault("tool_priority", "parallel")
+                else:
+                    spec.setdefault("tool_priority", "supadata_first")
+
+            enrichment = await self.mcp_service.enrich_context(spec, ctx)
+
+            # If planner explicitly wants tools and we have web URLs, do a 2nd pass to scrape via supadata
+            # (This is the practical "tool replacement" path when raw web snippets aren't enough.)
+            try:
+                if needs_tools and cost_pref != "budget":
+                    got_supadata = isinstance(enrichment, dict) and bool(enrichment.get("supadata"))
+                    if not got_supadata:
+                        urls = []
+                        if isinstance(enrichment, dict):
+                            urls = (
+                                ((enrichment.get("external_sources") or {}).get("web") or {}).get("urls")
+                                if isinstance(enrichment.get("external_sources"), dict)
+                                else []
+                            ) or []
+                        if isinstance(urls, list) and urls:
+                            sup_spec = {"supadata": {"scrape_urls": [u for u in urls if isinstance(u, str)]}}
+                            sup_enrichment = await self.mcp_service.enrich_context(sup_spec, ctx)
+                            if isinstance(sup_enrichment, dict) and sup_enrichment:
+                                enrichment = dict(enrichment or {})
+                                enrichment.update(sup_enrichment)
+            except Exception:
+                pass
+
+            if enrichment:
+                ctx.update(enrichment)
+                ctx.setdefault("mcp_enrichment", {}).update(enrichment)
+                state.context.update({k: v for k, v in ctx.items() if k != "messages"})
+
+            state.tool_enrichment_result = {
+                "ran": True,
+                "agent_key": agent_key,
+                "needs_tools": needs_tools,
+                "cost_preference": cost_pref,
+                "timestamp": datetime.now().isoformat(),
+                "enriched_keys": sorted(list(enrichment.keys())) if isinstance(enrichment, dict) else [],
+            }
+            state.audit_trail.append(
+                {
+                    "step": "tool_enrichment",
+                    "timestamp": datetime.now().isoformat(),
+                    "agent_key": agent_key,
+                    "needs_tools": needs_tools,
+                    "enriched_keys": state.tool_enrichment_result.get("enriched_keys", []),
+                }
+            )
+            return state
+
+        except Exception as e:
+            self.logger.warning("Tool enrichment failed: %s", e)
+            state.tool_enrichment_result = {"ran": False, "reason": "error", "error": str(e)}
+            return state
+
+    def _post_tool_enrichment_condition(self, state: MainOrchestratorState) -> str:
+        """
+        Tool Worker 이후 라우팅.
+        - tool이 필요했는데 실패한 경우: replan으로 복구(최대 N회)
+        - 그 외: planner가 정한 workflow_type으로 진행
+        """
+        try:
+            plan = state.plan if isinstance(state.plan, dict) else {}
+            needs_tools = bool(plan.get("needs_tools", False))
+            te = state.tool_enrichment_result if isinstance(state.tool_enrichment_result, dict) else {}
+            ran = bool(te.get("ran", False))
+            reason = str(te.get("reason") or "")
+
+            # Tool이 필요하다고 판단했는데 tool_enrichment가 실패/불가면 replan
+            if needs_tools and (not ran) and reason in ("error", "no_spec_or_service"):
+                if state.loop_count < state.max_loops:
+                    state.loop_count += 1
+                    state.workflow_type = state.workflow_type or "general"
+                    return "replan"
+
+            return self._route_condition(state)
+        except Exception:
+            return self._route_condition(state)
+
+    async def _replan_request(self, state: MainOrchestratorState) -> MainOrchestratorState:
+        """
+        Replan 단계:
+        - Tool이 실패했거나 사용 불가할 때, 플랜을 수정해서 '툴 없이 진행' 또는 'RAG 대체'로 전환
+        - RAG 결과가 빈약/불확실할 때, 플랜을 수정해서 '추가 검색/다른 소스/tool 대체'로 전환
+        - 출력은 plan JSON(기존 _plan_request 스키마 준수)
+        """
+        try:
+            if not state.messages:
+                return state
+
+            latest = state.messages[-1]
+            text = latest.content if hasattr(latest, "content") else str(latest)
+            if not isinstance(text, str):
+                text = str(text)
+
+            prev_plan = state.plan if isinstance(state.plan, dict) else {}
+            tool_state = state.tool_enrichment_result if isinstance(state.tool_enrichment_result, dict) else {}
+            routing = state.routing if isinstance(state.routing, dict) else {}
+            rag_state = state.rag_result if isinstance(state.rag_result, dict) else {}
+            retrieved_count = len(state.retrieved_documents or [])
+            rag_answer = ""
+            try:
+                ra = rag_state.get("response")
+                if isinstance(ra, str):
+                    rag_answer = ra[:500]
+            except Exception:
+                rag_answer = ""
+
+            system_prompt = """
+You are a System-2 Planner for an agentic, compound AI system.
+You MUST update the plan based on tool execution constraints.
+
+Output JSON only (no markdown, no prose).
+
+Output schema:
+{
+  "workflow_type": "general|rag|competency|recommendation|mission|search|analytics|data_collection|deep_agents",
+  "needs_rag": boolean,
+  "needs_tools": boolean,
+  "complexity": "simple|medium|high",
+  "cost_preference": "budget|balanced|performance|speed",
+  "notes": "short string"
+}
+
+Rules:
+- If tools are failing/unavailable, set needs_tools=false and prefer needs_rag=true if knowledge/context is needed.
+- If RAG answer is weak/uncertain, prefer:
+  (a) workflow_type="search" or "rag" with needs_rag=true and/or
+  (b) enabling needs_tools=true to fetch external context (web/supadata/youtube), but only if cost is justified.
+- Do NOT answer the user. Only produce the plan JSON.
+"""
+
+            resp = await self.planner_engine.generate(
+                prompt=(
+                    "User request:\n"
+                    + text
+                    + "\n\nRouter:\n"
+                    + str(routing)
+                    + "\n\nPrevious plan:\n"
+                    + str(prev_plan)
+                    + "\n\nRAG status:\n"
+                    + f"retrieved_docs_count={retrieved_count}\n"
+                    + "rag_answer_preview:\n"
+                    + rag_answer
+                    + "\n\nTool enrichment result:\n"
+                    + str(tool_state)
+                ),
+                system_prompt=system_prompt,
+                model_name=getattr(self.planner_engine, "deep_model", None),
+                temperature=0.0,
+            )
+
+            cleaned = str(resp).replace("```json", "").replace("```", "").strip()
+            import json as _json
+            try:
+                plan = _json.loads(cleaned)
+            except Exception:
+                plan = dict(prev_plan or {})
+                plan.setdefault("notes", "replan_parse_failed")
+                # 최소 안전: tool 실패 시 tools off + rag on
+                if not plan:
+                    plan = {
+                        "workflow_type": state.workflow_type or "rag",
+                        "needs_rag": True,
+                        "needs_tools": False,
+                        "complexity": "medium",
+                        "cost_preference": "balanced",
+                        "notes": "replan_fallback",
+                    }
+                else:
+                    plan["needs_tools"] = False
+                    plan["needs_rag"] = True
+
+            if isinstance(plan, dict):
+                # Policy hardening:
+                # - If planner chose "search", we ALWAYS want downstream RAG re-entry enabled.
+                #   (search -> external_integration -> rag loop is guarded by needs_rag)
+                try:
+                    wf_val = plan.get("workflow_type")
+                    if isinstance(wf_val, str) and wf_val == "search":
+                        plan["needs_rag"] = True
+                except Exception:
+                    pass
+
+                state.plan = plan
+                wf = plan.get("workflow_type")
+                if isinstance(wf, str) and wf:
+                    state.workflow_type = wf
+
+                # Replan이 "재실행"을 의도한 경우, 기존 RAG 결과를 리셋해서
+                # search -> external_integration -> rag 재실행 경로가 실제로 동작하게 한다.
+                try:
+                    needs_rag = bool(plan.get("needs_rag", False))
+                    if needs_rag and state.rag_result:
+                        state.rag_result = None
+                        state.retrieved_documents = []
+                        state.rag_context = None
+                except Exception:
+                    pass
+
+                state.replan_result = {
+                    "ran": True,
+                    "timestamp": datetime.now().isoformat(),
+                    "loop_count": state.loop_count,
+                    "tool_enrichment": tool_state,
+                }
+                state.audit_trail.append(
+                    {
+                        "step": "replan_request",
+                        "timestamp": datetime.now().isoformat(),
+                        "plan": plan,
+                        "loop_count": state.loop_count,
+                    }
+                )
+
+        except Exception as e:
+            self.logger.warning("Replan step failed: %s", e)
+            state.replan_result = {"ran": False, "error": str(e)}
         return state
     
     def _route_condition(self, state: MainOrchestratorState) -> str:
@@ -682,6 +1113,21 @@ class MainOrchestrator:
             state.add_error(f"외부 API 연동 실패: {str(e)}")
         
         return state
+
+    def _post_tool_route_condition(self, state: MainOrchestratorState) -> str:
+        """Tool/Integration 이후 후속 라우팅(Loop-safe)."""
+        try:
+            plan = state.plan if isinstance(state.plan, dict) else {}
+            needs_rag = bool(plan.get("needs_rag", False))
+            if needs_rag and state.loop_count < state.max_loops:
+                # 이미 RAG 결과가 없을 때만 재진입 (무한루프 방지)
+                if not state.rag_result:
+                    state.loop_count += 1
+                    state.workflow_type = "rag"
+                    return "rag"
+            return "final"
+        except Exception:
+            return "final"
     
     async def _analytics_processing(self, state: MainOrchestratorState) -> MainOrchestratorState:
         """분석 처리 (DER-005, DER-007)"""
@@ -753,34 +1199,93 @@ class MainOrchestrator:
         return state
     
     async def _synthesize_results(self, state: MainOrchestratorState) -> str:
-        """모든 결과를 종합하여 최종 응답 생성"""
-        synthesis_parts = []
-        
-        # 역량진단 결과
-        if state.competency_data:
-            synthesis_parts.append(f"역량진단 분석: {state.competency_data}")
-        
-        # 추천 결과
-        if state.recommendation_data:
-            synthesis_parts.append(f"맞춤형 추천: {state.recommendation_data}")
-        
-        # 검색 결과
-        if state.search_results:
-            synthesis_parts.append(f"검색 결과: {len(state.search_results)}개 항목 발견")
-        
-        # 분석 결과
-        if state.analytics_results:
-            synthesis_parts.append(f"분석 리포트: {state.analytics_results}")
-        
-        # 데이터 수집 결과
-        if state.data_collection_state:
-            synthesis_parts.append(f"데이터 수집: {state.data_collection_state.success_count}개 항목 수집 완료")
-        
-        # 성능 정보
-        if state.selected_llm_model:
-            synthesis_parts.append(f"사용된 LLM: {state.selected_llm_model}")
-        
-        return "\\n\\n".join(synthesis_parts) if synthesis_parts else "처리가 완료되었습니다."
+        """모든 결과를 종합하여 최종 응답 생성 (Compound 시스템용)."""
+        # 1) RAG 결과만으로 충분한 케이스는 그대로 반환(중복 합성 방지)
+        if state.rag_result and isinstance(state.rag_result, dict):
+            resp = state.rag_result.get("response")
+            if isinstance(resp, str) and resp.strip() and not any(
+                [
+                    state.competency_data,
+                    state.recommendation_data,
+                    state.analytics_results,
+                    state.mission_recommendations,
+                    state.collected_data,
+                ]
+            ):
+                return resp.strip()
+
+        # 2) 가능한 경우: 선택된 모델로 "최종 답변" 생성
+        try:
+            latest = state.messages[-1] if state.messages else None
+            user_text = latest.content if hasattr(latest, "content") else str(latest)
+            if not isinstance(user_text, str):
+                user_text = str(user_text)
+
+            plan = state.plan if isinstance(state.plan, dict) else {}
+            routing = state.routing if isinstance(state.routing, dict) else {}
+
+            payload: Dict[str, Any] = {
+                "routing": routing,
+                "plan": plan,
+                "competency": state.competency_data,
+                "recommendation": state.recommendation_data,
+                "missions": state.mission_recommendations[:5]
+                if isinstance(state.mission_recommendations, list)
+                else state.mission_recommendations,
+                "analytics": state.analytics_results,
+                "search_results_count": len(state.search_results or []),
+                "external_api_results": state.external_api_results,
+                "data_collection_count": len(state.collected_data or []),
+                "rag": {
+                    "retrieved_docs_count": len(state.retrieved_documents or []),
+                    "answer": (state.rag_result or {}).get("response")
+                    if isinstance(state.rag_result, dict)
+                    else None,
+                },
+            }
+
+            import json as _json
+
+            system_prompt = """
+You are the Final Synthesizer for a compound AI system.
+Write the final user-facing answer in Korean.
+
+Rules:
+- Use the provided results; do not fabricate.
+- If RAG answer exists, incorporate it.
+- If some parts are missing, say what is missing and what to do next.
+- Keep it structured with clear headings and bullet points.
+"""
+            model = state.selected_llm_model or self.settings.DEFAULT_LLM_MODEL
+            return await self.rag_pipeline.generation_engine.generate(
+                prompt=(
+                    "User request:\n"
+                    + user_text
+                    + "\n\nSystem outputs(JSON):\n"
+                    + _json.dumps(payload, ensure_ascii=False)
+                ),
+                system_prompt=system_prompt,
+                model_name=model,
+                temperature=0.2,
+            )
+        except Exception:
+            # 3) 최후 폴백: 텍스트 요약
+            parts: List[str] = []
+            if state.rag_result and isinstance(state.rag_result, dict) and isinstance(
+                state.rag_result.get("response"), str
+            ):
+                parts.append(str(state.rag_result.get("response")))
+            if state.competency_data:
+                parts.append(f"역량진단 분석: {state.competency_data}")
+            if state.recommendation_data:
+                parts.append(f"맞춤형 추천: {state.recommendation_data}")
+            if state.analytics_results:
+                parts.append(f"분석 리포트: {state.analytics_results}")
+            if state.mission_recommendations:
+                parts.append(f"미션 추천: {len(state.mission_recommendations)}개")
+            if state.selected_llm_model:
+                parts.append(f"사용된 LLM: {state.selected_llm_model}")
+            return "\n\n".join([p for p in parts if p]) if parts else "처리가 완료되었습니다."
     
     async def _data_collection(self, state: MainOrchestratorState) -> MainOrchestratorState:
         """데이터 수집 처리"""
@@ -970,11 +1475,6 @@ class MainOrchestrator:
                 state.retrieved_documents = rag_result.get('retrieved_documents', [])
                 state.rag_context = rag_result.get('context', {})
                 
-                # 응답 메시지 추가
-                response_content = rag_result.get('response', '')
-                if response_content:
-                    state.messages = list(state.messages) + [AIMessage(content=response_content)]
-                
                 # 후속 워크플로우 결정
                 state.workflow_type = self._determine_post_rag_workflow(rag_result, str(message_content))
                 state.current_step = "rag_processed"
@@ -1066,7 +1566,62 @@ class MainOrchestrator:
     
     def _rag_route_condition(self, state: MainOrchestratorState) -> str:
         """RAG 처리 후 라우팅 조건"""
-        return state.workflow_type
+        try:
+            # RAG answer quality gate:
+            # If answer is weak/uncertain, run System-2 replan (loop-safe) to decide:
+            # - additional search
+            # - tool enrichment
+            # - alternate workflow
+            if self._should_replan_after_rag(state) and state.loop_count < state.max_loops:
+                state.loop_count += 1
+                state.audit_trail.append(
+                    {
+                        "step": "rag_quality_gate",
+                        "timestamp": datetime.now().isoformat(),
+                        "decision": "replan",
+                        "loop_count": state.loop_count,
+                    }
+                )
+                return "replan"
+            return state.workflow_type
+        except Exception:
+            return state.workflow_type
+
+    def _should_replan_after_rag(self, state: MainOrchestratorState) -> bool:
+        """RAG 결과가 빈약/불확실하면 replan 트리거."""
+        try:
+            if not state.rag_result or not isinstance(state.rag_result, dict):
+                return False
+
+            resp = state.rag_result.get("response")
+            text = resp if isinstance(resp, str) else ""
+            text_stripped = text.strip()
+
+            retrieved_count = len(state.retrieved_documents or [])
+
+            # Hard signals: no docs or empty answer
+            if retrieved_count == 0:
+                return True
+            if not text_stripped:
+                return True
+
+            # Weak answer heuristics (Korean uncertainty patterns)
+            lowered = text_stripped.lower()
+            uncertainty_markers = [
+                "잘 모르", "알 수 없", "확인할 수 없", "찾을 수 없", "제공된 문서",
+                "근거가 없", "정보가 없", "추가 정보", "확실하지", "추정",
+                "cannot", "unknown", "not sure", "insufficient",
+            ]
+            if any(m in lowered for m in uncertainty_markers):
+                return True
+
+            # Very short answer with many docs usually indicates low-quality synthesis
+            if len(text_stripped) < 120 and retrieved_count >= 2:
+                return True
+
+            return False
+        except Exception:
+            return False
     
     async def get_session_state(self, session_id: str) -> Optional[Dict[str, Any]]:
         """세션 상태 조회"""

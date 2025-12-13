@@ -19,6 +19,6 @@ print(f"API Key length: {len(api_key)}")
 
 genai.configure(api_key=api_key)
 
-model = genai.GenerativeModel("gemini-2.0-flash")
+model = genai.GenerativeModel("gemini-2.5-flash")
 response = model.generate_content("Say 'OK' only")
 print(f"Response: {response.text}")

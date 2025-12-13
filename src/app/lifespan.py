@@ -16,7 +16,8 @@ from src.graphs.main_orchestrator import get_orchestrator
 from src.rag.rag_pipeline import RAGPipeline
 from src.agents.creator_onboarding_agent import CreatorOnboardingAgent
 from src.core.circuit_breaker import init_circuit_breakers
-from src.utils.agent_config import get_agent_runtime_config
+from src.core.circuit_breaker import get_circuit_breaker_manager
+from src.core.utils.agent_config import get_agent_runtime_config
 from src.monitoring.logging_setup import setup_logging
 from config.settings import get_settings
 
@@ -77,6 +78,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
         # Initialize Circuit Breakers
         init_circuit_breakers()
+        # Ensure MCP tool circuit breakers exist so /api/v1/circuit-breaker/status shows them immediately
+        try:
+            cbm = get_circuit_breaker_manager()
+            cbm.get_breaker("mcp_web", fail_max=settings.MCP_WEB_FAIL_MAX, reset_timeout=settings.MCP_WEB_RESET_TIMEOUT_SECS)
+            cbm.get_breaker("mcp_youtube", fail_max=settings.MCP_YOUTUBE_FAIL_MAX, reset_timeout=settings.MCP_YOUTUBE_RESET_TIMEOUT_SECS)
+            cbm.get_breaker("mcp_supadata", fail_max=settings.MCP_SUPADATA_FAIL_MAX, reset_timeout=settings.MCP_SUPADATA_RESET_TIMEOUT_SECS)
+        except Exception as e:
+            logger.warning("Failed to pre-initialize MCP circuit breakers: %s", e)
         logger.info("Circuit breakers initialized")
 
         # Initialize OpenTelemetry tracing (optional)

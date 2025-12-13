@@ -1,12 +1,14 @@
-import type { Request, Response, NextFunction } from 'express';
-import { config } from '../../config';
+import { Request, Response, NextFunction } from 'express-serve-static-core';
+import { config } from '../../config/index.js';
 
+// Explicitly use types from express-serve-static-core which Express re-exports but sometimes gets confused
 export function authMiddleware(req: Request, res: Response, next: NextFunction): void {
   if (!config.apiToken) {
-    return next();
+    next();
+    return;
   }
 
-  const auth = req.headers.authorization;
+  const auth = (req.headers as any)['authorization'];
   if (!auth || !auth.startsWith('Bearer ')) {
     res.status(401).json({ error: 'Unauthorized' });
     return;
@@ -20,5 +22,3 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
 
   next();
 }
-
-

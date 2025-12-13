@@ -7,7 +7,7 @@ from typing import Dict, Any
 
 from celery import shared_task
 
-from src.services.audit_service import get_audit_service
+from src.services.audit.service import get_audit_service
 from src.data.models.audit_models import AuditAction, AuditSeverity, AuditLogQuery
 
 logger = logging.getLogger(__name__)
@@ -121,7 +121,7 @@ def cleanup_old_audit_logs(self, days_to_keep: int = 90) -> Dict[str, Any]:
                 # PostgreSQL에서는 DELETE 쿼리 실행
                 from sqlalchemy import create_engine, delete
                 from sqlalchemy.orm import sessionmaker
-                from src.services.audit_service import AuditLogTable
+                from src.services.audit.service import AuditLogTable
 
                 cutoff_date = datetime.utcnow() - timedelta(days=days_to_keep)
 

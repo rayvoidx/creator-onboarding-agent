@@ -10,6 +10,7 @@ from ...data.models.mission_models import (
     MissionAssignment,
     MissionAssignmentStatus,
 )
+from ...utils.agent_config import get_agent_runtime_config
 
 
 class MissionRecommendationState(BaseState):
@@ -30,18 +31,10 @@ class MissionRecommendationState(BaseState):
 
 @dataclass
 class MissionAgentConfig:
-    """미션 추천 규칙 및 LLM 설정.
-
-    - min_score_for_recommendation, top_k: 룰 기반 스코어링 파라미터
-    - llm_models: 멀티 LLM 구성을 위한 선호 모델 리스트 (Settings.AGENT_MODEL_CONFIGS에서 주입)
-      현재 버전에서는 추천 사유 자연어 설명 등에 활용하기 위한 훅으로만 보관합니다.
-    - vector_db: 벡터 DB 설정 (AGENT_MODEL_CONFIGS에서 주입)
-    """
+    """미션 추천 규칙 설정"""
 
     min_score_for_recommendation: float = 50.0
     top_k: int = 5
-    llm_models: Optional[List[str]] = None
-    vector_db: Optional[str] = None
 
 
 class MissionAgent(BaseAgent[MissionRecommendationState]):
@@ -55,10 +48,14 @@ class MissionAgent(BaseAgent[MissionRecommendationState]):
     """
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-        super().__init__("MissionAgent", config)
-        self.cfg = MissionAgentConfig(
-            **(config or {})
-        )  # unknown key는 dataclass에서 무시됨
+        merged_config = get_agent_runtime_config("mission", config)
+        super().__init__("MissionAgent", merged_config)
+        self.agent_model_config = merged_config
+        scoring_config = {
+            "min_score_for_recommendation": merged_config.get("min_score_for_recommendation", 50.0),
+            "top_k": merged_config.get("top_k", 5),
+        }
+        self.cfg = MissionAgentConfig(**scoring_config)
 
     async def execute(
         self, state: MissionRecommendationState
@@ -90,6 +87,20 @@ class MissionAgent(BaseAgent[MissionRecommendationState]):
             )
             recent_mission_types: List[str] = list(
                 creator.get("recent_mission_types", [])
+            )
+            youtube_context = (
+                state.context.get("youtube_insights", {}) if state.context else {}
+            )
+            recent_videos = (
+                youtube_context.get("channel_overview", {}).get("recent_videos", [])
+                if isinstance(youtube_context, dict)
+                else []
+            )
+            latest_video = recent_videos[0] if recent_videos else {}
+            channel_info = (
+                youtube_context.get("channel_overview", {}).get("channel_info", {})
+                if isinstance(youtube_context, dict)
+                else {}
             )
 
             # 추가 필터 (API에서 전달한 mission_types, min_reward 등)
@@ -136,6 +147,16 @@ class MissionAgent(BaseAgent[MissionRecommendationState]):
                             "mission_name": m.name,
                             "mission_type": m.type.value,
                             "reward_type": m.reward_type.value,
+                            "external_signals": {
+                                "youtube_channel": channel_info.get("title"),
+                                "latest_video": {
+                                    "title": latest_video.get("title"),
+                                    "view_count": latest_video.get("view_count"),
+                                    "published_at": latest_video.get("published_at"),
+                                }
+                                if latest_video
+                                else None,
+                            },
                         },
                     )
                 )

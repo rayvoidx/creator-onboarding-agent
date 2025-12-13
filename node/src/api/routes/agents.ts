@@ -1,47 +1,37 @@
-import { Router, type Request, type Response } from 'express';
-import { authMiddleware } from '../middleware/auth';
-import { AgentRunRequestSchema } from '../schemas/request';
-import { runAgent } from '../../graphs/mainOrchestrator';
-import type {
-  AgentRunRequestDto,
-  AgentRunResponseDto,
-  AgentRunResult
-} from '../../types/agentContracts';
+import { Router } from 'express';
+import { Request, Response } from 'express-serve-static-core';
+import { authMiddleware } from '../middleware/auth.js';
+import { AgentRunRequestSchema } from '../schemas/request.js';
+import { runAgent } from '../../graphs/mainOrchestrator.js';
 
 const router = Router();
 
-type RunRequest = Request<unknown, AgentRunResponseDto, AgentRunRequestDto>;
-type RunResponse = Response<AgentRunResponseDto>;
-
-router.post('/run', authMiddleware, async (req: RunRequest, res: RunResponse) => {
+// Force explicit casting to handle potential express version mismatch
+router.post('/run', authMiddleware as any, async (req: Request, res: Response) => {
   const parse = AgentRunRequestSchema.safeParse(req.body);
   if (!parse.success) {
-    const payload: AgentRunResponseDto = {
+    const payload = {
       success: false,
       error: { code: 400, message: 'Invalid request' },
       timestamp: Date.now()
     };
-    return res.status(400).json(payload);
+    res.status(400).json(payload);
+    return;
   }
   const { agentType, input, params } = parse.data;
   try {
-    const result: AgentRunResult = await runAgent({ agentType, input, params });
-    const payload: AgentRunResponseDto = {
-      success: true,
-      data: result,
-      timestamp: Date.now()
-    };
-    return res.status(200).json(payload);
+    const result = await runAgent({ agentType: agentType as any, input, params });
+    
+    const payload = { success: true, data: result, timestamp: Date.now() };
+    res.status(200).json(payload);
   } catch (err: any) {
-    const payload: AgentRunResponseDto = {
+    const payload = {
       success: false,
       error: { code: 500, message: err?.message ?? 'Internal error' },
       timestamp: Date.now()
     };
-    return res.status(500).json(payload);
+    res.status(500).json(payload);
   }
 });
 
 export default router;
-
-

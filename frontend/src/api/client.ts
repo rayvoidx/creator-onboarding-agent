@@ -27,7 +27,7 @@ import {
 
 const api: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000",
-  timeout: 0, // 타임아웃 비활성화 (MCP 스크래핑 + LLM 리포트 생성 시간 무제한)
+  timeout: 20000,
 });
 
 // Token management

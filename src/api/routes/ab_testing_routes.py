@@ -8,10 +8,7 @@ from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from src.services.ab_testing_service import (
-    get_ab_testing_service,
-    ExperimentStatus,
-)
+from src.services.ab_testing.service import get_ab_testing_service, ExperimentStatus
 from src.api.middleware.auth import require_permission
 from src.data.models.user_models import TokenData, Permission
 

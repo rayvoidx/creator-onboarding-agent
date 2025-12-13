@@ -8,6 +8,12 @@ from .prompt_templates import PromptTemplates, PromptType
 from .document_processor import DocumentProcessor
 from .retrieval_engine import RetrievalEngine
 from .generation_engine import GenerationEngine
+from .context_builder import ContextPromptBuilder
+from .response_refiner import ResponseRefiner
+from .query_expander import QueryExpander
+from .semantic_cache import SemanticCache
+from .prompt_optimizer import PromptOptimizer
+from .llm_manager import LLMManager
 from ..services.mcp_integration import get_mcp_service
 
 try:
@@ -36,6 +42,9 @@ class RAGPipeline:
             retrieval_config.setdefault('embedding_model', embedding_model)
         if vector_db:
             retrieval_config.setdefault('vector_db', vector_db)
+        # 2025: GraphRAG-lite is a practical default (can be disabled via config)
+        retrieval_config.setdefault("graph_enabled", True)
+        retrieval_config.setdefault("graph_weight", float(retrieval_config.get("graph_weight", 0.3)))
         self.retrieval_engine = RetrievalEngine(retrieval_config)
 
         generation_config = dict(self.config.get('generation', {}))
@@ -45,6 +54,15 @@ class RAGPipeline:
             if len(preferred_llms) > 1:
                 generation_config.setdefault('fast_model', preferred_llms[1])
         self.generation_engine = GenerationEngine(generation_config)
+        self.context_builder = ContextPromptBuilder()
+        self.response_refiner = ResponseRefiner(self.generation_engine)
+        self.query_expander = QueryExpander(self.generation_engine)
+        
+        # Optimization Components
+        self.semantic_cache = SemanticCache()
+        self.prompt_optimizer = PromptOptimizer()
+        self.llm_manager = LLMManager(self.generation_engine)
+        
         self.mcp_service = get_mcp_service()
         # Observability (optional)
         if LangfuseIntegration is not None:
@@ -77,15 +95,40 @@ class RAGPipeline:
                     metadata={"query_type": query_type.value}
                 )
             
-            # 1. 쿼리 전처리 및 확장
-            processed_query = await self._preprocess_query(query, user_context)
+            # 0. Check Semantic Cache
+            cached_response = await self.semantic_cache.get_cached_response(query)
+            if cached_response:
+                return {
+                    'success': True,
+                    'response': cached_response,
+                    'cached': True,
+                    'metadata': {'query_type': query_type.value}
+                }
+
+            # 1. 쿼리 전처리 및 확장 (Query Expansion)
+            # Wrtn Style: Multi-query expansion
+            queries = await self.query_expander.expand_query(query, n_variations=3)
+            processed_query = queries[0] # Main query for logging/primary use
             
             # 2~5. 검색/컨텍스트/프롬프트를 병렬로 준비해 레이턴시 단축
             import asyncio
-            retrieved_docs = await self._hybrid_retrieval(processed_query, user_context)
-            reranked = None
-            if self.enable_reranking and len(retrieved_docs) > self.rerank_top_k:
-                reranked = asyncio.create_task(self._rerank_documents(processed_query, retrieved_docs))
+            
+            # Hybrid Search with Multi-Query (Parallelized)
+            search_tasks = [self._hybrid_retrieval(q, user_context) for q in queries]
+            search_results_list = await asyncio.gather(*search_tasks)
+            
+            # Flatten and deduplicate results from all queries
+            all_docs = []
+            seen_ids = set()
+            for docs in search_results_list:
+                for doc in docs:
+                    if doc['id'] not in seen_ids:
+                        all_docs.append(doc)
+                        seen_ids.add(doc['id'])
+            
+            # Rerank the consolidated list (Cross-Encoder)
+            retrieved_docs = await self.retrieval_engine.rerank_documents(query, all_docs, top_k=self.rerank_top_k)
+
             ctx_task = asyncio.create_task(self._create_context(retrieved_docs, user_context))
             # 컨텍스트가 프롬프트에 필요하므로 컨텍스트 완료 후 프롬프트 생성
             context = await ctx_task
@@ -93,17 +136,33 @@ class RAGPipeline:
             if query_type == PromptType.ANALYTICS:
                 context = self._augment_analytics_context(context, user_context or {})
             prompt = await self._create_prompt(query_type, processed_query, retrieved_docs, context, conversation_history)
-            if reranked:
-                try:
-                    retrieved_docs = await reranked
-                except Exception:
-                    pass
             
-            # 6. 생성 수행
-            response = await self._generate_response(prompt, query_type, context)
+            # 6. 생성 수행 (with Intelligent Routing & Optimization)
+            # Route model
+            user_tier = (user_context or {}).get('user_tier', 'free')
+            complexity = 'high' if len(retrieved_docs) > 3 or len(processed_query) > 50 else 'low'
+            routing_config = self.llm_manager.route_request(user_tier, complexity)
+            
+            # Apply routing config to context
+            if context:
+                context.update(routing_config)
+
+            # Optimize Prompt (Token Reduction)
+            optimized_prompt, _ = self.prompt_optimizer.optimize(prompt, []) # Prompt string optimization
+            
+            # Streaming check (if client supports it)
+            if (user_context or {}).get('stream', False):
+                # Return stream iterator directly (requires architectural change in caller)
+                # For now, we simulate streaming by logging or just using standard gen
+                pass
+
+            response = await self._generate_response(optimized_prompt, query_type, context)
             
             # 7. 후처리 및 검증
             final_response = await self._postprocess_response(response, retrieved_docs)
+            
+            # Cache the result
+            await self.semantic_cache.cache_response(query, final_response)
             
             # 성능 메트릭 계산
             processing_time = (datetime.now() - start_time).total_seconds()
@@ -147,32 +206,6 @@ class RAGPipeline:
                 'response': None
             }
     
-    async def _preprocess_query(self, query: str, user_context: Optional[Dict[str, Any]]) -> str:
-        """쿼리 전처리 및 확장"""
-        try:
-            # 기본 전처리
-            processed_query = query.strip()
-            
-            # 사용자 컨텍스트 기반 쿼리 확장
-            if user_context:
-                # 역량 수준에 따른 쿼리 조정
-                competency_level = user_context.get('competency_level', 'beginner')
-                if competency_level == 'beginner':
-                    processed_query += " 기초 수준으로 설명해주세요"
-                elif competency_level == 'advanced':
-                    processed_query += " 전문가 수준으로 상세히 설명해주세요"
-                
-                # 관심사 기반 쿼리 확장
-                interests = user_context.get('interests', [])
-                if interests:
-                    processed_query += f" 특히 {', '.join(interests)} 관련 내용을 포함해주세요"
-            
-            return processed_query
-            
-        except Exception as e:
-            self.logger.error(f"Query preprocessing failed: {e}")
-            return query
-    
     async def _hybrid_retrieval(
         self, 
         query: str, 
@@ -209,29 +242,6 @@ class RAGPipeline:
         except Exception as e:
             self.logger.error(f"Hybrid retrieval failed: {e}")
             return []
-    
-    async def _rerank_documents(
-        self, 
-        query: str, 
-        documents: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
-        """문서 재순위화"""
-        try:
-            if len(documents) <= self.rerank_top_k:
-                return documents
-            
-            # 재순위화 수행
-            reranked_docs = await self.retrieval_engine.rerank_documents(
-                query=query,
-                documents=documents,
-                top_k=self.rerank_top_k
-            )
-            
-            return reranked_docs
-            
-        except Exception as e:
-            self.logger.error(f"Document reranking failed: {e}")
-            return documents[:self.rerank_top_k]
     
     async def _create_context(
         self, 
@@ -340,24 +350,19 @@ class RAGPipeline:
         context: Dict[str, Any],
         conversation_history: Optional[List[Dict[str, str]]]
     ) -> str:
-        """프롬프트 생성"""
+        """프롬프트 생성 (Context Prompt Builder 사용)"""
         try:
-            if query_type == PromptType.GENERAL_CHAT and conversation_history:
-                # 대화형 프롬프트
-                return self.prompt_templates.get_conversation_prompt(
-                    user_message=query,
-                    conversation_history=conversation_history,
-                    retrieved_context=documents,
-                    user_profile=context.get('user_context')
-                )
-            else:
-                # 특화 프롬프트
-                return self.prompt_templates.create_rag_prompt(
-                    prompt_type=query_type,
-                    user_input=query,
-                    retrieved_documents=documents,
-                    context=context
-                )
+            # Wrtn Style: Rich Context Construction via ContextPromptBuilder
+            # 기존의 단순 템플릿 치환 대신, 구조화된 컨텍스트 프롬프트를 생성합니다.
+            full_prompt = self.context_builder.build_context_prompt(
+                query=query,
+                user_context=context.get('user_context', {}),
+                system_context={'os': 'darwin', 'query_type': query_type.value},
+                retrieved_docs=documents,
+                history=conversation_history,
+                agent_specific_context=context
+            )
+            return full_prompt
                 
         except Exception as e:
             self.logger.error(f"Prompt creation failed: {e}")
@@ -411,8 +416,14 @@ class RAGPipeline:
                 source_info = self._create_source_info(documents)
                 validated_response += f"\n\n**참고 자료**:\n{source_info}"
             
-            # 3. 추가 검증 및 정제
-            final_response = await self._refine_response(validated_response)
+            # 3. Wrtn Style 정제 (Persona & Tone & Hallucination Check)
+            # 기존 _refine_response 대신 ResponseRefiner 사용
+            final_response = await self.response_refiner.refine(
+                raw_response=validated_response,
+                context={'retrieved_documents': documents}, # Pass docs for hallucination check
+                style="wrtn_friendly",
+                check_hallucination=True # Enable safety check
+            )
             
             return final_response
             

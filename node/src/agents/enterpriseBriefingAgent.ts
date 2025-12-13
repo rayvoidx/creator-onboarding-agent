@@ -72,7 +72,7 @@ export class EnterpriseBriefingAgent {
 }`;
 
     const completion = await this.client.chat.completions.create({
-      model: process.env.OPENAI_MODEL || 'gpt-5.1',
+      model: process.env.OPENAI_MODEL || 'gpt-5.2',
       messages: [
         { role: 'system', content: sys },
         {

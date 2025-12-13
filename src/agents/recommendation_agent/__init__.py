@@ -3,6 +3,7 @@ import logging
 from typing import Dict, Any, Optional, List
 from pydantic import Field
 from ...core.base import BaseAgent, BaseState
+from ...utils.agent_config import get_agent_runtime_config
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,9 @@ class RecommendationAgent(BaseAgent[RecommendationState]):
     """추천 에이전트"""
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-        super().__init__("RecommendationAgent", config)
+        merged_config = get_agent_runtime_config("recommendation", config)
+        super().__init__("RecommendationAgent", merged_config)
+        self.agent_model_config = merged_config
         self.learning_materials = self._initialize_learning_materials()
         self.recommendation_weights = {
             'competency_level': 0.4,

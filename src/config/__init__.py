@@ -4,7 +4,7 @@ Configuration module.
 Centralizes all application configuration management.
 """
 
-from src.config.settings import Settings, get_settings
+from config.settings import Settings, get_settings
 from src.config.constants import (
     APP_NAME,
     APP_VERSION,

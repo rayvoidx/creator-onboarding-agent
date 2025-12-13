@@ -7,7 +7,7 @@ from typing import Dict, Any, List
 
 from celery import shared_task
 
-from src.services.audit_service import get_audit_service
+from src.services.audit.service import get_audit_service
 from src.data.models.audit_models import AuditAction, AuditSeverity
 
 logger = logging.getLogger(__name__)

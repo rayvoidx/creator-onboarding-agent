@@ -7,9 +7,9 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: creator-onboarding-api
-    command: ["uvicorn", "src.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    command: ["uvicorn", "src.app.main:app", "--host", "0.0.0.0", "--port", "8001"]
     ports:
-      - "8000:8000"
+      - "8001:8001"
     environment:
       # Database
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/creator_onboarding_db
@@ -23,8 +23,16 @@ services:
 
       # LLM Model Names
       - ANTHROPIC_MODEL_NAME=${ANTHROPIC_MODEL_NAME:-claude-sonnet-4-5-20250929}
-      - GEMINI_MODEL_NAME=${GEMINI_MODEL_NAME:-gemini-2.0-flash}
-      - OPENAI_MODEL_NAME=${OPENAI_MODEL_NAME:-gpt-5.1}
+      - GEMINI_MODEL_NAME=${GEMINI_MODEL_NAME:-gemini-2.5-flash}
+      - OPENAI_MODEL_NAME=${OPENAI_MODEL_NAME:-gpt-5.2}
+      - DEFAULT_LLM_MODEL=${DEFAULT_LLM_MODEL:-claude-sonnet-4-5-20250929}
+      - FAST_LLM_MODEL=${FAST_LLM_MODEL:-gemini-2.5-flash}
+      - DEEP_LLM_MODEL=${DEEP_LLM_MODEL:-gpt-5.2}
+      - FALLBACK_LLM_MODEL=${FALLBACK_LLM_MODEL:-gemini-2.5-flash}
+
+      # RAG & Search Configuration
+      - RERANKER_THRESHOLD=${RERANKER_THRESHOLD:-0.0}
+      - QUERY_EXPANSION_ENABLED=${QUERY_EXPANSION_ENABLED:-true}
 
       # Embedding Models
       - EMBEDDING_MODEL_NAME=${EMBEDDING_MODEL_NAME:-text-embedding-3-large}

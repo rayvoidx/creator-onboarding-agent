@@ -7,7 +7,7 @@ from typing import Dict, Any, Optional
 
 from fastapi import APIRouter, Depends, Query
 
-from src.services.audit_service import get_audit_service
+from src.services.audit.service import get_audit_service
 from src.data.models.audit_models import (
     AuditLogQuery,
     AuditLogResponse,

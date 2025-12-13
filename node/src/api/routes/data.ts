@@ -1,5 +1,6 @@
-import { Router, type Request, type Response } from 'express';
-import { refreshNewsCache, readNewsCache } from '../../services/newsService';
+import { Router } from 'express';
+import { Request, Response } from 'express-serve-static-core';
+import { refreshNewsCache, readNewsCache } from '../../services/newsService.js';
 
 const router = Router();
 
@@ -18,5 +19,3 @@ router.post('/news/refresh', async (_req: Request, res: Response) => {
 });
 
 export default router;
-
-

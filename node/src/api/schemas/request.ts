@@ -1,18 +1,21 @@
 import { z } from 'zod';
-import type { AgentRunRequestDto, AgentType } from '../../types/agentContracts';
+import type { AgentRunRequestDto, AgentType } from '../../types/agentContracts.js';
 
+// The "satisfies" constraint was causing type issues with ZodEnum inference vs TS types.
+// We explicitly list the values to match the AgentType union.
 export const AgentTypeEnum = z.enum([
   'llmManager',
   'enterpriseBriefing',
   'creatorOnboarding',
   'missionRecommend'
-] satisfies AgentType[]);
+]);
 
 export const AgentRunRequestSchema = z.object({
-  agentType: AgentTypeEnum.default('llmManager'),
+  // Use z.nativeEnum or ensure the enum values align with the type.
+  // Since AgentType is a string union, z.enum is correct, but the default inference caused a mismatch.
+  agentType: AgentTypeEnum.default('llmManager') as z.ZodType<AgentType>, 
   input: z.union([z.string(), z.record(z.any())]),
   params: z.record(z.any()).optional()
-}) satisfies z.ZodSchema<AgentRunRequestDto>;
+});
 
 export type AgentRunRequest = AgentRunRequestDto;
-

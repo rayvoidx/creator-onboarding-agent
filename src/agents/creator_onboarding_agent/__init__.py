@@ -1,15 +1,10 @@
 from __future__ import annotations
 
 import logging
-import re
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, field
 
-from pathlib import Path
-
-from src.utils.agent_config import get_agent_runtime_config
-from src.core.utils.prompt_loader import PromptLoader
-from config.settings import get_settings
+from src.core.utils.agent_config import get_agent_runtime_config
 
 
 logger = logging.getLogger(__name__)
@@ -62,212 +57,6 @@ class CreatorOnboardingAgent:
         }
         self._retrieval_engine = None
         self._use_rag = self.config.get("use_rag", True)
-        self._llm = None
-        # PromptLoader with correct path to src/agents
-        agents_path = Path(__file__).parent.parent  # src/agents
-        self._prompt_loader = PromptLoader(base_path=agents_path)
-
-    def _get_llm(self):
-        """LLM 인스턴스 가져오기 (지연 로딩)"""
-        if self._llm is None:
-            try:
-                from langchain_anthropic import ChatAnthropic
-                from langchain_openai import ChatOpenAI
-
-                settings = get_settings()
-                llm_models = self.agent_model_config.get("llm_models", [])
-
-                # 선호 모델 순서대로 시도
-                for model_name in llm_models:
-                    try:
-                        if "claude" in model_name.lower() and settings.ANTHROPIC_API_KEY:
-                            self._llm = ChatAnthropic(
-                                model=model_name,
-                                anthropic_api_key=settings.ANTHROPIC_API_KEY,
-                                temperature=0.3,
-                                max_tokens=2000
-                            )
-                            logger.info(f"CreatorOnboardingAgent: Using {model_name}")
-                            break
-                        elif "gpt" in model_name.lower() and settings.OPENAI_API_KEY:
-                            self._llm = ChatOpenAI(
-                                model=model_name,
-                                openai_api_key=settings.OPENAI_API_KEY,
-                                temperature=0.3,
-                                max_tokens=2000
-                            )
-                            logger.info(f"CreatorOnboardingAgent: Using {model_name}")
-                            break
-                    except Exception as e:
-                        logger.warning(f"Failed to init {model_name}: {e}")
-                        continue
-
-                # 폴백: 기본 모델
-                if self._llm is None:
-                    if settings.ANTHROPIC_API_KEY:
-                        self._llm = ChatAnthropic(
-                            model=settings.ANTHROPIC_MODEL_NAME,
-                            anthropic_api_key=settings.ANTHROPIC_API_KEY,
-                            temperature=0.3,
-                            max_tokens=2000
-                        )
-                        logger.info(f"CreatorOnboardingAgent: Fallback to {settings.ANTHROPIC_MODEL_NAME}")
-                    elif settings.OPENAI_API_KEY:
-                        self._llm = ChatOpenAI(
-                            model=settings.OPENAI_MODEL_NAME,
-                            openai_api_key=settings.OPENAI_API_KEY,
-                            temperature=0.3,
-                            max_tokens=2000
-                        )
-                        logger.info(f"CreatorOnboardingAgent: Fallback to {settings.OPENAI_MODEL_NAME}")
-
-            except Exception as e:
-                logger.warning(f"Failed to initialize LLM: {e}")
-                self._llm = None
-        return self._llm
-
-    async def _generate_llm_report(
-        self,
-        platform: str,
-        handle: str,
-        followers: int,
-        avg_likes: int,
-        avg_comments: int,
-        posts_30d: int,
-        reports_90d: int,
-        brand_fit: float,
-        engagement_rate: float,
-        frequency: float,
-        score: float,
-        grade: str,
-        decision: str,
-        score_breakdown: Dict[str, float],
-        risks: List[str],
-        tags: List[str],
-        rag_enhanced: Optional[RAGEnhancedData] = None
-    ) -> str:
-        """LLM을 사용하여 상세 평가 리포트 생성"""
-        llm = self._get_llm()
-        if not llm:
-            return self._generate_basic_report(
-                platform, handle, followers, engagement_rate, posts_30d,
-                reports_90d, brand_fit, score, grade, decision, risks, tags
-            )
-
-        try:
-            # 시스템 프롬프트 로드
-            system_prompt = self._prompt_loader.load(
-                "creator_onboarding_agent", "system"
-            )
-
-            # 사용자 프롬프트 구성
-            user_prompt = f"""다음 크리에이터의 온보딩 평가를 분석하고 상세 리포트를 작성해주세요.
-
-## 크리에이터 정보
-- 플랫폼: {platform}
-- 핸들: @{handle}
-
-## 메트릭
-- 팔로워: {followers:,}명
-- 평균 좋아요: {avg_likes:,}
-- 평균 댓글: {avg_comments:,}
-- 30일 게시물: {posts_30d}개
-- 90일 신고: {reports_90d}회
-- 브랜드 적합도: {brand_fit:.2f}
-- 참여율: {engagement_rate:.2%}
-- 일평균 게시물: {frequency:.2f}
-
-## 평가 결과
-- 최종 점수: {score}/100
-- 등급: {grade}
-- 결정: {decision}
-
-## 점수 구성
-- 팔로워 영향력: {score_breakdown.get('followers', 0):.1f}/40
-- 참여율: {score_breakdown.get('engagement', 0):.1f}/30
-- 활동 빈도: {score_breakdown.get('frequency', 0):.1f}/15
-- 브랜드 적합도: {score_breakdown.get('brand_fit', 0):.1f}/15
-
-## 리스크
-{', '.join(risks) if risks else '없음'}
-
-## 태그
-{', '.join(tags) if tags else '없음'}
-"""
-
-            # RAG 인사이트 추가
-            if rag_enhanced:
-                if rag_enhanced.similar_creators:
-                    user_prompt += f"\n## 유사 크리에이터\n{len(rag_enhanced.similar_creators)}명 발견\n"
-                if rag_enhanced.category_insights:
-                    user_prompt += f"\n## 카테고리 인사이트\n{rag_enhanced.category_insights[:300]}\n"
-                if rag_enhanced.market_context:
-                    user_prompt += f"\n## 시장 컨텍스트\n{rag_enhanced.market_context[:300]}\n"
-
-            user_prompt += """
-위 데이터를 바탕으로 다음 형식의 리포트를 작성해주세요:
-
-## 크리에이터 평가 리포트
-
-### 핵심 요약
-[이 크리에이터의 가장 큰 강점과 약점, 최종 결정의 근거를 2-3문장으로 요약]
-
-### 강점 분석
-[점수가 높은 영역과 브랜드 파트너십에서 기대할 수 있는 가치]
-
-### 개선 영역
-[점수가 낮거나 리스크가 있는 영역과 구체적인 개선 방안]
-
-### 권장 사항
-[어떤 캠페인에 적합한지, 또는 재평가를 위한 조건]
-
-### 다음 단계
-[구체적인 액션 아이템 2-3개]
-"""
-
-            from langchain_core.messages import SystemMessage, HumanMessage
-
-            response = await llm.ainvoke([
-                SystemMessage(content=system_prompt),
-                HumanMessage(content=user_prompt)
-            ])
-
-            return response.content
-
-        except Exception as e:
-            logger.warning(f"LLM report generation failed: {e}")
-            return self._generate_basic_report(
-                platform, handle, followers, engagement_rate, posts_30d,
-                reports_90d, brand_fit, score, grade, decision, risks, tags
-            )
-
-    def _generate_basic_report(
-        self,
-        platform: str,
-        handle: str,
-        followers: int,
-        engagement_rate: float,
-        posts_30d: int,
-        reports_90d: int,
-        brand_fit: float,
-        score: float,
-        grade: str,
-        decision: str,
-        risks: List[str],
-        tags: List[str]
-    ) -> str:
-        """기본 리포트 생성 (LLM 실패 시 폴백)"""
-        return f"""=== Creator Evaluation Report ===
-Platform: {platform} | Handle: {handle}
-
-=== Metrics ===
-Followers: {followers:,} | Engagement: {engagement_rate:.2%} | Posts(30d): {posts_30d}
-Brand-fit: {brand_fit:.2f} | Reports(90d): {reports_90d}
-
-=== Evaluation ===
-Score: {score} / 100 | Grade: {grade} | Decision: {decision}
-Risks: {', '.join(risks) if risks else 'None'}
-Tags: {', '.join(tags) if tags else 'None'}"""
 
     def _get_retrieval_engine(self):
         """RetrievalEngine 인스턴스 가져오기 (지연 로딩)"""
@@ -444,71 +233,24 @@ Tags: {', '.join(tags) if tags else 'None'}"""
         platform: str = str(input_data.get("platform", "")).lower()
         handle: str = str(input_data.get("handle", "")).strip()
         profile_url: Optional[str] = input_data.get("profile_url")
+        provided_metrics: Dict[str, Any] = input_data.get("metrics", {}) or {}
         category: Optional[str] = input_data.get("category")
 
-        # metrics는 nested dict 또는 최상위 레벨에서 직접 제공될 수 있음
-        provided_metrics: Dict[str, Any] = input_data.get("metrics", {}) or {}
-
-        # 최상위 레벨에 직접 제공된 값들을 metrics에 병합
-        direct_fields = ["followers", "avg_likes", "avg_comments", "posts_30d",
-                        "reports_90d", "brand_fit", "tags", "followers_count"]
-        for field in direct_fields:
-            if field in input_data and field not in provided_metrics:
-                provided_metrics[field] = input_data[field]
-
-        # 1) fetch profile (via Supadata MCP)
+        # 1) fetch profile (via MCP HTTP)
         profile: Dict[str, Any] = {}
         if profile_url and profile_url.startswith("http"):
             try:
-                from src.services.supadata_mcp import SupadataMCPClient  # lazy import
-                supadata_client = SupadataMCPClient()
-
-                if supadata_client.available:
-                    # Supadata MCP를 통해 SNS 프로필 스크래핑
-                    scraped_results = await supadata_client.scrape_urls([profile_url])
-
-                    if scraped_results:
-                        scraped_data = scraped_results[0]
-                        profile = {
-                            "url": profile_url,
-                            "fetched": True,
-                            "scraped_content": scraped_data,
-                        }
-
-                        # 스크래핑된 데이터에서 메트릭 추출 시도
-                        content = scraped_data.get("content", [])
-                        all_text = ""
-                        if content and isinstance(content, list):
-                            for block in content:
-                                if isinstance(block, dict):
-                                    text = block.get("text", "")
-                                    all_text += text + "\n"
-
-                        # raw_text 저장
-                        profile["raw_text"] = all_text
-
-                        # 자동 메트릭 추출
-                        if all_text:
-                            extracted_metrics = _extract_metrics_from_text(all_text, platform)
-                            if extracted_metrics:
-                                # 추출된 메트릭을 프로필에 병합 (기존 값이 없는 경우만)
-                                for key, value in extracted_metrics.items():
-                                    if key not in profile or not profile.get(key):
-                                        profile[key] = value
-                                logger.info("Auto-extracted metrics: %s", list(extracted_metrics.keys()))
-
-                        logger.info("Successfully scraped profile via Supadata MCP: %s", profile_url)
-                    else:
-                        profile = {"url": profile_url, "fetched": False, "error": "No results from Supadata"}
-                        logger.warning("Supadata MCP returned no results for: %s", profile_url)
-                else:
-                    # Supadata가 사용 불가능한 경우 기본 프로필 설정
-                    profile = {"url": profile_url, "fetched": False, "error": "Supadata MCP not available"}
-                    logger.warning("Supadata MCP not available, skipping scrape for: %s", profile_url)
-
+                from src.mcp import HttpMCP  # lazy import
+                hmcp = HttpMCP()
+                fetched = hmcp.fetch(profile_url)
+                profile = {
+                    "url": profile_url,
+                    "fetched": True,
+                    "content_type": fetched.get("content_type"),
+                }
             except Exception as e:
-                logger.warning("Supadata MCP scrape failed for %s: %s", profile_url, e)
-                profile = {"url": profile_url, "fetched": False, "error": str(e)}
+                logger.info("HTTP fetch failed for %s: %s", profile_url, e)
+                profile = {"url": profile_url, "fetched": False}
         profile.update(provided_metrics)
 
         # 2) derive signals (robust defaults)
@@ -605,33 +347,48 @@ Tags: {', '.join(tags) if tags else 'None'}"""
                 logger.warning(f"RAG enhancement failed: {e}")
                 rag_enhanced = None
 
-        # 5) LLM-enhanced comprehensive report
-        score_breakdown = {
-            "followers": round(s_followers * 100, 1),
-            "engagement": round(s_engage * 100, 1),
-            "frequency": round(s_freq * 100, 1),
-            "brand_fit": round(s_fit * 100, 1),
-        }
+        # 5) comprehensive report
+        report_parts = [
+            f"=== Creator Evaluation Report ===",
+            f"Platform: {platform} | Handle: {handle}",
+            f"Category: {category or 'Not specified'}",
+            "",
+            f"=== Metrics ===",
+            f"Followers: {followers:,} | Engagement: {engagement_rate:.2%} | Posts(30d): {posts_30d}",
+            f"Brand-fit: {brand_fit:.2f} | Reports(90d): {reports_90d}",
+            "",
+            f"=== Evaluation ===",
+            f"Score: {score} / 100 | Grade: {grade} | Decision: {decision}",
+            f"Risks: {', '.join(risk_tags) if risk_tags else 'None'}",
+            f"Tags: {', '.join(tags) if tags else 'None'}",
+        ]
 
-        report = await self._generate_llm_report(
-            platform=platform,
-            handle=handle,
-            followers=followers,
-            avg_likes=avg_likes,
-            avg_comments=avg_comments,
-            posts_30d=posts_30d,
-            reports_90d=reports_90d,
-            brand_fit=brand_fit,
-            engagement_rate=engagement_rate,
-            frequency=frequency,
-            score=score,
-            grade=grade,
-            decision=decision,
-            score_breakdown=score_breakdown,
-            risks=risk_tags,
-            tags=tags,
-            rag_enhanced=rag_enhanced
-        )
+        # RAG 향상 정보 추가
+        if rag_enhanced:
+            report_parts.append("")
+            report_parts.append("=== RAG-Enhanced Insights ===")
+
+            if rag_enhanced.similar_creators:
+                report_parts.append(f"Similar Creators Found: {len(rag_enhanced.similar_creators)}")
+                for i, sc in enumerate(rag_enhanced.similar_creators[:3], 1):
+                    report_parts.append(
+                        f"  {i}. @{sc.get('handle', 'unknown')} ({sc.get('platform', '')}) - "
+                        f"Similarity: {sc.get('score', 0):.2f}, Grade: {sc.get('grade', 'N/A')}"
+                    )
+
+            if rag_enhanced.category_insights:
+                report_parts.append(f"Category Insights: {rag_enhanced.category_insights[:200]}")
+
+            if rag_enhanced.market_context:
+                report_parts.append(f"Market Context: {rag_enhanced.market_context[:200]}")
+
+            if rag_enhanced.risk_analysis and risk_tags:
+                report_parts.append(f"Risk Analysis: {rag_enhanced.risk_analysis[:200]}")
+
+            if rag_enhanced.recommendation_context:
+                report_parts.append(f"Recommendation: {rag_enhanced.recommendation_context}")
+
+        report = "\n".join(report_parts)
 
         return CreatorEvaluationResult(
             success=True,
@@ -705,193 +462,5 @@ def _grade_and_decide(score: float, risk_tags: List[str]) -> tuple[str, str, Lis
         tags.append("needs_activation")
 
     return grade, decision, tags
-
-
-def _extract_metrics_from_text(text: str, platform: str = "") -> Dict[str, Any]:
-    """스크래핑된 텍스트에서 SNS 메트릭을 자동 추출
-
-    Instagram, TikTok 등 SNS 프로필 텍스트에서 팔로워, 게시물 수 등을 파싱합니다.
-    """
-    metrics: Dict[str, Any] = {}
-
-    if not text:
-        return metrics
-
-    # 텍스트 정규화
-    text_lower = text.lower()
-
-    def parse_count(s: str) -> int:
-        """숫자 문자열을 정수로 변환 (K, M 단위 지원)"""
-        s = s.strip().replace(",", "").replace(" ", "")
-        multiplier = 1
-
-        if s.endswith("k") or s.endswith("천"):
-            s = s[:-1]
-            multiplier = 1_000
-        elif s.endswith("m") or s.endswith("백만"):
-            s = s[:-1]
-            multiplier = 1_000_000
-        elif s.endswith("만"):
-            s = s[:-1]
-            multiplier = 10_000
-
-        try:
-            return int(float(s) * multiplier)
-        except (ValueError, TypeError):
-            return 0
-
-    # 팔로워 수 추출 패턴들
-    follower_patterns = [
-        # Instagram 형식: "1,234 followers", "1.2M followers"
-        r"([\d,.]+[kKmM]?)\s*(?:followers?|팔로워)",
-        # TikTok 형식: "1234 Followers"
-        r"([\d,.]+[kKmM]?)\s*Followers?",
-        # 한국어: "팔로워 1,234" 또는 "팔로워: 1,234"
-        r"팔로워[:\s]*([\d,.]+[kKmM만천]?)",
-        # 숫자 followers 형식
-        r"([\d,.]+)\s*(?:명|명의)?\s*팔로워",
-        # Instagram JSON/메타데이터 형식
-        r'"edge_followed_by"[^}]*"count":\s*(\d+)',
-        r'"follower_count":\s*(\d+)',
-    ]
-
-    for pattern in follower_patterns:
-        match = re.search(pattern, text, re.IGNORECASE)
-        if match:
-            count = parse_count(match.group(1))
-            if count > 0:
-                metrics["followers"] = count
-                logger.info(f"Extracted followers: {count}")
-                break
-
-    # 팔로잉 수 추출
-    following_patterns = [
-        r"([\d,.]+[kKmM]?)\s*(?:following|팔로잉)",
-        r"팔로잉[:\s]*([\d,.]+[kKmM만천]?)",
-        r'"edge_follow"[^}]*"count":\s*(\d+)',
-    ]
-
-    for pattern in following_patterns:
-        match = re.search(pattern, text, re.IGNORECASE)
-        if match:
-            count = parse_count(match.group(1))
-            if count > 0:
-                metrics["following"] = count
-                break
-
-    # 게시물 수 추출
-    posts_patterns = [
-        r"([\d,.]+)\s*(?:posts?|게시물)",
-        r"게시물[:\s]*([\d,.]+)",
-        r'"edge_owner_to_timeline_media"[^}]*"count":\s*(\d+)',
-        r'"media_count":\s*(\d+)',
-    ]
-
-    for pattern in posts_patterns:
-        match = re.search(pattern, text, re.IGNORECASE)
-        if match:
-            count = parse_count(match.group(1))
-            if count > 0:
-                metrics["total_posts"] = count
-                # posts_30d 추정: 전체 게시물의 약 10% 또는 최소 4개
-                estimated_monthly = max(4, count // 10)
-                metrics["posts_30d"] = min(estimated_monthly, 30)  # 최대 30개/월
-                logger.info(f"Extracted posts: {count}, estimated posts_30d: {metrics['posts_30d']}")
-                break
-
-    # 좋아요 수 추출 (평균 추정)
-    likes_patterns = [
-        r"([\d,.]+[kKmM]?)\s*(?:likes?|좋아요)",
-        r'"edge_liked_by"[^}]*"count":\s*(\d+)',
-        r'"like_count":\s*(\d+)',
-    ]
-
-    total_likes = 0
-    like_count = 0
-    for pattern in likes_patterns:
-        matches = re.findall(pattern, text, re.IGNORECASE)
-        for match in matches:
-            count = parse_count(match)
-            if count > 0:
-                total_likes += count
-                like_count += 1
-
-    if like_count > 0:
-        metrics["avg_likes"] = total_likes // like_count
-        logger.info(f"Extracted avg_likes: {metrics['avg_likes']}")
-    elif "followers" in metrics:
-        # 팔로워 기반 평균 좋아요 추정 (약 3% 참여율 가정)
-        metrics["avg_likes"] = max(10, metrics["followers"] // 30)
-
-    # 댓글 수 추출 (평균 추정)
-    comments_patterns = [
-        r"([\d,.]+[kKmM]?)\s*(?:comments?|댓글)",
-        r'"edge_media_to_comment"[^}]*"count":\s*(\d+)',
-        r'"comment_count":\s*(\d+)',
-    ]
-
-    total_comments = 0
-    comment_count = 0
-    for pattern in comments_patterns:
-        matches = re.findall(pattern, text, re.IGNORECASE)
-        for match in matches:
-            count = parse_count(match)
-            if count > 0:
-                total_comments += count
-                comment_count += 1
-
-    if comment_count > 0:
-        metrics["avg_comments"] = total_comments // comment_count
-        logger.info(f"Extracted avg_comments: {metrics['avg_comments']}")
-    elif "avg_likes" in metrics:
-        # 좋아요 기반 댓글 추정 (좋아요의 약 2-5%)
-        metrics["avg_comments"] = max(1, metrics["avg_likes"] // 30)
-
-    # 비디오 조회수 (TikTok용)
-    views_patterns = [
-        r"([\d,.]+[kKmM]?)\s*(?:views?|조회수)",
-        r'"play_count":\s*(\d+)',
-    ]
-
-    total_views = 0
-    view_count = 0
-    for pattern in views_patterns:
-        matches = re.findall(pattern, text, re.IGNORECASE)
-        for match in matches:
-            count = parse_count(match)
-            if count > 0:
-                total_views += count
-                view_count += 1
-
-    if view_count > 0:
-        metrics["avg_views"] = total_views // view_count
-
-    # 플랫폼별 추가 처리
-    if platform.lower() == "instagram":
-        # Instagram 프로필에서 bio/description 추출
-        bio_patterns = [
-            r'"biography":\s*"([^"]*)"',
-            r'"bio":\s*"([^"]*)"',
-        ]
-        for pattern in bio_patterns:
-            match = re.search(pattern, text)
-            if match:
-                metrics["bio"] = match.group(1)[:200]
-                break
-
-    elif platform.lower() == "tiktok":
-        # TikTok 특화 메트릭
-        if "avg_views" in metrics and "followers" in metrics:
-            # TikTok은 조회수 기반 참여율이 더 중요
-            if not metrics.get("avg_likes"):
-                metrics["avg_likes"] = max(10, metrics["avg_views"] // 20)
-
-    # 추출된 메트릭 요약 로그
-    if metrics:
-        logger.info(f"Extracted metrics from text: {list(metrics.keys())}")
-    else:
-        logger.warning("No metrics could be extracted from text")
-
-    return metrics
 
 

@@ -1,4 +1,4 @@
-import type { Express } from 'express';
+import { Express } from 'express-serve-static-core';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -27,5 +27,3 @@ export function registerSecurity(app: Express): void {
     })
   );
 }
-
-

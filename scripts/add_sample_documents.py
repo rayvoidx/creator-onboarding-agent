@@ -213,8 +213,9 @@ async def add_documents_to_rag():
                 'max_results': 10
             },
             'generation': {
-                'default_model': os.getenv('DEFAULT_LLM_MODEL', 'gpt-5.1'),
-                'fallback_model': os.getenv('FALLBACK_LLM_MODEL', 'gpt-5.1'),
+                'default_model': os.getenv('DEFAULT_LLM_MODEL', 'gpt-5.2'),
+                # Prefer a smaller/cheaper OpenAI fallback for sample generation if needed
+                'fallback_model': os.getenv('FALLBACK_LLM_MODEL', 'gpt-5-mini'),
                 'openai_api_key': os.getenv('OPENAI_API_KEY'),
             }
         }

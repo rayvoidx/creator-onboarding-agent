@@ -75,18 +75,18 @@ class Settings(BaseSettings):
 
     # LLM
     # 일반 대화 기본 모델(일반용)
-    DEFAULT_LLM_MODEL: str = os.getenv("DEFAULT_LLM_MODEL", "claude-sonnet-4-20250514")
+    DEFAULT_LLM_MODEL: str = os.getenv("DEFAULT_LLM_MODEL", "claude-sonnet-4-5-20250929")
     # 폴백/가속 모델(저부하/빠른 응답)
-    FAST_LLM_MODEL: str = os.getenv("FAST_LLM_MODEL", "gemini-2.0-flash")
+    FAST_LLM_MODEL: str = os.getenv("FAST_LLM_MODEL", "gemini-2.5-flash")
     # 심화/대용량 컨텍스트 모델(고난도/심화 질문)
-    DEEP_LLM_MODEL: str = os.getenv("DEEP_LLM_MODEL", "gpt-5.1")
+    DEEP_LLM_MODEL: str = os.getenv("DEEP_LLM_MODEL", "gpt-5.2")
     # 역사적 호환을 위해 유지하되 내부적으로 FAST로 매핑
-    FALLBACK_LLM_MODEL: str = os.getenv("FALLBACK_LLM_MODEL", "gemini-2.0-flash")
+    FALLBACK_LLM_MODEL: str = os.getenv("FALLBACK_LLM_MODEL", "gemini-2.5-flash")
 
     # Provider-specific model names (멀티 모델 플릿 구성용)
-    ANTHROPIC_MODEL_NAME: str = os.getenv("ANTHROPIC_MODEL_NAME", "claude-sonnet-4-20250514")
-    GEMINI_MODEL_NAME: str = os.getenv("GEMINI_MODEL_NAME", "gemini-2.0-flash")
-    OPENAI_MODEL_NAME: str = os.getenv("OPENAI_MODEL_NAME", "gpt-5.1")
+    ANTHROPIC_MODEL_NAME: str = os.getenv("ANTHROPIC_MODEL_NAME", "claude-sonnet-4-5-20250929")
+    GEMINI_MODEL_NAME: str = os.getenv("GEMINI_MODEL_NAME", "gemini-2.5-flash")
+    OPENAI_MODEL_NAME: str = os.getenv("OPENAI_MODEL_NAME", "gpt-5.2")
 
     # Embedding models
     GEMINI_EMBEDDING_MODEL_NAME: str = os.getenv("GEMINI_EMBEDDING_MODEL_NAME", "text-embedding-004")
@@ -115,6 +115,34 @@ class Settings(BaseSettings):
     DEEPAGENT_MAX_STEPS: int = int(os.getenv("DEEPAGENT_MAX_STEPS", "8"))
     DEEPAGENT_CRITIC_ROUNDS: int = int(os.getenv("DEEPAGENT_CRITIC_ROUNDS", "2"))
     DEEPAGENT_TIMEOUT_SECS: int = int(os.getenv("DEEPAGENT_TIMEOUT_SECS", "60"))
+
+    # MCP Tool Policy (Retry/Backoff/Circuit Breaker) - 운영 튜닝용
+    # Web
+    MCP_WEB_FAIL_MAX: int = int(os.getenv("MCP_WEB_FAIL_MAX", "3"))
+    MCP_WEB_RESET_TIMEOUT_SECS: int = int(os.getenv("MCP_WEB_RESET_TIMEOUT_SECS", "20"))
+    MCP_WEB_TIMEOUT_SECS: int = int(os.getenv("MCP_WEB_TIMEOUT_SECS", "8"))
+    MCP_WEB_MAX_RETRIES: int = int(os.getenv("MCP_WEB_MAX_RETRIES", "2"))
+    MCP_WEB_BACKOFF_BASE_SECS: float = float(os.getenv("MCP_WEB_BACKOFF_BASE_SECS", "0.4"))
+    MCP_WEB_BACKOFF_MAX_SECS: float = float(os.getenv("MCP_WEB_BACKOFF_MAX_SECS", "3.0"))
+    MCP_WEB_JITTER_SECS: float = float(os.getenv("MCP_WEB_JITTER_SECS", "0.2"))
+
+    # YouTube
+    MCP_YOUTUBE_FAIL_MAX: int = int(os.getenv("MCP_YOUTUBE_FAIL_MAX", "3"))
+    MCP_YOUTUBE_RESET_TIMEOUT_SECS: int = int(os.getenv("MCP_YOUTUBE_RESET_TIMEOUT_SECS", "30"))
+    MCP_YOUTUBE_TIMEOUT_SECS: int = int(os.getenv("MCP_YOUTUBE_TIMEOUT_SECS", "12"))
+    MCP_YOUTUBE_MAX_RETRIES: int = int(os.getenv("MCP_YOUTUBE_MAX_RETRIES", "1"))
+    MCP_YOUTUBE_BACKOFF_BASE_SECS: float = float(os.getenv("MCP_YOUTUBE_BACKOFF_BASE_SECS", "0.6"))
+    MCP_YOUTUBE_BACKOFF_MAX_SECS: float = float(os.getenv("MCP_YOUTUBE_BACKOFF_MAX_SECS", "3.0"))
+    MCP_YOUTUBE_JITTER_SECS: float = float(os.getenv("MCP_YOUTUBE_JITTER_SECS", "0.2"))
+
+    # Supadata
+    MCP_SUPADATA_FAIL_MAX: int = int(os.getenv("MCP_SUPADATA_FAIL_MAX", "4"))
+    MCP_SUPADATA_RESET_TIMEOUT_SECS: int = int(os.getenv("MCP_SUPADATA_RESET_TIMEOUT_SECS", "45"))
+    MCP_SUPADATA_TIMEOUT_SECS: int = int(os.getenv("MCP_SUPADATA_TIMEOUT_SECS", "20"))
+    MCP_SUPADATA_MAX_RETRIES: int = int(os.getenv("MCP_SUPADATA_MAX_RETRIES", "1"))
+    MCP_SUPADATA_BACKOFF_BASE_SECS: float = float(os.getenv("MCP_SUPADATA_BACKOFF_BASE_SECS", "0.8"))
+    MCP_SUPADATA_BACKOFF_MAX_SECS: float = float(os.getenv("MCP_SUPADATA_BACKOFF_MAX_SECS", "4.0"))
+    MCP_SUPADATA_JITTER_SECS: float = float(os.getenv("MCP_SUPADATA_JITTER_SECS", "0.3"))
 
     # Vector DB Config
     @property
@@ -151,8 +179,8 @@ class Settings(BaseSettings):
 
         - 값 예시:
           {
-            "general": {"llm_models": ["gpt-5.1", "claude-3-sonnet"]},
-            "competency": {"llm_models": ["claude-3-opus", "gpt-5.1"]},
+            "general": {"llm_models": ["gpt-5.2", "claude-sonnet-4-5-20250929"]},
+            "competency": {"llm_models": ["claude-opus-4-5-20251101", "gpt-5.2"]},
             ...
           }
         """

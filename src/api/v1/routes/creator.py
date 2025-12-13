@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException
 
 from src.app.dependencies import get_dependencies
 from src.api.schemas.response_schemas import CreatorEvaluationResponse
-from src.services.creator_history_service import get_creator_history_service
+from src.services.creator_history.service import get_creator_history_service
 
 router = APIRouter(prefix="/api/v1/creator", tags=["Creator"])
 logger = logging.getLogger(__name__)

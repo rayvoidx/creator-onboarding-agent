@@ -1,11 +1,11 @@
 const ko = {
   app: {
-    title: "크리에이터 온보딩",
-    subtitle: "AI 기반 크리에이터 평가 시스템",
+    title: "Creator Intelligence Console",
+    subtitle: "온보딩 · 미션 인텔리전스 · 인사이트",
     nav: {
-      evaluation: "평가",
-      mission: "미션",
-      analytics: "분석",
+      evaluation: "크리에이터 평가",
+      mission: "미션 추천",
+      analytics: "인사이트",
     },
     language: "언어",
   },

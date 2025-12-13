@@ -37,7 +37,8 @@ async def test_anthropic():
         from anthropic import Anthropic
         client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
         response = client.messages.create(
-            model="claude-3-haiku-20240307",
+            # Latest fast Claude (Anthropic official model list)
+            model="claude-haiku-4-5-20251001",
             max_tokens=10,
             messages=[{"role": "user", "content": "Say 'OK' only"}]
         )
@@ -54,7 +55,7 @@ async def test_gemini():
         import google.generativeai as genai
         genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
         # Use a known working model for testing
-        model_name = "gemini-2.0-flash"
+        model_name = "gemini-2.5-flash"
         model = genai.GenerativeModel(model_name)
         response = model.generate_content("Say 'OK' only")
         print(f"   ✅ Gemini ({model_name}): {response.text.strip()}")

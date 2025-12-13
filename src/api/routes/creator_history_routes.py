@@ -7,7 +7,7 @@ from typing import Dict, Any, Optional
 
 from fastapi import APIRouter, Depends, Query, HTTPException
 
-from src.services.creator_history_service import get_creator_history_service
+from src.services.creator_history.service import get_creator_history_service
 from src.data.models.creator_history_models import (
     CreatorHistoryQuery,
     CreatorHistoryResponse,

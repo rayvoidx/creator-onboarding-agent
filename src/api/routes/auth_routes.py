@@ -8,7 +8,7 @@ from typing import Dict, Any
 from fastapi import APIRouter, HTTPException, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from src.services.auth_service import get_auth_service
+from src.services.auth.service import get_auth_service
 from src.data.models.user_models import (
     UserCreate,
     UserResponse,

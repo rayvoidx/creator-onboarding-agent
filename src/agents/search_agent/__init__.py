@@ -3,6 +3,7 @@ from typing import Dict, Any, List, Optional
 import logging
 from pydantic import Field
 from ...core.base import BaseAgent, BaseState  # type: ignore[import]
+from ...utils.agent_config import get_agent_runtime_config
 
 logger = logging.getLogger(__name__)
 
@@ -29,9 +30,11 @@ class SearchAgent(BaseAgent[SearchState]):
     """
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-        super().__init__("SearchAgent", config)
-        self.vector_weight = config.get('vector_weight', 0.7) if config else 0.7
-        self.keyword_weight = config.get('keyword_weight', 0.3) if config else 0.3
+        merged_config = get_agent_runtime_config("search", config)
+        super().__init__("SearchAgent", merged_config)
+        self.agent_model_config = merged_config
+        self.vector_weight = merged_config.get('vector_weight', 0.7)
+        self.keyword_weight = merged_config.get('keyword_weight', 0.3)
 
     async def execute(self, state: SearchState) -> SearchState:
         """

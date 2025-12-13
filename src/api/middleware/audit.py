@@ -9,7 +9,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 from starlette.requests import Request
 
-from src.services.audit_service import get_audit_service
+from src.services.audit.service import get_audit_service
 from src.data.models.audit_models import AuditAction, AuditSeverity
 
 logger = logging.getLogger(__name__)
