@@ -43,12 +43,8 @@ class MissionRequirement(BaseModel):
     min_engagement_rate: float = Field(
         0.0, ge=0.0, le=1.0, description="최소 참여율 (0~1 스케일)"
     )
-    min_posts_30d: int = Field(
-        0, ge=0, description="최근 30일 최소 게시물 수"
-    )
-    min_grade: str = Field(
-        "C", description="최소 등급 (S/A/B/C, 대소문자 무시)"
-    )
+    min_posts_30d: int = Field(0, ge=0, description="최근 30일 최소 게시물 수")
+    min_grade: str = Field("C", description="최소 등급 (S/A/B/C, 대소문자 무시)")
     allowed_platforms: List[str] = Field(
         default_factory=list, description="허용 플랫폼 (소문자: tiktok, instagram 등)"
     )
@@ -86,9 +82,7 @@ class Mission(BaseModel):
     currency: str = Field("KRW", description="보상 통화 코드")
     start_at: Optional[datetime] = None
     end_at: Optional[datetime] = None
-    requirement: MissionRequirement = Field(
-        default_factory=MissionRequirement
-    )
+    requirement: MissionRequirement = Field(default_factory=MissionRequirement)
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
@@ -116,9 +110,7 @@ class MissionAssignment(BaseModel):
     score: float = Field(
         0.0, ge=0.0, le=100.0, description="미션과 크리에이터의 적합도 점수 (0~100)"
     )
-    reasons: List[str] = Field(
-        default_factory=list, description="추천/할당 사유"
-    )
+    reasons: List[str] = Field(default_factory=list, description="추천/할당 사유")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     metadata: Dict[str, Any] = Field(default_factory=dict)
