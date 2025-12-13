@@ -284,8 +284,8 @@ class YouTubeAnalyzer:
         Returns:
             키워드 및 빈도 정보
         """
-        from collections import Counter
         import re
+        from collections import Counter
 
         all_words = []
         for segment in segments:

@@ -1,8 +1,8 @@
 """메트릭 수집기"""
 
 import logging
-from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional
 
 try:
     import psutil  # type: ignore

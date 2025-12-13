@@ -2,12 +2,12 @@
 
 import logging
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, HTTPException
 
-from src.app.dependencies import get_dependencies
 from src.api.schemas.response_schemas import CreatorEvaluationResponse
+from src.app.dependencies import get_dependencies
 from src.services.creator_history.service import get_creator_history_service
 
 router = APIRouter(prefix="/api/v1/creator", tags=["Creator"])

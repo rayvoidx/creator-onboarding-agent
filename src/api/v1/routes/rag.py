@@ -3,15 +3,15 @@
 import json
 import logging
 from datetime import datetime
-from typing import Dict, Any, Optional, List
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
+from config.settings import get_settings
+from src.api.middleware.security_utils import sanitize_output
 from src.app.dependencies import get_dependencies
 from src.rag.prompt_templates import PromptType
-from src.api.middleware.security_utils import sanitize_output
-from config.settings import get_settings
 
 router = APIRouter(prefix="/api/v1/rag", tags=["RAG"])
 logger = logging.getLogger(__name__)

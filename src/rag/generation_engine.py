@@ -1,14 +1,20 @@
 """생성 엔진 구현 (Enhanced with Streaming & Advanced Routing)"""
 
 import logging
-from typing import Dict, Any, List, Optional, AsyncIterator
+from typing import Any, AsyncIterator, Dict, List, Optional
 
 # 선택적 import
 try:
-    from langchain_openai import ChatOpenAI  # type: ignore[import-not-found]
     from langchain_anthropic import ChatAnthropic  # type: ignore[import-not-found]
-    from langchain_google_genai import ChatGoogleGenerativeAI  # type: ignore[import-not-found]
-    from langchain_core.messages import HumanMessage, SystemMessage, AIMessage  # type: ignore[import-not-found]
+    from langchain_core.messages import (  # type: ignore[import-not-found]
+        AIMessage,
+        HumanMessage,
+        SystemMessage,
+    )
+    from langchain_google_genai import (
+        ChatGoogleGenerativeAI,  # type: ignore[import-not-found]
+    )
+    from langchain_openai import ChatOpenAI  # type: ignore[import-not-found]
 
     LANGCHAIN_AVAILABLE = True
 except ImportError:

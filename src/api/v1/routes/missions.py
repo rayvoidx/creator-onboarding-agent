@@ -2,16 +2,16 @@
 
 import logging
 from datetime import datetime
-from typing import Dict, Any, Optional, List
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException
 
-from src.app.dependencies import get_dependencies
 from src.api.schemas.request_schemas import MissionRecommendRequest
 from src.api.schemas.response_schemas import (
-    MissionRecommendationResponse,
     MissionRecommendationItem,
+    MissionRecommendationResponse,
 )
+from src.app.dependencies import get_dependencies
 
 router = APIRouter(prefix="/api/v1/missions", tags=["Missions"])
 logger = logging.getLogger(__name__)

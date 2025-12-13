@@ -6,9 +6,9 @@ Canonical implementation lives in `src.services.ab_testing.service`.
 
 from src.services.ab_testing.service import (  # noqa: F401
     ABTestingService,
-    ExperimentStatus,
     Experiment,
     ExperimentResult,
+    ExperimentStatus,
     PromptVariant,
     VariantType,
     get_ab_testing_service,

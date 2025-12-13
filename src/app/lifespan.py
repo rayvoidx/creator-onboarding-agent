@@ -4,26 +4,25 @@ Application lifespan management.
 Handles startup and shutdown events for the FastAPI application.
 """
 
-import os
 import logging
-from typing import AsyncGenerator
+import os
 from contextlib import asynccontextmanager
+from typing import AsyncGenerator
 
 from fastapi import FastAPI
 
-from src.app.dependencies import get_dependencies, MONITORING_AVAILABLE
-from src.graphs.main_orchestrator import get_orchestrator
-from src.rag.rag_pipeline import RAGPipeline
-from src.agents.creator_onboarding_agent import CreatorOnboardingAgent
-from src.core.circuit_breaker import init_circuit_breakers
-from src.core.circuit_breaker import get_circuit_breaker_manager
-from src.core.utils.agent_config import get_agent_runtime_config
-from src.monitoring.logging_setup import setup_logging
 from config.settings import get_settings
+from src.agents.creator_onboarding_agent import CreatorOnboardingAgent
+from src.app.dependencies import MONITORING_AVAILABLE, get_dependencies
+from src.core.circuit_breaker import get_circuit_breaker_manager, init_circuit_breakers
+from src.core.utils.agent_config import get_agent_runtime_config
+from src.graphs.main_orchestrator import get_orchestrator
+from src.monitoring.logging_setup import setup_logging
+from src.rag.rag_pipeline import RAGPipeline
 
 # Optional tracing imports
 try:
-    from src.monitoring.tracing import setup_tracing, instrument_app
+    from src.monitoring.tracing import instrument_app, setup_tracing
 
     TRACING_AVAILABLE = True
 except ImportError:
@@ -31,8 +30,8 @@ except ImportError:
 
 # Optional monitoring imports
 try:
-    from src.monitoring.performance_monitor import PerformanceMonitor
     from src.monitoring.metrics_collector import MetricsCollector
+    from src.monitoring.performance_monitor import PerformanceMonitor
 except ImportError:
     PerformanceMonitor = None  # type: ignore
     MetricsCollector = None  # type: ignore

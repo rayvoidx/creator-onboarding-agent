@@ -4,14 +4,14 @@
 
 import logging
 import time
-from typing import Callable, Any
+from typing import Any, Callable
 
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import Response
 from starlette.requests import Request
+from starlette.responses import Response
 
-from src.services.audit.service import get_audit_service
 from src.data.models.audit_models import AuditAction, AuditSeverity
+from src.services.audit.service import get_audit_service
 
 logger = logging.getLogger(__name__)
 

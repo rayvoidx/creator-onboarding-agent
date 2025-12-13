@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional
 
 from src.core.utils.agent_config import get_agent_runtime_config
-
 
 logger = logging.getLogger(__name__)
 

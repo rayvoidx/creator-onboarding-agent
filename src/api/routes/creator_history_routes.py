@@ -4,18 +4,18 @@
 
 import logging
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
-from src.services.creator_history.service import get_creator_history_service
+from src.api.middleware.auth import require_permission
 from src.data.models.creator_history_models import (
     CreatorHistoryQuery,
     CreatorHistoryResponse,
     CreatorTrend,
 )
-from src.api.middleware.auth import require_permission
-from src.data.models.user_models import TokenData, Permission
+from src.data.models.user_models import Permission, TokenData
+from src.services.creator_history.service import get_creator_history_service
 
 logger = logging.getLogger(__name__)
 

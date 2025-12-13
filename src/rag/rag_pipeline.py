@@ -1,20 +1,20 @@
 """RAG 파이프라인 구현"""
 
 import logging
-from typing import Dict, Any, List, Optional
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-from .prompt_templates import PromptTemplates, PromptType
-from .document_processor import DocumentProcessor
-from .retrieval_engine import RetrievalEngine
-from .generation_engine import GenerationEngine
-from .context_builder import ContextPromptBuilder
-from .response_refiner import ResponseRefiner
-from .query_expander import QueryExpander
-from .semantic_cache import SemanticCache
-from .prompt_optimizer import PromptOptimizer
-from .llm_manager import LLMManager
 from ..services.mcp_integration import get_mcp_service
+from .context_builder import ContextPromptBuilder
+from .document_processor import DocumentProcessor
+from .generation_engine import GenerationEngine
+from .llm_manager import LLMManager
+from .prompt_optimizer import PromptOptimizer
+from .prompt_templates import PromptTemplates, PromptType
+from .query_expander import QueryExpander
+from .response_refiner import ResponseRefiner
+from .retrieval_engine import RetrievalEngine
+from .semantic_cache import SemanticCache
 
 try:
     from ..monitoring.langfuse import LangfuseIntegration  # type: ignore
@@ -211,7 +211,9 @@ class RAGPipeline:
             # Observability log
             try:
                 if self.langfuse and trace_id:
-                    from typing import cast, Dict as _Dict, Any as _Any
+                    from typing import Any as _Any
+                    from typing import Dict as _Dict
+                    from typing import cast
 
                     meta: _Dict[str, _Any] = cast(
                         _Dict[str, _Any], result.get("metadata", {})

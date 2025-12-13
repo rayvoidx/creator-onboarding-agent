@@ -27,6 +27,11 @@ env/
 ENV/
 .venv
 
+# uv (local caches/tools directories)
+.uv-cache/
+.xdg-cache/
+.xdg-data/
+
 # IDE
 .vscode/
 .idea/

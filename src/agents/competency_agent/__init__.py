@@ -7,17 +7,18 @@ DER-001: AI 기반 역량진단 모델 개발을 위한 에이전트
 
 from __future__ import annotations
 
-from typing import Dict, List, Any, Optional, Tuple
-from datetime import datetime
 import logging
+from datetime import datetime
+from typing import Any, Dict, List, Optional, Tuple
+
 from pydantic import Field
 
 # 선택적 임포트 (머신러닝 라이브러리)
 try:
     import numpy as np  # type: ignore
     import pandas as pd  # type: ignore
-    from sklearn.preprocessing import StandardScaler  # type: ignore
     from sklearn.ensemble import RandomForestClassifier  # type: ignore
+    from sklearn.preprocessing import StandardScaler  # type: ignore
 
     ML_AVAILABLE = True
 except ImportError:

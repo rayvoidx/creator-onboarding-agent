@@ -4,14 +4,14 @@ A/B 테스팅 API 라우터
 
 import logging
 from datetime import datetime
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from src.services.ab_testing.service import get_ab_testing_service, ExperimentStatus
 from src.api.middleware.auth import require_permission
-from src.data.models.user_models import TokenData, Permission
+from src.data.models.user_models import Permission, TokenData
+from src.services.ab_testing.service import ExperimentStatus, get_ab_testing_service
 
 logger = logging.getLogger(__name__)
 

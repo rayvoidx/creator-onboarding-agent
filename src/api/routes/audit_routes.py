@@ -4,19 +4,19 @@
 
 import logging
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, Query
 
-from src.services.audit.service import get_audit_service
+from src.api.middleware.auth import require_permission
 from src.data.models.audit_models import (
+    AuditAction,
     AuditLogQuery,
     AuditLogResponse,
-    AuditAction,
     AuditSeverity,
 )
-from src.api.middleware.auth import require_permission
-from src.data.models.user_models import TokenData, Permission
+from src.data.models.user_models import Permission, TokenData
+from src.services.audit.service import get_audit_service
 
 logger = logging.getLogger(__name__)
 

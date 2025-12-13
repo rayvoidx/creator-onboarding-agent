@@ -1,6 +1,7 @@
 """API 요청 스키마"""
 
-from typing import Dict, Any, Optional, List
+from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, Field, field_validator
 
 

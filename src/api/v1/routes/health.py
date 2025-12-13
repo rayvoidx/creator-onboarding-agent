@@ -5,9 +5,9 @@ from datetime import datetime
 
 from fastapi import APIRouter, HTTPException
 
-from src.app.dependencies import get_dependencies
-from src.api.schemas.response_schemas import HealthCheckResponse
 from config.settings import get_settings
+from src.api.schemas.response_schemas import HealthCheckResponse
+from src.app.dependencies import get_dependencies
 
 router = APIRouter(tags=["System"])
 logger = logging.getLogger(__name__)

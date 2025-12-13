@@ -4,22 +4,23 @@
 
 import logging
 from datetime import datetime
-from typing import Dict, Any
+from typing import Any, Dict
 
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from src.services.auth.service import get_auth_service
+from src.api.middleware.auth import get_current_active_user, require_permission
 from src.data.models.user_models import (
+    LoginRequest,
+    PasswordChangeRequest,
+    Permission,
+    RefreshTokenRequest,
+    Token,
+    TokenData,
     UserCreate,
     UserResponse,
-    Token,
-    LoginRequest,
-    RefreshTokenRequest,
-    PasswordChangeRequest,
 )
-from src.api.middleware.auth import get_current_active_user, require_permission
-from src.data.models.user_models import TokenData, Permission
+from src.services.auth.service import get_auth_service
 
 logger = logging.getLogger(__name__)
 

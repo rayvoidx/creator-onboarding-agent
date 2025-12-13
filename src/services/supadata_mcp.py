@@ -7,6 +7,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from config.settings import get_settings
+
 from ..mcp.mcp import MCP_LIB_AVAILABLE
 
 if MCP_LIB_AVAILABLE:  # pragma: no cover - optional dependency

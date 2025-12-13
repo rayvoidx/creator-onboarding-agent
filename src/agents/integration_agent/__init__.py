@@ -4,12 +4,13 @@ Integration Agent - 외부 서비스 통합 에이전트
 외부 API 연동 및 데이터 통합을 담당합니다.
 """
 
-from typing import Dict, Any, Optional, List
-from pydantic import Field
 import logging
+from typing import Any, Dict, List, Optional
 
-from ..base import BaseAgent
+from pydantic import Field
+
 from ...core.base import BaseState
+from ..base import BaseAgent
 
 logger = logging.getLogger(__name__)
 

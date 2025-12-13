@@ -2,14 +2,14 @@
 
 import hashlib
 import json
-from typing import List, Any, Dict, Optional
 import logging
+from typing import Any, Dict, List, Optional
 
 # 선택적 ML 의존성
 try:
     import numpy as np  # type: ignore
-    from sklearn.preprocessing import StandardScaler  # type: ignore
     from sklearn.ensemble import RandomForestClassifier  # type: ignore
+    from sklearn.preprocessing import StandardScaler  # type: ignore
 
     ML_AVAILABLE = True
 except ImportError:

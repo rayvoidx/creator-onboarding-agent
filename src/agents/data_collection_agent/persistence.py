@@ -4,9 +4,10 @@
 PostgreSQL 테이블 정의 및 데이터 액세스 레이어
 """
 
-from sqlalchemy import Column, String, DateTime, Text, JSON, Index
-from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
+
+from sqlalchemy import JSON, Column, DateTime, Index, String, Text
+from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 

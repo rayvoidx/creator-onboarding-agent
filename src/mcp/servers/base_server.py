@@ -4,14 +4,14 @@ MCP 프로토콜 서버 기본 클래스
 stdio 및 HTTP 전송을 지원하는 MCP 서버 구현
 """
 
-import json
-import sys
 import asyncio
+import json
 import logging
+import sys
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Callable, Awaitable
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any, Awaitable, Callable, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -263,9 +263,10 @@ class HTTPMCPServer(MCPServer):
 
     def create_fastapi_app(self):
         """FastAPI 앱 생성"""
+        from typing import Any, Optional
+
         from fastapi import FastAPI, HTTPException
         from pydantic import BaseModel
-        from typing import Any, Optional
 
         app = FastAPI(
             title=f"MCP Server - {self.name}",

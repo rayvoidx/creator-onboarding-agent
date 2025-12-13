@@ -3,6 +3,7 @@ Celery 애플리케이션 설정
 """
 
 import os
+
 from celery import Celery
 
 from config.settings import get_settings

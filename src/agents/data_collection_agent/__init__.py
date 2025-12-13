@@ -8,15 +8,15 @@
 from __future__ import annotations
 
 import logging
-from typing import Dict, List, Any, Optional
-from datetime import datetime
 from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
+from typing import Any, Dict, List, Optional
 
 from ...core.base import BaseAgent, BaseState  # type: ignore[import-not-found]
 from ...data.models.data_models import (  # type: ignore[import-not-found]
-    ContentMetadata,
     CollectionStatus,
+    ContentMetadata,
     ContentType,
 )
 from ...utils.agent_config import get_agent_runtime_config
@@ -383,6 +383,7 @@ class DataCollectionAgent(BaseAgent[DataCollectionState]):
         try:
             from sqlalchemy import create_engine
             from sqlalchemy.orm import sessionmaker
+
             from config.settings import get_settings
 
             settings = get_settings()
@@ -399,7 +400,7 @@ class DataCollectionAgent(BaseAgent[DataCollectionState]):
             engine = create_engine(sync_url)
 
             # 테이블 생성 (없는 경우)
-            from .persistence import ContentMetadataTable, Base
+            from .persistence import Base, ContentMetadataTable
 
             Base.metadata.create_all(engine)
 
@@ -504,8 +505,9 @@ class DataCollectionAgent(BaseAgent[DataCollectionState]):
         """파일을 로컬 스토리지에 저장"""
         try:
             import os
-            import aiohttp
             from pathlib import Path
+
+            import aiohttp
 
             # 저장 디렉토리 설정
             storage_dir = Path(self.config.get("storage_dir", "./data/files"))
@@ -569,11 +571,12 @@ class DataCollectionAgent(BaseAgent[DataCollectionState]):
             raise
 
 
+import asyncio
+import xml.etree.ElementTree as ET
+from urllib.parse import urlencode
+
 # API 클라이언트 클래스들
 import aiohttp
-import asyncio
-from urllib.parse import urlencode
-import xml.etree.ElementTree as ET
 
 
 class BaseAPIClient:

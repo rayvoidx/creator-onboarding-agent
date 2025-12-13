@@ -19,7 +19,6 @@ from starlette.responses import JSONResponse, Response
 from config.settings import get_settings
 from src.data.models.user_models import Permission, TokenData
 
-
 logger: logging.Logger = logging.getLogger(__name__)
 
 

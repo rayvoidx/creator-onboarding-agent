@@ -7,7 +7,9 @@ context, and exposes it via request.state.request_id.
 import uuid
 from typing import Any, Callable
 
-from starlette.middleware.base import BaseHTTPMiddleware  # type: ignore[import-not-found]
+from starlette.middleware.base import (
+    BaseHTTPMiddleware,  # type: ignore[import-not-found]
+)
 from starlette.requests import Request  # type: ignore[import-not-found]
 from starlette.responses import Response  # type: ignore[import-not-found]
 

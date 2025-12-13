@@ -1,5 +1,6 @@
-from typing import List
 import logging
+from typing import List
+
 from .generation_engine import GenerationEngine
 
 logger = logging.getLogger(__name__)

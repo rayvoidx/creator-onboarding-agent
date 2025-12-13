@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import JSONResponse, Response
-from starlette.requests import Request
-from typing import Dict, Callable, Any, Tuple, Optional
-from datetime import datetime
 import logging
+from datetime import datetime
+from typing import Any, Callable, Dict, Optional, Tuple
+
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import JSONResponse, Response
 
 logger: logging.Logger = logging.getLogger(__name__)
 

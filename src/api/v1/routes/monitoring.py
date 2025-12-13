@@ -2,16 +2,17 @@
 
 import logging
 from datetime import datetime
-from typing import Dict, Any
+from typing import Any, Dict
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
-from src.app.dependencies import get_dependencies, MONITORING_AVAILABLE
+from src.app.dependencies import MONITORING_AVAILABLE, get_dependencies
 
 # Optional Prometheus imports
 try:
-    from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+    from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
+
     from src.monitoring.prometheus_exporter import build_registry
 
     PROM_AVAILABLE = True

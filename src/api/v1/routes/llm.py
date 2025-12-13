@@ -2,12 +2,12 @@
 
 import logging
 from datetime import datetime
-from typing import Dict, Any
+from typing import Any, Dict
 
 from fastapi import APIRouter, HTTPException
 
-from src.app.dependencies import get_dependencies
 from config.settings import get_settings
+from src.app.dependencies import get_dependencies
 
 router = APIRouter(prefix="/api/v1/llm", tags=["LLM Management"])
 logger = logging.getLogger(__name__)

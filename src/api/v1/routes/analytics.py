@@ -5,9 +5,9 @@ from datetime import datetime
 
 from fastapi import APIRouter, HTTPException
 
-from src.app.dependencies import get_dependencies
 from src.api.schemas.request_schemas import AnalyticsRequest
 from src.api.schemas.response_schemas import AnalyticsResponse
+from src.app.dependencies import get_dependencies
 
 router = APIRouter(prefix="/api/v1/analytics", tags=["Analytics"])
 logger = logging.getLogger(__name__)

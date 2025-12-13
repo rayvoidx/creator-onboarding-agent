@@ -3,10 +3,10 @@ from __future__ import annotations
 import logging
 import os
 import re
-import urllib3
 from typing import Any, Dict, List, Optional
 
 import requests  # type: ignore
+import urllib3
 
 try:
     from bs4 import BeautifulSoup  # type: ignore
@@ -1031,6 +1031,7 @@ class YouTubeMCP:
             Dict[str, Any]: YouTube 영상 데이터 또는 None
         """
         import asyncio
+
         from config.settings import get_settings
 
         settings = get_settings()

@@ -4,10 +4,11 @@ Deep Agents - 심층 분석 에이전트
 다단계 추론, Self-Critique, 품질 검증을 담당합니다.
 """
 
-from typing import Dict, Any, Optional, List
-from pydantic import Field
 import logging
 import re
+from typing import Any, Dict, List, Optional
+
+from pydantic import Field
 
 from ...core.base import BaseState
 

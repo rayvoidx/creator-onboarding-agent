@@ -5,23 +5,23 @@
 import logging
 import uuid
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any, List
+from typing import Any, Dict, List, Optional
 
-from passlib.context import CryptContext
-from jose import jwt, JWTError
 import redis.asyncio as redis
+from jose import JWTError, jwt
+from passlib.context import CryptContext
 
+from config.settings import get_settings
 from src.data.models.user_models import (
+    ROLE_PERMISSIONS,
+    Permission,
+    Token,
+    TokenData,
     User,
     UserCreate,
     UserResponse,
-    Token,
-    TokenData,
     UserRole,
-    Permission,
-    ROLE_PERMISSIONS,
 )
-from config.settings import get_settings
 
 logger = logging.getLogger(__name__)
 settings = get_settings()

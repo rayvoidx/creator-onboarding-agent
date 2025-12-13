@@ -5,29 +5,29 @@
 import logging
 import uuid
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any, List
+from typing import Any, Dict, List, Optional
 
 from sqlalchemy import (
-    create_engine,
+    JSON,
     Column,
-    String,
     DateTime,
     Float,
     Integer,
-    JSON,
+    String,
     Text,
+    create_engine,
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
+from config.settings import get_settings
 from src.data.models.creator_history_models import (
-    CreatorSnapshot,
     CreatorHistoryEntry,
-    CreatorTrend,
     CreatorHistoryQuery,
     CreatorHistoryResponse,
+    CreatorSnapshot,
+    CreatorTrend,
 )
-from config.settings import get_settings
 
 logger = logging.getLogger(__name__)
 settings = get_settings()

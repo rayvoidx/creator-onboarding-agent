@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
 from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 
 from ...core.base import BaseAgent, BaseState
 from ...data.models.mission_models import (
     Mission,
-    MissionRequirement,
     MissionAssignment,
     MissionAssignmentStatus,
+    MissionRequirement,
 )
 from ...utils.agent_config import get_agent_runtime_config
 

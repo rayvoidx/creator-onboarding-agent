@@ -6,14 +6,14 @@ Provides centralized access to shared application components.
 
 from typing import Optional
 
+from src.agents.creator_onboarding_agent import CreatorOnboardingAgent
 from src.graphs.main_orchestrator import MainOrchestrator
 from src.rag.rag_pipeline import RAGPipeline
-from src.agents.creator_onboarding_agent import CreatorOnboardingAgent
 
 # Optional monitoring imports
 try:
-    from src.monitoring.performance_monitor import PerformanceMonitor
     from src.monitoring.metrics_collector import MetricsCollector
+    from src.monitoring.performance_monitor import PerformanceMonitor
 
     MONITORING_AVAILABLE = True
 except ImportError:

@@ -6,9 +6,9 @@ Centralizes all application configuration management.
 
 from config.settings import Settings, get_settings
 from src.config.constants import (
+    API_V1_PREFIX,
     APP_NAME,
     APP_VERSION,
-    API_V1_PREFIX,
     DEFAULT_PAGE_SIZE,
     MAX_PAGE_SIZE,
 )

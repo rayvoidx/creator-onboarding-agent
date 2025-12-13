@@ -1,8 +1,10 @@
 """DER-002: 맞춤형 추천 에이전트"""
 
 import logging
-from typing import Dict, Any, Optional, List
+from typing import Any, Dict, List, Optional
+
 from pydantic import Field
+
 from ...core.base import BaseAgent, BaseState
 from ...utils.agent_config import get_agent_runtime_config
 

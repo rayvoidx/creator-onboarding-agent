@@ -1,13 +1,13 @@
 """문서 처리 및 전처리"""
 
 # type: ignore
-import re
+import hashlib
 import json
 import logging
-from typing import Dict, Any, List, Optional, cast
-from datetime import datetime
-import hashlib
+import re
 from abc import ABC, abstractmethod
+from datetime import datetime
+from typing import Any, Dict, List, Optional, cast
 
 logger = logging.getLogger(__name__)
 
@@ -393,8 +393,8 @@ class DocumentProcessor:
             if not file_path:
                 return ""
             try:
-                from PIL import Image  # type: ignore
                 import pytesseract  # type: ignore
+                from PIL import Image  # type: ignore
             except Exception:
                 return ""
             if self.tesseract_cmd:

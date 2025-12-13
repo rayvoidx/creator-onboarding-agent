@@ -2,13 +2,13 @@
 
 import logging
 from datetime import datetime
+from typing import Any, Dict
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 
-from src.app.dependencies import get_dependencies
 from src.api.schemas.request_schemas import CompetencyAssessmentRequest
 from src.api.schemas.response_schemas import CompetencyAssessmentResponse
-from typing import Dict, Any
+from src.app.dependencies import get_dependencies
 
 router = APIRouter(prefix="/api/v1/competency", tags=["Competency"])
 logger = logging.getLogger(__name__)

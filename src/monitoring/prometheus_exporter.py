@@ -6,6 +6,7 @@ Build a one-shot registry from current PerformanceMonitor and MetricsCollector s
 """
 
 from typing import Any, Optional
+
 from prometheus_client import CollectorRegistry, Gauge
 
 

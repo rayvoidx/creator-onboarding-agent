@@ -1,17 +1,17 @@
 """API v1 routes module."""
 
 from src.api.v1.routes import (
-    health,
-    competency,
-    recommendations,
-    search,
     analytics,
-    llm,
-    rag,
+    circuit_breaker,
+    competency,
     creator,
+    health,
+    llm,
     missions,
     monitoring,
-    circuit_breaker,
+    rag,
+    recommendations,
+    search,
     session,
 )
 

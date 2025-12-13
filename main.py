@@ -16,6 +16,7 @@ __all__ = ["app", "create_app"]
 
 if __name__ == "__main__":
     import uvicorn
+
     from config.settings import get_settings
 
     settings = get_settings()

@@ -4,12 +4,12 @@
 
 import logging
 from datetime import datetime
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
 from celery import shared_task
 
-from src.services.audit.service import get_audit_service
 from src.data.models.audit_models import AuditAction, AuditSeverity
+from src.services.audit.service import get_audit_service
 
 logger = logging.getLogger(__name__)
 
@@ -249,8 +249,8 @@ def index_documents_to_vector_db(
     )
 
     try:
-        from src.rag.rag_pipeline import RAGPipeline
         from config.settings import get_settings
+        from src.rag.rag_pipeline import RAGPipeline
 
         settings = get_settings()
 

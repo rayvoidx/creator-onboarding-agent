@@ -11,41 +11,40 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
-from src.app.lifespan import lifespan
-from src.api.middleware.auth import AuthMiddleware
-from src.api.middleware.rate_limit import RateLimitMiddleware
-from src.api.middleware.correlation import CorrelationIdMiddleware
+from config.settings import get_settings
 from src.api.middleware.audit import AuditMiddleware
+from src.api.middleware.auth import AuthMiddleware
+from src.api.middleware.correlation import CorrelationIdMiddleware
 from src.api.middleware.error_handler import register_error_handlers
+from src.api.middleware.rate_limit import RateLimitMiddleware
+from src.api.routes.ab_testing_routes import router as ab_testing_router
+from src.api.routes.audit_routes import router as audit_router
 
 # Import routers
 from src.api.routes.auth_routes import router as auth_router
-from src.api.routes.audit_routes import router as audit_router
 from src.api.routes.creator_history_routes import router as creator_history_router
-from src.api.routes.ab_testing_routes import router as ab_testing_router
 from src.api.routes.mcp_routes import router as mcp_router
 
 # Import v1 API routes
 from src.api.v1.routes import (
-    health,
-    competency,
-    recommendations,
-    search,
     analytics,
-    llm,
-    rag,
+    circuit_breaker,
+    competency,
     creator,
+    health,
+    llm,
     missions,
     monitoring,
-    circuit_breaker,
+    rag,
+    recommendations,
+    search,
     session,
 )
-
+from src.app.lifespan import lifespan
 from src.monitoring.logging_setup import setup_logging
-from config.settings import get_settings
 
 # Setup logging
 setup_logging()

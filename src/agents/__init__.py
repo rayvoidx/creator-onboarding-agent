@@ -7,11 +7,11 @@ Contains all AI agents for the system, each with consistent structure:
 - prompts/: Prompt templates
 """
 
-from src.core.base import BaseAgent
+from src.agents.deep_agents import DeepAgentsState, UnifiedDeepAgents
 
 # Import sub-agents
 from src.agents.integration_agent import IntegrationAgent, IntegrationState
-from src.agents.deep_agents import UnifiedDeepAgents, DeepAgentsState
+from src.core.base import BaseAgent
 
 # Lazy import orchestrator to avoid circular dependencies
 try:

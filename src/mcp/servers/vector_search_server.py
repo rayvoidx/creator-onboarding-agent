@@ -7,7 +7,7 @@ ChromaDB 기반 벡터 검색을 MCP 프로토콜로 노출합니다.
 import logging
 from typing import Any, Dict, List, Optional
 
-from .base_server import MCPServer, HTTPMCPServer, MCPTool
+from .base_server import HTTPMCPServer, MCPServer, MCPTool
 
 logger = logging.getLogger(__name__)
 

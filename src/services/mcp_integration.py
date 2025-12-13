@@ -11,10 +11,11 @@ from urllib.parse import urlparse
 
 import pybreaker
 
+from config.settings import get_settings
+from src.core.circuit_breaker import get_circuit_breaker_manager
+
 from ..mcp.mcp import HttpMCP, WebSearchMCP, YouTubeMCP
 from .supadata_mcp import SupadataMCPClient
-from src.core.circuit_breaker import get_circuit_breaker_manager
-from config.settings import get_settings
 
 logger = logging.getLogger(__name__)
 

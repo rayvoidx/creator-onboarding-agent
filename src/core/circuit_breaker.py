@@ -6,8 +6,8 @@ import logging
 import time
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, Optional
 from functools import wraps
+from typing import Any, Callable, Dict, Optional
 
 import pybreaker
 

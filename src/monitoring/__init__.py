@@ -2,8 +2,8 @@
 
 try:
     from .langfuse import LangfuseIntegration  # type: ignore
-    from .performance_monitor import PerformanceMonitor
     from .metrics_collector import MetricsCollector
+    from .performance_monitor import PerformanceMonitor
 
     __all__ = ["LangfuseIntegration", "PerformanceMonitor", "MetricsCollector"]
 except ImportError:
