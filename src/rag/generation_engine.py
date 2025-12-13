@@ -300,6 +300,22 @@ class GenerationEngine:
     ) -> List[Any]:
         """메시지 준비"""
         try:
+            # LangChain 미가용 시 dict 형태로 반환 (테스트/Mock 용)
+            if not LANGCHAIN_AVAILABLE or HumanMessage is None:
+                messages = []
+                if system_prompt:
+                    messages.append({"role": "system", "content": system_prompt})
+                
+                # Context 처리 (간소화)
+                full_prompt = prompt
+                if context:
+                    context_info = self._format_context(context)
+                    if context_info:
+                        full_prompt = f"Context:\n{context_info}\n\n{prompt}"
+                
+                messages.append({"role": "user", "content": full_prompt})
+                return messages
+
             messages = []
             if system_prompt:
                 messages.append(SystemMessage(content=system_prompt))
