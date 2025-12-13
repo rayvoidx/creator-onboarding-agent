@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
     default_retry_delay=30,
 )
 def send_email_notification(
-    self, recipient: str, subject: str, body: str, html_body: str = None
+    self, recipient: str, subject: str, body: str, html_body: str | None = None
 ) -> Dict[str, Any]:
     """
     이메일 알림 발송
@@ -58,7 +58,7 @@ def send_email_notification(
     default_retry_delay=30,
 )
 def send_webhook_notification(
-    self, webhook_url: str, payload: Dict[str, Any], headers: Dict[str, str] = None
+    self, webhook_url: str, payload: Dict[str, Any], headers: Dict[str, str] | None = None
 ) -> Dict[str, Any]:
     """
     웹훅 알림 발송
@@ -189,7 +189,7 @@ def notify_creator_evaluation_complete(
     self,
     creator_id: str,
     evaluation_result: Dict[str, Any],
-    notification_channels: List[str] = None,
+    notification_channels: List[str] | None = None,
 ) -> Dict[str, Any]:
     """
     크리에이터 평가 완료 알림

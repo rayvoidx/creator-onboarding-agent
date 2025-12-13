@@ -113,7 +113,7 @@ class CompetencyAnalyzer:
 
     def _identify_strengths(self, features: Any) -> List[str]:
         """강점 식별"""
-        strengths = []
+        strengths: List[str] = []
         if not features or len(features) == 0:
             return strengths
 
@@ -135,7 +135,7 @@ class CompetencyAnalyzer:
 
     def _identify_improvement_areas(self, features: Any) -> List[str]:
         """개선 영역 식별"""
-        areas = []
+        areas: List[str] = []
         if not features or len(features) == 0:
             return areas
 

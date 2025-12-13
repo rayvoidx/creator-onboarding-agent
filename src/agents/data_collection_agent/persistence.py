@@ -6,10 +6,12 @@ PostgreSQL 테이블 정의 및 데이터 액세스 레이어
 
 from datetime import datetime
 
+from typing import Any
+
 from sqlalchemy import JSON, Column, DateTime, Index, String, Text
 from sqlalchemy.ext.declarative import declarative_base
 
-Base = declarative_base()
+Base: Any = declarative_base()
 
 
 class ContentMetadataTable(Base):

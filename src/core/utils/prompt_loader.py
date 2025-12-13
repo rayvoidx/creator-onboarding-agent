@@ -121,7 +121,7 @@ class PromptLoader:
         Returns:
             {prompt_type: prompt_content} 딕셔너리
         """
-        prompts = {}
+        prompts: Dict[str, str] = {}
         prompts_dir = self.base_path / agent_name / "prompts"
 
         if not prompts_dir.exists():

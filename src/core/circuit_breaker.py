@@ -56,7 +56,7 @@ class CircuitBreakerManager:
         name: str,
         fail_max: int = 5,
         reset_timeout: int = 30,
-        exclude: tuple = None,
+        exclude: tuple | None = None,
     ) -> pybreaker.CircuitBreaker:
         """
         서킷 브레이커 가져오기 (없으면 생성)
@@ -96,7 +96,7 @@ class CircuitBreakerManager:
 
         return self._breakers[name]
 
-    def get_status(self, name: str = None) -> Dict[str, Any]:
+    def get_status(self, name: str | None = None) -> Dict[str, Any]:
         """
         서킷 브레이커 상태 조회
 
@@ -171,8 +171,8 @@ def circuit_breaker(
     name: str,
     fail_max: int = 5,
     reset_timeout: int = 30,
-    fallback: Callable = None,
-    exclude: tuple = None,
+    fallback: Callable | None = None,
+    exclude: tuple | None = None,
 ):
     """
     서킷 브레이커 데코레이터

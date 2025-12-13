@@ -38,7 +38,7 @@ from src.data.models.audit_models import (
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
-Base = declarative_base()
+Base: Any = declarative_base()
 
 
 class AuditLogTable(Base):

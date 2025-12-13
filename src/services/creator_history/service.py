@@ -37,7 +37,7 @@ from src.data.models.creator_history_models import (
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
-Base = declarative_base()
+Base: Any = declarative_base()
 
 
 class CreatorSnapshotTable(Base):
