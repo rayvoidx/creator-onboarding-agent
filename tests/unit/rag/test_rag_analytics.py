@@ -25,7 +25,7 @@ async def test_rag_analytics_context_shape(monkeypatch):
             }
         ]
 
-    async def fake_rerank_documents(self, query, documents):
+    async def fake_rerank_documents(query, documents, top_k=None):
         return documents
 
     async def fake_generate(prompt, system_prompt=None, model_name=None, context=None):

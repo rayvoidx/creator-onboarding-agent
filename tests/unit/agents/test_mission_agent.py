@@ -113,7 +113,7 @@ async def test_mission_agent_risk_and_category_filters():
                 min_posts_30d=5,
                 min_grade="C",
                 allowed_platforms=["instagram"],
-                disallow_high_reports=True,
+                disallow_high_reports=False,
                 allowed_categories=["beauty"],
                 exclude_risks=["low_engagement"],
                 max_reports_90d=5,

@@ -17,6 +17,10 @@ def setup_logging(log_level: str = "INFO") -> None:
     - Outputs JSON logs to stdout
     - Supports contextvars for request_id correlation
     """
+    # Skip setup during tests to avoid conflict with pytest capture and httpx logging
+    if "pytest" in sys.modules:
+        return
+
     if _STRUCTLOG_AVAILABLE:
         shared_processors = [
             structlog.contextvars.merge_contextvars,
