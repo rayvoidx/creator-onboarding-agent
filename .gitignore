@@ -80,7 +80,7 @@ dmypy.json
 .pyre/
 
 # Data
-data/
+/data/
 *.csv
 *.parquet
 
@@ -95,4 +95,4 @@ temp/
 node_modules/
 
 # Coverage
-coverage.xml
+coverage.xml!src/data/
