@@ -305,14 +305,14 @@ class GenerationEngine:
                 messages = []
                 if system_prompt:
                     messages.append({"role": "system", "content": system_prompt})
-                
+
                 # Context 처리 (간소화)
                 full_prompt = prompt
                 if context:
                     context_info = self._format_context(context)
                     if context_info:
                         full_prompt = f"Context:\n{context_info}\n\n{prompt}"
-                
+
                 messages.append({"role": "user", "content": full_prompt})
                 return messages
 

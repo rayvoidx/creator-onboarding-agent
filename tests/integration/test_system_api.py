@@ -18,7 +18,7 @@ def test_agent_model_status_endpoint() -> None:
 
         test_app = create_app()
         client = TestClient(test_app)
-        
+
         # Endpoint is mounted under /api/v1/llm/system/agent-models
         response = client.get("/api/v1/llm/system/agent-models")
         assert response.status_code == 200
