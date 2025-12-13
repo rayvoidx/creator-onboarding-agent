@@ -58,7 +58,10 @@ def send_email_notification(
     default_retry_delay=30,
 )
 def send_webhook_notification(
-    self, webhook_url: str, payload: Dict[str, Any], headers: Dict[str, str] | None = None
+    self,
+    webhook_url: str,
+    payload: Dict[str, Any],
+    headers: Dict[str, str] | None = None,
 ) -> Dict[str, Any]:
     """
     웹훅 알림 발송
