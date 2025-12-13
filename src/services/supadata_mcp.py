@@ -50,7 +50,7 @@ class SupadataMCPClient:
         }
 
         try:
-            self.client = MultiServerMCPClient({"supadata": connection})  # type: ignore[arg-type]
+            self.client = MultiServerMCPClient({"supadata": connection})  # type: ignore[arg-type, dict-item]
             self.logger.info("Supadata MCP client initialized")
         except Exception as exc:  # pragma: no cover - initialization failure
             self.logger.warning("Failed to initialize Supadata MCP client: %s", exc)

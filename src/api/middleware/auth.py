@@ -60,7 +60,7 @@ async def get_current_active_user(token: str = Depends(oauth2_scheme)) -> TokenD
     return user
 
 
-def require_permission(required: Permission) -> Callable[[TokenData], TokenData]:
+def require_permission(required: Permission) -> Callable[[TokenData], Any]:
     """특정 Permission이 필요한 엔드포인트에 사용하는 의존성 팩토리."""
 
     async def dependency(
