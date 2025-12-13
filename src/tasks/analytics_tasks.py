@@ -268,7 +268,10 @@ def generate_creator_analytics(
 
 @shared_task(bind=True)
 def export_audit_logs(
-    self, format: str = "json", start_date: str | None = None, end_date: str | None = None
+    self,
+    format: str = "json",
+    start_date: str | None = None,
+    end_date: str | None = None,
 ) -> Dict[str, Any]:
     """
     감사 로그 내보내기
