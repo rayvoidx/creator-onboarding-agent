@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
     autoretry_for=(Exception,),
     retry_backoff=True,
 )
-def collect_nile_data(self, params: Dict[str, Any] = None) -> Dict[str, Any]:
+def collect_nile_data(self, params: Dict[str, Any] | None = None) -> Dict[str, Any]:
     """
     국가평생교육진흥원(NILE) 데이터 수집
 
@@ -76,7 +76,7 @@ def collect_nile_data(self, params: Dict[str, Any] = None) -> Dict[str, Any]:
     autoretry_for=(Exception,),
     retry_backoff=True,
 )
-def collect_mohw_data(self, params: Dict[str, Any] = None) -> Dict[str, Any]:
+def collect_mohw_data(self, params: Dict[str, Any] | None = None) -> Dict[str, Any]:
     """
     보건복지부(MOHW) 데이터 수집
     """
@@ -123,7 +123,7 @@ def collect_mohw_data(self, params: Dict[str, Any] = None) -> Dict[str, Any]:
     autoretry_for=(Exception,),
     retry_backoff=True,
 )
-def collect_kicce_data(self, params: Dict[str, Any] = None) -> Dict[str, Any]:
+def collect_kicce_data(self, params: Dict[str, Any] | None = None) -> Dict[str, Any]:
     """
     육아정책연구소(KICCE) 데이터 수집
     """

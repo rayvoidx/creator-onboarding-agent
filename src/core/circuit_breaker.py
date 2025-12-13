@@ -212,7 +212,7 @@ def circuit_breaker(
 
                 # 실제 함수 실행
                 result = await func(*args, **kwargs)
-                breaker.success()
+                breaker.success()  # type: ignore
                 manager.record_call(name, True)
                 return result
 
@@ -227,7 +227,7 @@ def circuit_breaker(
                 raise
 
             except Exception as e:
-                breaker.failure(e)
+                breaker.failure(e)  # type: ignore
                 manager.record_call(name, False)
 
                 # 서킷이 열린 경우 폴백 시도
@@ -258,7 +258,7 @@ def circuit_breaker(
                     )
 
                 result = func(*args, **kwargs)
-                breaker.success()
+                breaker.success()  # type: ignore
                 manager.record_call(name, True)
                 return result
 
@@ -269,7 +269,7 @@ def circuit_breaker(
                 raise
 
             except Exception as e:
-                breaker.failure(e)
+                breaker.failure(e)  # type: ignore
                 manager.record_call(name, False)
 
                 if breaker.current_state == pybreaker.STATE_OPEN and fallback:

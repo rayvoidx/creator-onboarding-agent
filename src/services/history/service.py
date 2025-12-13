@@ -214,7 +214,7 @@ class CreatorHistoryService:
         creator_id: str,
         mission_id: str,
         mission_name: str,
-        performance_metrics: Dict[str, Any] = None,
+        performance_metrics: Dict[str, Any] | None = None,
     ) -> CreatorHistoryEntry:
         """
         미션 완료 기록
