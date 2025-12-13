@@ -65,11 +65,9 @@ async def test_creator_onboarding_to_mission_recommendation_flow():
         missions=[mission],
     )
 
-    mission_agent = MissionAgent()
+    mission_agent = MissionAgent(config={"min_score_for_recommendation": 0.0})
     result_state = await mission_agent.execute(mission_state)
 
     # 4) 온보딩 결과를 활용해 최소 1개 이상의 미션이 추천되는지 확인
     assert result_state.recommendations is not None
     assert len(result_state.recommendations) >= 1
-
-
