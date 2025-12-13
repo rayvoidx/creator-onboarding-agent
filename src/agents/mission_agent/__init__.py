@@ -134,6 +134,11 @@ class MissionAgent(BaseAgent[MissionRecommendationState]):
                     current_active_missions=current_active_missions,
                     recent_mission_types=recent_mission_types,
                 )
+
+                # 0점은 부적합(수행 불가)으로 간주하여 필터링
+                if score <= 0.0:
+                    continue
+
                 if score < self.cfg.min_score_for_recommendation:
                     continue
 

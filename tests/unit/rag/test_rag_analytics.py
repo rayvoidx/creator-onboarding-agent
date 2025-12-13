@@ -1,7 +1,7 @@
 import pytest
 
-from src.rag.rag_pipeline import RAGPipeline
 from src.rag.prompt_templates import PromptType
+from src.rag.rag_pipeline import RAGPipeline
 
 
 @pytest.mark.asyncio
@@ -39,9 +39,9 @@ async def test_rag_analytics_context_shape(monkeypatch):
         fake_hybrid_retrieval.__get__(pipeline, RAGPipeline),
     )
     monkeypatch.setattr(
-        pipeline,
-        "_rerank_documents",
-        fake_rerank_documents.__get__(pipeline, RAGPipeline),
+        pipeline.retrieval_engine,
+        "rerank_documents",
+        fake_rerank_documents,
     )
     monkeypatch.setattr(pipeline.generation_engine, "generate", fake_generate)
 
@@ -80,8 +80,9 @@ async def test_rag_analytics_context_shape(monkeypatch):
 
     # analytics_context 하위에도 동일한 정보가 정리되어 있는지 확인
     analytics_ctx = ctx.get("analytics_context", {})
-    assert analytics_ctx.get("creator_stats") == {"total_missions": 3, "completed_missions": 2}
+    assert analytics_ctx.get("creator_stats") == {
+        "total_missions": 3,
+        "completed_missions": 2,
+    }
     assert analytics_ctx.get("mission_stats") == {"total": 5, "active": 3}
     assert analytics_ctx.get("reward_stats") == {"total_reward": 100000}
-
-

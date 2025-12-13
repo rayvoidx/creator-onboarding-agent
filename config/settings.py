@@ -1,12 +1,17 @@
 """
 애플리케이션 설정 모듈
 """
+
 import os
 import secrets
-from typing import List, Dict, Any
 from copy import deepcopy
+from typing import Any, Dict, List
+
 from pydantic import Field  # type: ignore[import-not-found]
-from pydantic_settings import BaseSettings, SettingsConfigDict  # type: ignore[import-not-found]
+from pydantic_settings import (  # type: ignore[import-not-found]
+    BaseSettings,
+    SettingsConfigDict,
+)
 
 
 class Settings(BaseSettings):
@@ -15,19 +20,39 @@ class Settings(BaseSettings):
     # API Keys
     OPENAI_API_KEY: str = ""
     ANTHROPIC_API_KEY: str = ""
-    GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY", "") or os.getenv("GEMINI_API_KEY", "")  # Gemini API
+    GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY", "") or os.getenv(
+        "GEMINI_API_KEY", ""
+    )  # Gemini API
     VOYAGE_API_KEY: str = os.getenv("VOYAGE_API_KEY", "")  # Voyage AI 임베딩용
     # Web search (optional)
     BRAVE_API_KEY: str = os.getenv("BRAVE_API_KEY", "")
     SERPAPI_API_KEY: str = os.getenv("SERPAPI_API_KEY", "")
 
     # Supadata MCP
-    SUPADATA_API_KEY: str = os.getenv("SUPADATA_API_KEY", "")
-    SUPADATA_MCP_COMMAND: str = os.getenv("SUPADATA_MCP_COMMAND", "npx")
+    SUPADATA_API_KEY: str = ""
+    SUPADATA_MCP_COMMAND: str = "npx"
+    SUPADATA_MCP_ARGS: str = ""
 
     def get_supadata_mcp_args(self) -> list:
         """Supadata MCP 실행 인자 반환"""
-        return ["-y", "@supadata/mcp"]
+        if not self.SUPADATA_MCP_ARGS:
+            return ["-y", "@supadata/mcp"]
+
+        # JSON 파싱 시도
+        if self.SUPADATA_MCP_ARGS.strip().startswith("["):
+            try:
+                import json
+
+                parsed = json.loads(self.SUPADATA_MCP_ARGS)
+                if isinstance(parsed, list):
+                    return [str(arg) for arg in parsed]
+            except Exception:
+                pass
+
+        # shlex split
+        import shlex
+
+        return shlex.split(self.SUPADATA_MCP_ARGS)
 
     # Database
     DATABASE_URL: str = "postgresql://user:password@localhost:5432/ai_learning_db"
@@ -58,7 +83,9 @@ class Settings(BaseSettings):
     SECRET_KEY: str = os.getenv("SECRET_KEY", "")
     ENABLE_AUTH: bool = os.getenv("ENABLE_AUTH", "true").lower() == "true"
     ENABLE_RATE_LIMITING: bool = True
-    RATE_LIMIT_USE_REDIS: bool = os.getenv("RATE_LIMIT_USE_REDIS", "false").lower() == "true"
+    RATE_LIMIT_USE_REDIS: bool = (
+        os.getenv("RATE_LIMIT_USE_REDIS", "false").lower() == "true"
+    )
 
     # CORS
     # 환경 변수로 설정 시: ALLOWED_ORIGINS='["http://localhost:3000","http://localhost:8000"]'
@@ -70,12 +97,18 @@ class Settings(BaseSettings):
         """ALLOWED_ORIGINS를 리스트로 반환"""
         if isinstance(self.ALLOWED_ORIGINS, str):
             # 콤마로 구분된 문자열을 리스트로 변환
-            return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(',') if origin.strip()]
+            return [
+                origin.strip()
+                for origin in self.ALLOWED_ORIGINS.split(",")
+                if origin.strip()
+            ]
         return self.ALLOWED_ORIGINS
 
     # LLM
     # 일반 대화 기본 모델(일반용)
-    DEFAULT_LLM_MODEL: str = os.getenv("DEFAULT_LLM_MODEL", "claude-sonnet-4-5-20250929")
+    DEFAULT_LLM_MODEL: str = os.getenv(
+        "DEFAULT_LLM_MODEL", "claude-sonnet-4-5-20250929"
+    )
     # 폴백/가속 모델(저부하/빠른 응답)
     FAST_LLM_MODEL: str = os.getenv("FAST_LLM_MODEL", "gemini-2.5-flash")
     # 심화/대용량 컨텍스트 모델(고난도/심화 질문)
@@ -84,20 +117,30 @@ class Settings(BaseSettings):
     FALLBACK_LLM_MODEL: str = os.getenv("FALLBACK_LLM_MODEL", "gemini-2.5-flash")
 
     # Provider-specific model names (멀티 모델 플릿 구성용)
-    ANTHROPIC_MODEL_NAME: str = os.getenv("ANTHROPIC_MODEL_NAME", "claude-sonnet-4-5-20250929")
+    ANTHROPIC_MODEL_NAME: str = os.getenv(
+        "ANTHROPIC_MODEL_NAME", "claude-sonnet-4-5-20250929"
+    )
     GEMINI_MODEL_NAME: str = os.getenv("GEMINI_MODEL_NAME", "gemini-2.5-flash")
     OPENAI_MODEL_NAME: str = os.getenv("OPENAI_MODEL_NAME", "gpt-5.2")
 
     # Embedding models
-    GEMINI_EMBEDDING_MODEL_NAME: str = os.getenv("GEMINI_EMBEDDING_MODEL_NAME", "text-embedding-004")
-    VOYAGE_EMBEDDING_MODEL_NAME: str = os.getenv("VOYAGE_EMBEDDING_MODEL_NAME", "voyage-3")
+    GEMINI_EMBEDDING_MODEL_NAME: str = os.getenv(
+        "GEMINI_EMBEDDING_MODEL_NAME", "text-embedding-004"
+    )
+    VOYAGE_EMBEDDING_MODEL_NAME: str = os.getenv(
+        "VOYAGE_EMBEDDING_MODEL_NAME", "voyage-3"
+    )
     DEFAULT_EMBEDDING_PROVIDER: str = os.getenv("DEFAULT_EMBEDDING_PROVIDER", "voyage")
-    EMBEDDING_MODEL_NAME: str = os.getenv("EMBEDDING_MODEL_NAME", "text-embedding-3-large")
+    EMBEDDING_MODEL_NAME: str = os.getenv(
+        "EMBEDDING_MODEL_NAME", "text-embedding-3-large"
+    )
 
     # Prompt config
     PROMPT_CONFIG_PATH: str = os.getenv("PROMPT_CONFIG_PATH", "./prompts.yaml")
     PROMPT_DEFAULT_VERSION: str = os.getenv("PROMPT_DEFAULT_VERSION", "v1")
-    PROMPT_AB_TEST_ENABLED: bool = os.getenv("PROMPT_AB_TEST_ENABLED", "false").lower() == "true"
+    PROMPT_AB_TEST_ENABLED: bool = (
+        os.getenv("PROMPT_AB_TEST_ENABLED", "false").lower() == "true"
+    )
 
     # (Optional) CLOVA Studio 키 - 현재 LLM은 OpenAI/Anthropic 사용, 서버만 NCP에 배포
     CLOVASTUDIO_API_KEY: str = os.getenv("CLOVASTUDIO_API_KEY", "")
@@ -109,7 +152,9 @@ class Settings(BaseSettings):
 
     # Reranker/Query expansion
     RERANKER_THRESHOLD: float = float(os.getenv("RERANKER_THRESHOLD", "0.0"))
-    QUERY_EXPANSION_ENABLED: bool = os.getenv("QUERY_EXPANSION_ENABLED", "false").lower() == "true"
+    QUERY_EXPANSION_ENABLED: bool = (
+        os.getenv("QUERY_EXPANSION_ENABLED", "false").lower() == "true"
+    )
 
     # Deep Agents (optional knobs)
     DEEPAGENT_MAX_STEPS: int = int(os.getenv("DEEPAGENT_MAX_STEPS", "8"))
@@ -122,27 +167,45 @@ class Settings(BaseSettings):
     MCP_WEB_RESET_TIMEOUT_SECS: int = int(os.getenv("MCP_WEB_RESET_TIMEOUT_SECS", "20"))
     MCP_WEB_TIMEOUT_SECS: int = int(os.getenv("MCP_WEB_TIMEOUT_SECS", "8"))
     MCP_WEB_MAX_RETRIES: int = int(os.getenv("MCP_WEB_MAX_RETRIES", "2"))
-    MCP_WEB_BACKOFF_BASE_SECS: float = float(os.getenv("MCP_WEB_BACKOFF_BASE_SECS", "0.4"))
-    MCP_WEB_BACKOFF_MAX_SECS: float = float(os.getenv("MCP_WEB_BACKOFF_MAX_SECS", "3.0"))
+    MCP_WEB_BACKOFF_BASE_SECS: float = float(
+        os.getenv("MCP_WEB_BACKOFF_BASE_SECS", "0.4")
+    )
+    MCP_WEB_BACKOFF_MAX_SECS: float = float(
+        os.getenv("MCP_WEB_BACKOFF_MAX_SECS", "3.0")
+    )
     MCP_WEB_JITTER_SECS: float = float(os.getenv("MCP_WEB_JITTER_SECS", "0.2"))
 
     # YouTube
     MCP_YOUTUBE_FAIL_MAX: int = int(os.getenv("MCP_YOUTUBE_FAIL_MAX", "3"))
-    MCP_YOUTUBE_RESET_TIMEOUT_SECS: int = int(os.getenv("MCP_YOUTUBE_RESET_TIMEOUT_SECS", "30"))
+    MCP_YOUTUBE_RESET_TIMEOUT_SECS: int = int(
+        os.getenv("MCP_YOUTUBE_RESET_TIMEOUT_SECS", "30")
+    )
     MCP_YOUTUBE_TIMEOUT_SECS: int = int(os.getenv("MCP_YOUTUBE_TIMEOUT_SECS", "12"))
     MCP_YOUTUBE_MAX_RETRIES: int = int(os.getenv("MCP_YOUTUBE_MAX_RETRIES", "1"))
-    MCP_YOUTUBE_BACKOFF_BASE_SECS: float = float(os.getenv("MCP_YOUTUBE_BACKOFF_BASE_SECS", "0.6"))
-    MCP_YOUTUBE_BACKOFF_MAX_SECS: float = float(os.getenv("MCP_YOUTUBE_BACKOFF_MAX_SECS", "3.0"))
+    MCP_YOUTUBE_BACKOFF_BASE_SECS: float = float(
+        os.getenv("MCP_YOUTUBE_BACKOFF_BASE_SECS", "0.6")
+    )
+    MCP_YOUTUBE_BACKOFF_MAX_SECS: float = float(
+        os.getenv("MCP_YOUTUBE_BACKOFF_MAX_SECS", "3.0")
+    )
     MCP_YOUTUBE_JITTER_SECS: float = float(os.getenv("MCP_YOUTUBE_JITTER_SECS", "0.2"))
 
     # Supadata
     MCP_SUPADATA_FAIL_MAX: int = int(os.getenv("MCP_SUPADATA_FAIL_MAX", "4"))
-    MCP_SUPADATA_RESET_TIMEOUT_SECS: int = int(os.getenv("MCP_SUPADATA_RESET_TIMEOUT_SECS", "45"))
+    MCP_SUPADATA_RESET_TIMEOUT_SECS: int = int(
+        os.getenv("MCP_SUPADATA_RESET_TIMEOUT_SECS", "45")
+    )
     MCP_SUPADATA_TIMEOUT_SECS: int = int(os.getenv("MCP_SUPADATA_TIMEOUT_SECS", "20"))
     MCP_SUPADATA_MAX_RETRIES: int = int(os.getenv("MCP_SUPADATA_MAX_RETRIES", "1"))
-    MCP_SUPADATA_BACKOFF_BASE_SECS: float = float(os.getenv("MCP_SUPADATA_BACKOFF_BASE_SECS", "0.8"))
-    MCP_SUPADATA_BACKOFF_MAX_SECS: float = float(os.getenv("MCP_SUPADATA_BACKOFF_MAX_SECS", "4.0"))
-    MCP_SUPADATA_JITTER_SECS: float = float(os.getenv("MCP_SUPADATA_JITTER_SECS", "0.3"))
+    MCP_SUPADATA_BACKOFF_BASE_SECS: float = float(
+        os.getenv("MCP_SUPADATA_BACKOFF_BASE_SECS", "0.8")
+    )
+    MCP_SUPADATA_BACKOFF_MAX_SECS: float = float(
+        os.getenv("MCP_SUPADATA_BACKOFF_MAX_SECS", "4.0")
+    )
+    MCP_SUPADATA_JITTER_SECS: float = float(
+        os.getenv("MCP_SUPADATA_JITTER_SECS", "0.3")
+    )
 
     # Vector DB Config
     @property
@@ -152,7 +215,7 @@ class Settings(BaseSettings):
             "pinecone_api_key": self.PINECONE_API_KEY,
             "pinecone_environment": self.PINECONE_ENVIRONMENT,
             "pinecone_index_name": self.PINECONE_INDEX_NAME,
-            "pinecone_namespace": self.PINECONE_NAMESPACE
+            "pinecone_namespace": self.PINECONE_NAMESPACE,
         }
 
     # LLM Configs
@@ -168,7 +231,7 @@ class Settings(BaseSettings):
             "default_model": self.DEFAULT_LLM_MODEL,
             "fast_model": self.FAST_LLM_MODEL,
             "deep_model": self.DEEP_LLM_MODEL,
-            "fallback_model": self.FALLBACK_LLM_MODEL
+            "fallback_model": self.FALLBACK_LLM_MODEL,
         }
 
     # 에이전트별 LLM 선호 모델 구성 (LLMManagerAgent에서 사용)
@@ -188,47 +251,47 @@ class Settings(BaseSettings):
             "general": {
                 # 기본 대화/요약/일반 질의
                 "llm_models": [self.ANTHROPIC_MODEL_NAME, self.GEMINI_MODEL_NAME],
-                "vector_db": "pinecone"
+                "vector_db": "pinecone",
             },
             "competency": {
                 # 역량 진단/분석은 정밀도 우선
                 "llm_models": [self.ANTHROPIC_MODEL_NAME, self.OPENAI_MODEL_NAME],
-                "vector_db": "pinecone"
+                "vector_db": "pinecone",
             },
             "recommendation": {
                 # 개인화 추천: 창의성 + 추론 균형
                 "llm_models": [self.OPENAI_MODEL_NAME, self.ANTHROPIC_MODEL_NAME],
-                "vector_db": "pinecone"
+                "vector_db": "pinecone",
             },
             "search": {
                 # 검색 후 요약: 속도 우선
                 "llm_models": [self.GEMINI_MODEL_NAME, self.OPENAI_MODEL_NAME],
-                "vector_db": "pinecone"
+                "vector_db": "pinecone",
             },
             "analytics": {
                 # 리포트/지표 해석: 심화 분석 모델 우선
                 "llm_models": [self.ANTHROPIC_MODEL_NAME, self.OPENAI_MODEL_NAME],
-                "vector_db": "pinecone"
+                "vector_db": "pinecone",
             },
             "mission": {
                 # 미션 매칭/캠페인 설명: 요약+추론
                 "llm_models": [self.OPENAI_MODEL_NAME, self.ANTHROPIC_MODEL_NAME],
-                "vector_db": "pinecone"
+                "vector_db": "pinecone",
             },
             "rag": {
                 # RAG 응답 생성: 컨텍스트 처리 용량이 큰 모델 우선
                 "llm_models": [self.OPENAI_MODEL_NAME, self.ANTHROPIC_MODEL_NAME],
-                "vector_db": "pinecone"
+                "vector_db": "pinecone",
             },
             "deep_agents": {
                 # Deep Agents 내부에서 사용할 심화 모델
                 "llm_models": [self.ANTHROPIC_MODEL_NAME, self.OPENAI_MODEL_NAME],
-                "vector_db": "pinecone"
+                "vector_db": "pinecone",
             },
             "creator": {
                 # 크리에이터 온보딩/평가
                 "llm_models": [self.ANTHROPIC_MODEL_NAME, self.GEMINI_MODEL_NAME],
-                "vector_db": "pinecone"
+                "vector_db": "pinecone",
             },
         }
 
@@ -247,9 +310,7 @@ class Settings(BaseSettings):
         return dict(base)
 
     model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        extra="ignore"
+        env_file=".env", env_file_encoding="utf-8", extra="ignore"
     )
 
     def validate_settings(self) -> None:
@@ -262,14 +323,18 @@ class Settings(BaseSettings):
             if not self.OPENAI_API_KEY and not self.ANTHROPIC_API_KEY:
                 # 운영환경에서 둘 다 비어있으면 경고 로그를 남길 수 있도록 raise 대신 ValueError 메시지 제공
                 import logging
+
                 logging.getLogger(__name__).warning(
                     "No LLM API keys configured. Set OPENAI_API_KEY or ANTHROPIC_API_KEY."
                 )
 
         # ALLOWED_ORIGINS 파싱 안전성 확보 (JSON/CSV 혼용 지원)
         try:
-            if isinstance(self.ALLOWED_ORIGINS, str) and self.ALLOWED_ORIGINS.strip().startswith("["):
+            if isinstance(
+                self.ALLOWED_ORIGINS, str
+            ) and self.ALLOWED_ORIGINS.strip().startswith("["):
                 import json
+
                 parsed = json.loads(self.ALLOWED_ORIGINS)
                 if isinstance(parsed, list):
                     # 내부 표현은 CSV 문자열 유지, 접근은 allowed_origins_list 사용 권장
@@ -281,6 +346,7 @@ class Settings(BaseSettings):
         # 운영 환경에서는 CORS 화이트리스트 필수
         if self.ENV in ("prod", "production") and not self.allowed_origins_list:
             import logging
+
             logging.getLogger(__name__).warning(
                 "ALLOWED_ORIGINS is empty in production. Set at least one allowed origin."
             )
@@ -288,6 +354,7 @@ class Settings(BaseSettings):
         # SECRET_KEY 유효성 검사: 인증 활성화 시 필수
         try:
             import logging
+
             if self.ENABLE_AUTH and not self.SECRET_KEY:
                 if self.DEBUG:
                     # 개발 모드에서는 고정 개발 키로 설정하고 경고
@@ -306,7 +373,10 @@ class Settings(BaseSettings):
         # Naver Cloud 배포 시 기본 키 존재 여부 안내(서버 배포용, 필수는 아님)
         try:
             import logging
-            if (self.CLOUD_PROVIDER == "ncp") and (not self.NCLOUD_ACCESS_KEY_ID or not self.NCLOUD_SECRET_KEY):
+
+            if (self.CLOUD_PROVIDER == "ncp") and (
+                not self.NCLOUD_ACCESS_KEY_ID or not self.NCLOUD_SECRET_KEY
+            ):
                 logging.getLogger(__name__).info(
                     "NCP credentials not set. If you use Naver Cloud SDK/services, set NCLOUD_ACCESS_KEY_ID/NCLOUD_SECRET_KEY."
                 )
@@ -316,6 +386,7 @@ class Settings(BaseSettings):
         # Pinecone 설정 검증
         try:
             import logging
+
             if self.VECTOR_DB_PROVIDER == "pinecone" and not self.PINECONE_API_KEY:
                 logging.getLogger(__name__).warning(
                     "PINECONE_API_KEY is not set. Vector search will be limited."

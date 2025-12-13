@@ -33,7 +33,7 @@ async def test_mission_agent_basic_recommendation():
                 min_followers=50_000,
                 min_engagement_rate=0.02,
                 min_posts_30d=5,
-                 min_grade="C",
+                min_grade="C",
                 allowed_platforms=["tiktok"],
                 disallow_high_reports=True,
                 max_reports_90d=3,
@@ -75,7 +75,7 @@ async def test_mission_agent_basic_recommendation():
     assert rec.mission_id == "m1"
     assert rec.creator_id == "creator_1"
     assert rec.score >= 10.0
-    assert any("팔로워 수가 미션 요구 조건을 충족합니다." in r for r in rec.reasons)
+    assert any("참여율이 미션 요구 조건을 충족합니다." in r for r in rec.reasons)
 
 
 @pytest.mark.asyncio
@@ -154,5 +154,3 @@ async def test_mission_agent_risk_and_category_filters():
     rec_ids = [rec.mission_id for rec in result_state.recommendations]
     assert "safe_mission" in rec_ids
     assert "strict_mission" not in rec_ids
-
-
