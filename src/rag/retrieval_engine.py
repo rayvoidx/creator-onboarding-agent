@@ -53,7 +53,7 @@ class RetrievalEngine:
             "max_results", 20
         )  # Fetch more for reranking
         self.rerank_top_k = self.config.get("rerank_top_k", 5)  # Final Top K
-        self.similarity_threshold = self.config.get("similarity_threshold", 0.5)
+        self.similarity_threshold = self.config.get("similarity_threshold", 0.85)
 
         # GraphRAG 설정
         self.graph_enabled = self.config.get("graph_enabled", False)

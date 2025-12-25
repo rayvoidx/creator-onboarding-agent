@@ -116,8 +116,8 @@ class RAGPipeline:
                 }
 
             # 1. 쿼리 전처리 및 확장 (Query Expansion)
-            # Wrtn Style: Multi-query expansion
-            queries = await self.query_expander.expand_query(query, n_variations=3)
+            # Wrtn Style: Multi-query expansion (5 variations for better recall)
+            queries = await self.query_expander.expand_query(query, n_variations=5)
             processed_query = queries[0]  # Main query for logging/primary use
 
             # 2~5. 검색/컨텍스트/프롬프트를 병렬로 준비해 레이턴시 단축

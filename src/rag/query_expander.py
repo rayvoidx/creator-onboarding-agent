@@ -16,7 +16,7 @@ class QueryExpander:
         self.engine = generation_engine
 
     async def expand_query(
-        self, original_query: str, n_variations: int = 3
+        self, original_query: str, n_variations: int = 5
     ) -> List[str]:
         """
         Generates extended queries for broader search coverage.

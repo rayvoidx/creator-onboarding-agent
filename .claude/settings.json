@@ -1,0 +1,83 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python:*)",
+      "Bash(pytest:*)",
+      "Bash(uv:*)",
+      "Bash(pip:*)",
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(git:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(mkdir:*)",
+      "Bash(cp:*)",
+      "Bash(mv:*)",
+      "Read(src/**)",
+      "Read(tests/**)",
+      "Read(config/**)",
+      "Read(docs/**)",
+      "Read(frontend/**)",
+      "Read(node/**)",
+      "Edit(src/**)",
+      "Edit(tests/**)",
+      "Edit(config/**)",
+      "Edit(frontend/**)",
+      "Edit(node/**)"
+    ],
+    "deny": [
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(**/secrets/**)",
+      "Read(**/*credential*)",
+      "Edit(.env)",
+      "Edit(.env.*)",
+      "Bash(rm -rf:*)"
+    ],
+    "ask": [
+      "Bash(docker:*)",
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Edit(.claude/**)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"[$(date +%H:%M:%S)] Editing: $CLAUDE_TOOL_INPUT\" >> .claude/hooks/edit.log 2>/dev/null || true"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [[ \"$CLAUDE_FILE_PATH\" == *.py ]]; then python -m py_compile \"$CLAUDE_FILE_PATH\" 2>/dev/null || true; fi"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"[$(date +%Y-%m-%d %H:%M:%S)] Session completed\" >> .claude/hooks/session.log 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  },
+  "env": {
+    "PYTHONPATH": ".",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  }
+}

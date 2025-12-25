@@ -151,7 +151,7 @@ class Settings(BaseSettings):
     OCR_CLEAN_FILTERS: str = os.getenv("OCR_CLEAN_FILTERS", "\t,\n,\r")
 
     # Reranker/Query expansion
-    RERANKER_THRESHOLD: float = float(os.getenv("RERANKER_THRESHOLD", "0.0"))
+    RERANKER_THRESHOLD: float = float(os.getenv("RERANKER_THRESHOLD", "0.85"))
     QUERY_EXPANSION_ENABLED: bool = (
         os.getenv("QUERY_EXPANSION_ENABLED", "false").lower() == "true"
     )
