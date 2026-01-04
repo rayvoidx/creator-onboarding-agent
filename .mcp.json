@@ -31,6 +31,48 @@
       "command": "npx",
       "args": ["-y", "@anthropic/mcp-server-sqlite", "--db-path", "./data/claude_memory.db"],
       "description": "SQLite DB - 로컬 데이터 저장/조회"
+    },
+    "vector-search": {
+      "command": "python",
+      "args": ["-m", "src.mcp.servers.vector_search_server"],
+      "transport": "stdio",
+      "description": "Pinecone 기반 벡터/하이브리드 검색 서버"
+    },
+    "http-fetch": {
+      "command": "python",
+      "args": ["-m", "src.mcp.servers.http_fetch_server"],
+      "transport": "stdio",
+      "description": "웹 페이지 가져오기 및 검색 서버"
+    }
+  },
+  "tools": {
+    "vector_search": {
+      "server": "vector-search",
+      "description": "시맨틱 벡터 검색"
+    },
+    "keyword_search": {
+      "server": "vector-search",
+      "description": "키워드 기반 검색"
+    },
+    "hybrid_search": {
+      "server": "vector-search",
+      "description": "벡터+키워드 하이브리드 검색"
+    },
+    "find_similar_creators": {
+      "server": "vector-search",
+      "description": "유사 크리에이터 검색"
+    },
+    "fetch_url": {
+      "server": "http-fetch",
+      "description": "URL 콘텐츠 가져오기"
+    },
+    "web_search": {
+      "server": "http-fetch",
+      "description": "웹 검색 (Brave/SerpAPI)"
+    },
+    "fetch_creator_profile": {
+      "server": "http-fetch",
+      "description": "크리에이터 프로필 가져오기"
     }
   }
 }
