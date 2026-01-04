@@ -3,7 +3,7 @@
 
 def hello_world() -> str:
     """Return a simple Hello World greeting.
-    
+
     Returns:
         str: Hello World message
     """
@@ -12,10 +12,10 @@ def hello_world() -> str:
 
 def hello_user(name: str) -> str:
     """Return a personalized greeting.
-    
+
     Args:
         name: The name to greet
-        
+
     Returns:
         str: Personalized greeting message
     """
@@ -24,10 +24,10 @@ def hello_user(name: str) -> str:
 
 def get_greeting(name: str = "World") -> str:
     """Get a greeting with optional name parameter.
-    
+
     Args:
         name: The name to greet (defaults to "World")
-        
+
     Returns:
         str: Greeting message
     """
