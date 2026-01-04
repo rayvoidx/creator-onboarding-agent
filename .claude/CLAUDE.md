@@ -75,7 +75,10 @@ AI 기반 크리에이터 온보딩 및 미션 추천 시스템
 │   ├── code-reviewer.md
 │   ├── debugger.md
 │   ├── architect.md
-│   └── data-analyst.md
+│   ├── data-analyst.md
+│   ├── test-runner.md
+│   ├── doc-updater.md
+│   └── project-orchestrator.md
 │
 ├── skills/                # 자동 활성화 스킬
 │   ├── rag-optimization/
@@ -87,10 +90,18 @@ AI 기반 크리에이터 온보딩 및 미션 추천 시스템
 │   └── monitoring/
 │       └── SKILL.md
 │
-└── hooks/                 # 이벤트 훅 스크립트
-    ├── format-python.sh
-    ├── validate-json.sh
-    └── security-check.sh
+├── hooks/                 # 이벤트 훅 스크립트
+│   ├── notify_slack.sh
+│   ├── format_after_edit.sh
+│   ├── validate-json.sh
+│   └── security-check.sh
+│
+└── scripts/               # 자동화 스크립트
+    ├── auto-dev-orchestrator.sh
+    ├── auto-verify.sh
+    ├── ralph-wiggum.sh
+    ├── multi-session.sh
+    └── claude-squad-setup.sh
 ```
 
 ---
@@ -129,6 +140,9 @@ Claude가 자동으로 위임하는 전문 에이전트:
 | `debugger` | 에러, 버그 분석 | Sonnet |
 | `architect` | 설계, 기술 결정 | Opus |
 | `data-analyst` | 데이터 분석, 메트릭 | Sonnet |
+| `test-runner` | 테스트 실행, 커버리지 | Sonnet |
+| `doc-updater` | 문서 업데이트, API 문서 | Haiku |
+| `project-orchestrator` | A-Z 워크플로우 조율 | Opus |
 
 ---
 
@@ -210,3 +224,121 @@ pytest --cov=src tests/
 # 프론트엔드
 cd frontend && npm run dev
 ```
+
+---
+
+## Agentic Development Architecture
+
+완전 자동화된 개발 워크플로우를 위한 3-레인 아키텍처:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    NOTIFICATION BUS (Slack)                     │
+│         입력 대기 / 권한 요청 / 완료 → 모바일 푸시              │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+        ┌────────────────────┼────────────────────┐
+        │                    │                    │
+        ▼                    ▼                    ▼
+┌───────────────┐   ┌───────────────┐   ┌───────────────┐
+│  LOCAL LANE   │   │  GITHUB LANE  │   │  WEB/MOBILE   │
+│               │   │               │   │               │
+│ • 터미널/IDE  │   │ • @claude 멘션│   │ • claude.ai   │
+│ • 빠른 반복   │   │ • PR 자동생성 │   │ • 비동기 작업 │
+│ • 병렬 세션   │   │ • 백그라운드  │   │ • 이슈 생성   │
+│   (tmux)      │   │   실행        │   │               │
+└───────────────┘   └───────────────┘   └───────────────┘
+```
+
+### 운영 루틴
+
+1. **폰에서 이슈 생성** → @claude 멘션
+2. **GitHub Action 실행** → 코드 수정 → PR 생성
+3. **Slack 푸시** → 진행/권한요청/완료 알림
+4. **PR 리뷰** → 승인/수정 지시
+
+---
+
+## Hooks (이벤트 훅) - 업데이트
+
+stdin으로 JSON payload를 수신하는 Hook 시스템:
+
+| Event | Trigger | Action |
+|-------|---------|--------|
+| `Notification` | 입력/상태 변경 | Slack 알림 |
+| `PermissionRequest` | 권한 필요 | Slack 알림 |
+| `PostToolUse(Edit\|Write)` | 파일 수정 후 | 자동 포맷팅 |
+| `PreToolUse(Edit)` | 편집 전 | 로그 기록 |
+| `Stop` | 세션 종료 | 완료 알림 |
+
+**Hook 스크립트:**
+- `notify_slack.sh` - JSON stdin 파싱 → Slack 푸시
+- `format_after_edit.sh` - 파일 타입별 자동 포맷 (ruff/prettier)
+
+---
+
+## GitHub Action (claude-code-action)
+
+`.github/workflows/claude-code.yml` - 백그라운드 자동 개발
+
+**트리거:**
+- 이슈/PR에서 `@claude` 멘션
+- `claude` 라벨 추가
+
+**기능:**
+- 코드 수정 → PR 생성/업데이트
+- 테스트 실행 → 결과 코멘트
+- Slack 완료 알림
+
+**사용법:**
+```markdown
+@claude 사용자 인증 기능을 JWT 기반으로 구현해주세요.
+- FastAPI 엔드포인트 추가
+- pytest 테스트 포함
+- 95% 커버리지 유지
+```
+
+**Secrets 필요:**
+- `ANTHROPIC_API_KEY`
+- `SLACK_WEBHOOK_URL` (선택)
+
+---
+
+## Automation Scripts
+
+```bash
+# A-Z 자동화 워크플로우
+./.claude/scripts/auto-dev-orchestrator.sh "요구사항"
+
+# Ralph Wiggum 자동 검증 (반복 테스트)
+./.claude/scripts/ralph-wiggum.sh start|stop|status
+
+# 멀티 세션 관리 (tmux)
+./.claude/scripts/multi-session.sh setup|start|list|stop
+
+# Claude Squad 워크플로우
+./.claude/scripts/claude-squad-setup.sh config|start
+```
+
+---
+
+## 환경 변수 설정
+
+`.env` 또는 `.env.local`:
+```bash
+# Slack 알림 (필수)
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/...
+SLACK_CHANNEL=#dev-notifications
+
+# GitHub Action용
+ANTHROPIC_API_KEY=sk-ant-...
+GITHUB_TOKEN=ghp_...
+
+# 자동화 설정
+CLAUDE_MAX_ITERATIONS=10
+CLAUDE_AUTO_NOTIFY=true
+```
+
+GitHub Secrets (Actions용):
+- `ANTHROPIC_API_KEY`
+- `SLACK_WEBHOOK_URL`

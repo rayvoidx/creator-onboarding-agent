@@ -1,15 +1,24 @@
 {
   "permissions": {
     "allow": [
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(git log*)",
+      "Bash(git branch*)",
+      "Bash(git checkout*)",
+      "Bash(git push*)",
+      "Bash(git pull*)",
       "Bash(python:*)",
-      "Bash(pytest:*)",
+      "Bash(pytest*)",
       "Bash(uv:*)",
       "Bash(pip:*)",
       "Bash(npm:*)",
       "Bash(npx:*)",
-      "Bash(git:*)",
+      "Bash(ruff*)",
+      "Bash(mypy*)",
       "Bash(ls:*)",
-      "Bash(cat:*)",
       "Bash(mkdir:*)",
       "Bash(cp:*)",
       "Bash(mv:*)",
@@ -19,6 +28,8 @@
       "Read(docs/**)",
       "Read(frontend/**)",
       "Read(node/**)",
+      "Read(.claude/**)",
+      "Read(.github/**)",
       "Edit(src/**)",
       "Edit(tests/**)",
       "Edit(config/**)",
@@ -30,47 +41,89 @@
       "Read(.env.*)",
       "Read(**/secrets/**)",
       "Read(**/*credential*)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
       "Edit(.env)",
       "Edit(.env.*)",
-      "Bash(rm -rf:*)"
+      "Bash(rm -rf*)",
+      "Bash(curl*)",
+      "Bash(wget*)"
     ],
     "ask": [
-      "Bash(docker:*)",
-      "Bash(curl:*)",
-      "Bash(wget:*)",
-      "Edit(.claude/**)"
+      "Bash(docker*)",
+      "Edit(.claude/**)",
+      "Edit(.github/**)"
     ]
   },
   "hooks": {
-    "PreToolUse": [
+    "Notification": [
       {
-        "matcher": "Edit",
+        "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": "echo \"[$(date +%H:%M:%S)] Editing: $CLAUDE_TOOL_INPUT\" >> .claude/hooks/edit.log 2>/dev/null || true"
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/notify_slack.sh"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/notify_slack.sh"
           }
         ]
       }
     ],
     "PostToolUse": [
       {
-        "matcher": "Write",
+        "matcher": "Edit|Write",
         "hooks": [
           {
             "type": "command",
-            "command": "if [[ \"$CLAUDE_FILE_PATH\" == *.py ]]; then python -m py_compile \"$CLAUDE_FILE_PATH\" 2>/dev/null || true; fi"
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/format_after_edit.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/security-check.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/validate-json.sh"
+          },
+          {
+            "type": "command",
+            "command": "echo \"[$(date +%H:%M:%S)] Editing: $CLAUDE_FILE_PATH\" >> \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/edit.log 2>/dev/null || true"
           }
         ]
       }
     ],
     "Stop": [
       {
-        "matcher": "*",
+        "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": "echo \"[$(date +%Y-%m-%d %H:%M:%S)] Session completed\" >> .claude/hooks/session.log 2>/dev/null || true"
+            "command": "echo \"[$(date +%Y-%m-%d %H:%M:%S)] Session completed\" >> \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/session.log 2>/dev/null || true"
+          },
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/notify_slack.sh"
           }
         ]
       }
@@ -78,6 +131,7 @@
   },
   "env": {
     "PYTHONPATH": ".",
-    "PYTHONDONTWRITEBYTECODE": "1"
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "CLAUDE_PROJECT_DIR": "."
   }
 }

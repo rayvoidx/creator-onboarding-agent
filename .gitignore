@@ -95,4 +95,12 @@ temp/
 node_modules/
 
 # Coverage
-coverage.xml!src/data/
+coverage.xml
+!src/data/
+
+# Claude Code
+.claude/settings.local.json
+.claude/hooks/*.log
+.claude/hooks/*.pid
+.worktrees/
+.claude-squad.yaml

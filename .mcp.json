@@ -1,0 +1,36 @@
+{
+  "mcpServers": {
+    "slack": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-server-slack"],
+      "env": {
+        "SLACK_BOT_TOKEN": "${SLACK_BOT_TOKEN}",
+        "SLACK_TEAM_ID": "${SLACK_TEAM_ID}"
+      },
+      "description": "Slack 연동 - 채널 메시지, 알림, 스레드 관리"
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+      },
+      "description": "GitHub PR, Issue, Repository 관리"
+    },
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"],
+      "description": "세션 간 컨텍스트 저장 - 프로젝트 지식 유지"
+    },
+    "fetch": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-server-fetch"],
+      "description": "웹 페이지 조회 - 문서, API 레퍼런스 확인"
+    },
+    "sqlite": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-server-sqlite", "--db-path", "./data/claude_memory.db"],
+      "description": "SQLite DB - 로컬 데이터 저장/조회"
+    }
+  }
+}

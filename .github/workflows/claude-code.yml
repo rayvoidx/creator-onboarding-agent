@@ -1,0 +1,140 @@
+# Claude Code Action - 자동 개발 워크플로우
+# @claude 멘션 또는 특정 라벨로 트리거
+# https://github.com/anthropics/claude-code-action
+
+name: Claude Code
+
+on:
+  # 이슈에서 @claude 멘션 시
+  issue_comment:
+    types: [created]
+
+  # PR에서 @claude 멘션 시
+  pull_request_review_comment:
+    types: [created]
+
+  # PR 리뷰 요청 시
+  pull_request:
+    types: [opened, synchronize, review_requested]
+
+  # 이슈에 'claude' 라벨 추가 시
+  issues:
+    types: [labeled]
+
+# 동시 실행 제한 (같은 이슈/PR에 대해)
+concurrency:
+  group: claude-${{ github.event.issue.number || github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  claude-code:
+    # 조건: @claude 멘션 또는 claude 라벨
+    if: |
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'issues' && github.event.label.name == 'claude') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'claude'))
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          pip install uv
+          uv pip install --system -r requirements.txt || true
+          npm ci || npm install || true
+
+      - name: Run Claude Code Action
+        uses: anthropics/claude-code-action@beta
+        with:
+          # Anthropic API 키
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+
+          # 모델 설정
+          model: 'claude-sonnet-4-20250514'
+
+          # 최대 턴 수 (안전장치)
+          max_turns: 20
+
+          # 허용된 도구
+          allowed_tools: |
+            Bash(git status)
+            Bash(git diff*)
+            Bash(git add*)
+            Bash(git commit*)
+            Bash(pytest*)
+            Bash(npm test*)
+            Bash(ruff*)
+            Read
+            Edit
+            Write
+            Glob
+            Grep
+
+          # 차단된 도구
+          disallowed_tools: |
+            Bash(rm -rf*)
+            Bash(curl*)
+            Read(.env*)
+            Read(**/secrets/**)
+
+          # 커스텀 지시사항
+          custom_instructions: |
+            이 프로젝트는 Creator Onboarding Agent입니다.
+            - FastAPI + LangGraph 기반
+            - pytest로 테스트 (95% 커버리지 목표)
+            - ruff로 포맷팅
+            - 변경 전 Plan Mode로 계획 수립
+            - 테스트 통과 확인 후 커밋
+
+          # 타임아웃 (분)
+          timeout_minutes: 25
+
+      - name: Notify Slack on completion
+        if: always()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          if [ -n "$SLACK_WEBHOOK_URL" ]; then
+            STATUS="${{ job.status }}"
+            ISSUE_NUM="${{ github.event.issue.number || github.event.pull_request.number }}"
+            REPO="${{ github.repository }}"
+
+            if [ "$STATUS" = "success" ]; then
+              EMOJI="✅"
+              COLOR="good"
+            else
+              EMOJI="❌"
+              COLOR="danger"
+            fi
+
+            curl -s -X POST "$SLACK_WEBHOOK_URL" \
+              -H 'Content-type: application/json' \
+              --data "{
+                \"attachments\": [{
+                  \"color\": \"$COLOR\",
+                  \"text\": \"$EMOJI Claude Code Action 완료\\n*Repo:* $REPO\\n*Issue/PR:* #$ISSUE_NUM\\n*Status:* $STATUS\"
+                }]
+              }"
+          fi
