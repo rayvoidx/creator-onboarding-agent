@@ -133,5 +133,24 @@
     "PYTHONPATH": ".",
     "PYTHONDONTWRITEBYTECODE": "1",
     "CLAUDE_PROJECT_DIR": "."
+  },
+  "lsp": {
+    "python": {
+      "command": "/Users/jaehyun/Desktop/creator-onboarding-agent/.venv/bin/pyright-langserver",
+      "args": ["--stdio"],
+      "extensionToLanguage": {
+        ".py": "python"
+      },
+      "env": {
+        "PYTHONPATH": ".,src"
+      },
+      "settings": {
+        "python.analysis.typeCheckingMode": "strict",
+        "python.analysis.diagnosticMode": "workspace"
+      },
+      "startupTimeout": 10000,
+      "restartOnCrash": true,
+      "maxRestarts": 5
+    }
   }
 }

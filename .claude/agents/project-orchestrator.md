@@ -82,3 +82,87 @@ orchestrator:
 - Edit tools
 - Bash (git, pytest, ruff, npm)
 - Task (서브에이전트 호출)
+
+---
+
+## Team Coordination Protocol
+
+8-세션 Claude Code Team을 조율하는 프로토콜입니다.
+
+### Team Sessions
+
+| Session | Model | Domain |
+|---------|-------|--------|
+| `cs-orchestrator` | Opus | Core, graphs, config, integration |
+| `cs-rag` | Opus | `src/rag/` (14 modules) |
+| `cs-agents` | Sonnet | `src/agents/`, `src/domain/`, `src/tools/` |
+| `cs-api` | Sonnet | `src/api/`, `src/app/`, `src/data/models/` |
+| `cs-mcp` | Sonnet | `src/mcp/`, `src/services/`, `src/tasks/`, `node/` |
+| `cs-monitor` | Sonnet | `src/monitoring/` |
+| `cs-frontend` | Sonnet | `frontend/`, `tests/e2e/` |
+| `cs-qa` | Sonnet | `tests/`, `.github/workflows/` |
+
+### File Ownership Rules
+
+- Each session owns specific directories exclusively
+- Shared files (`src/core/base.py`, `config/settings.py`, `src/agents/__init__.py`) are gated by Orchestrator
+- Cross-session file edits require Orchestrator approval via MCP Memory request
+
+### Merge Order (dependency-based)
+
+```
+1. team/mcp/main       → team/integration  (core infra, no upstream deps)
+2. team/monitoring/main → team/integration  (standalone observability)
+3. team/rag/main        → team/integration  (self-contained pipeline)
+4. team/agents/main     → team/integration  (depends on core)
+5. team/api/main        → team/integration  (depends on agents, rag)
+6. team/frontend/main   → team/integration  (depends on API contract)
+7. team/qa/main         → team/integration  (test code, least conflict)
+```
+
+### Conflict Resolution
+
+1. Detect: `git merge --no-commit --no-ff <branch>` (dry-run)
+2. If conflict on owned file: owning session resolves
+3. If conflict on shared file: Orchestrator resolves
+4. Notify via Slack and MCP Memory
+
+### Coordination Loop
+
+```
+Every integration cycle:
+1. Check all session git log (progress status)
+2. Check MCP Memory for inter-session requests
+3. Dry-run merge to detect conflicts
+4. If conflict → notify affected session via Slack
+5. If session blocked > 30min → escalate
+6. If all sessions complete → trigger QA session
+7. QA passes → integration merge → PR to main
+```
+
+### Inter-Session Communication
+
+Sessions communicate through:
+1. **Git branches** - Work visibility
+2. **Slack notifications** - `.claude/hooks/notify_slack.sh`
+3. **MCP Memory** - Task status entities
+
+MCP Memory entity format:
+```
+Entity: "task-<session>-<description>"
+Type: "team-task"
+Observations:
+  - "status: pending|in_progress|completed|blocked"
+  - "session: cs-<name>"
+  - "files: <comma-separated file paths>"
+  - "request: <description of what's needed>"
+```
+
+### Quality Gates Before PR
+
+- [ ] All 8 session branches merged into `team/integration`
+- [ ] `pytest --cov=src --cov-fail-under=95 tests/` passes
+- [ ] `ruff check src/` passes
+- [ ] `mypy src/` passes
+- [ ] `cd frontend && npm run build` succeeds
+- [ ] No merge conflicts remaining

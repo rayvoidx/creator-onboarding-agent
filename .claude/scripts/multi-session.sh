@@ -1,6 +1,10 @@
 #!/bin/bash
 # Claude Code Multi-Session Manager
 # tmux를 활용한 병렬 Claude Code 세션 관리
+#
+# NOTE: 팀 개발에는 Claude Squad(cs)를 사용하세요:
+#   brew install smtg-ai/tap/claude-squad && cs
+#   자세한 내용: .claude/scripts/claude-squad-setup.sh
 
 set -e
 
@@ -143,7 +147,7 @@ setup_parallel_dev() {
 # 도움말
 show_help() {
     cat << EOF
-Claude Code Multi-Session Manager
+Claude Code Multi-Session Manager (tmux)
 
 Usage: $0 <command> [options]
 
@@ -163,6 +167,11 @@ Examples:
   $0 worktree feature feature/new-feature
   $0 setup
   $0 list
+
+For team development, use Claude Squad instead:
+  brew install smtg-ai/tap/claude-squad
+  cs
+  ./.claude/scripts/claude-squad-setup.sh prompts
 
 EOF
 }

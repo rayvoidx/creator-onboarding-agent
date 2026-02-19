@@ -90,6 +90,16 @@ AI 기반 크리에이터 온보딩 및 미션 추천 시스템
 │   └── monitoring/
 │       └── SKILL.md
 │
+├── team/                  # Claude Squad 세션별 지침
+│   ├── orchestrator.md
+│   ├── rag.md
+│   ├── agents.md
+│   ├── api.md
+│   ├── mcp.md
+│   ├── monitor.md
+│   ├── frontend.md
+│   └── qa.md
+│
 ├── hooks/                 # 이벤트 훅 스크립트
 │   ├── notify_slack.sh
 │   ├── format_after_edit.sh
@@ -243,10 +253,10 @@ cd frontend && npm run dev
 ┌───────────────┐   ┌───────────────┐   ┌───────────────┐
 │  LOCAL LANE   │   │  GITHUB LANE  │   │  WEB/MOBILE   │
 │               │   │               │   │               │
-│ • 터미널/IDE  │   │ • @claude 멘션│   │ • claude.ai   │
-│ • 빠른 반복   │   │ • PR 자동생성 │   │ • 비동기 작업 │
-│ • 병렬 세션   │   │ • 백그라운드  │   │ • 이슈 생성   │
-│   (tmux)      │   │   실행        │   │               │
+│ • Claude Squad│   │ • @claude 멘션│   │ • claude.ai   │
+│   (cs CLI)    │   │ • PR 자동생성 │   │ • 비동기 작업 │
+│ • 8 병렬 세션 │   │ • 백그라운드  │   │ • 이슈 생성   │
+│ • git worktree│   │   실행        │   │               │
 └───────────────┘   └───────────────┘   └───────────────┘
 ```
 
@@ -304,6 +314,49 @@ stdin으로 JSON payload를 수신하는 Hook 시스템:
 
 ---
 
+## Claude Squad (팀 병렬 개발)
+
+Claude Squad(`cs`)로 8-세션 병렬 개발 팀을 운영합니다.
+
+```bash
+# 설치
+brew install smtg-ai/tap/claude-squad
+
+# 실행
+cs
+
+# TUI Key Bindings:
+#   n/N   새 인스턴스 생성
+#   ↑/↓   인스턴스 이동
+#   Enter  인스턴스 접속
+#   c     커밋 & 일시정지
+#   s     커밋 & 푸시
+#   D     인스턴스 삭제
+#   q     종료
+```
+
+### Team Sessions (7 teammates + 1 lead)
+
+| Session | Domain | Coverage |
+|---------|--------|----------|
+| **Lead** | 팀 조율, 통합 | - |
+| RAG Engineer | `src/rag/` | 98% |
+| Agent Developer | `src/agents/`, `src/domain/` | 98% |
+| API Developer | `src/api/`, `src/app/` | 100% |
+| MCP/Infra | `src/mcp/`, `src/services/`, `node/` | 95% |
+| Monitoring | `src/monitoring/` | 95% |
+| Frontend | `frontend/`, `tests/e2e/` | 90% |
+| QA Guardian | `tests/`, `.github/workflows/` | 95% |
+
+각 세션별 상세 지침: `.claude/team/*.md`
+
+```bash
+# 세션별 프롬프트 확인
+./.claude/scripts/claude-squad-setup.sh prompts
+```
+
+---
+
 ## Automation Scripts
 
 ```bash
@@ -313,11 +366,11 @@ stdin으로 JSON payload를 수신하는 Hook 시스템:
 # Ralph Wiggum 자동 검증 (반복 테스트)
 ./.claude/scripts/ralph-wiggum.sh start|stop|status
 
-# 멀티 세션 관리 (tmux)
-./.claude/scripts/multi-session.sh setup|start|list|stop
+# 세션별 스코프 검증
+./.claude/scripts/auto-verify.sh --session rag
 
-# Claude Squad 워크플로우
-./.claude/scripts/claude-squad-setup.sh config|start
+# 멀티 세션 관리 (tmux fallback)
+./.claude/scripts/multi-session.sh setup|start|list|stop
 ```
 
 ---

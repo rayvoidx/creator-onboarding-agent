@@ -1,185 +1,172 @@
 #!/bin/bash
-# Claude Squad Integration Setup
+# Claude Squad Team Launcher
+# cs CLI를 사용한 8-세션 병렬 개발 팀 빠른 시작
 # https://github.com/smtg-ai/claude-squad
+#
+# 사용법:
+#   ./claude-squad-setup.sh          # cs 설치 확인 + 팀 프롬프트 출력
+#   ./claude-squad-setup.sh prompts  # 각 세션별 프롬프트 출력
+#   ./claude-squad-setup.sh check    # cs 설치 확인
+#
+# cs를 실행한 후 TUI에서:
+#   n → 새 인스턴스 (아래 프롬프트 복사/붙여넣기)
+#   N → 프롬프트와 함께 새 인스턴스
+#   ↑/↓ → 인스턴스 이동
+#   Enter → 인스턴스 접속
+#   c → 커밋 & 일시정지
+#   s → 커밋 & 푸시
+#   q → 종료
 
 set -e
 
-SQUAD_CONFIG=".claude-squad.yaml"
+PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+TEAM_DIR="$PROJECT_ROOT/.claude/team"
 
-# 색상 정의
+# 색상
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+DIM='\033[2m'
 NC='\033[0m'
 
-log() {
-    echo -e "${BLUE}[$(date +%H:%M:%S)]${NC} $1"
-}
-
-# Claude Squad 설치 확인
-check_claude_squad() {
-    if ! command -v cs &> /dev/null; then
-        log "${YELLOW}Claude Squad not installed${NC}"
+# cs 설치 확인
+check_cs() {
+    if command -v cs &> /dev/null; then
+        local version=$(cs version 2>/dev/null || echo "unknown")
+        echo -e "${GREEN}cs installed${NC} (${version})"
+        return 0
+    else
+        echo -e "${RED}cs not installed${NC}"
         echo ""
-        echo "Install options:"
-        echo "  brew install claude-squad"
-        echo "  npm install -g @smtg-ai/claude-squad"
+        echo "Install Claude Squad:"
+        echo "  brew install smtg-ai/tap/claude-squad"
+        echo "  # or"
+        echo "  go install github.com/smtg-ai/claude-squad@latest"
         echo ""
+        echo "Requires: tmux, gh (GitHub CLI)"
         return 1
     fi
-    return 0
 }
 
-# 설정 파일 생성
-create_config() {
-    if [ -f "$SQUAD_CONFIG" ]; then
-        log "Config already exists: $SQUAD_CONFIG"
-        return 0
+# 팀 세션 프롬프트 출력
+show_prompts() {
+    echo -e "${BOLD}${CYAN}"
+    echo "=========================================="
+    echo "  Claude Code Team - Session Prompts"
+    echo "=========================================="
+    echo -e "${NC}"
+    echo ""
+    echo -e "${DIM}cs 실행 후 'N' 키로 아래 프롬프트를 복사하여 인스턴스를 생성하세요.${NC}"
+    echo -e "${DIM}각 인스턴스는 자동으로 독립 git worktree에서 실행됩니다.${NC}"
+    echo ""
+
+    echo -e "${BOLD}1. RAG Engineer${NC} ${DIM}(src/rag/ 전담)${NC}"
+    echo -e "${BLUE}───────────────────────────────────────${NC}"
+    if [ -f "$TEAM_DIR/rag.md" ]; then
+        echo "Read .claude/team/rag.md for your role. You own src/rag/ exclusively. Focus on retrieval, reranking, caching, query expansion. Run tests: pytest tests/unit/rag/ --cov=src/rag. Target 98% coverage. NEVER edit files outside src/rag/."
     fi
+    echo ""
 
-    cat > "$SQUAD_CONFIG" << 'EOF'
-# Claude Squad Configuration
-# https://github.com/smtg-ai/claude-squad
+    echo -e "${BOLD}2. Agent Developer${NC} ${DIM}(src/agents/ 전담)${NC}"
+    echo -e "${BLUE}───────────────────────────────────────${NC}"
+    echo "Read .claude/team/agents.md for your role. You own src/agents/ subdirectories, src/domain/, src/tools/. Implement BaseAgent pattern with async execute(). Run tests: pytest tests/unit/agents/ --cov=src/agents. Target 98% coverage. NEVER edit src/core/base.py."
+    echo ""
 
-name: creator-onboarding-agent
-description: AI 기반 크리에이터 온보딩 및 미션 추천 시스템
+    echo -e "${BOLD}3. API Developer${NC} ${DIM}(src/api/ 전담)${NC}"
+    echo -e "${BLUE}───────────────────────────────────────${NC}"
+    echo "Read .claude/team/api.md for your role. You own src/api/, src/app/, src/data/models/. FastAPI + Pydantic v2, Depends(), response_model. Run tests: pytest tests/integration/ --cov=src/api. Target 100% endpoint coverage. NEVER edit src/rag/ or src/agents/."
+    echo ""
 
-# 에이전트 정의
-agents:
-  - name: main
-    description: 메인 개발 에이전트
-    path: .
-    auto_start: true
+    echo -e "${BOLD}4. MCP/Infra Engineer${NC} ${DIM}(src/mcp/, src/services/, node/ 전담)${NC}"
+    echo -e "${BLUE}───────────────────────────────────────${NC}"
+    echo "Read .claude/team/mcp.md for your role. You own src/mcp/, src/services/, src/tasks/, node/, src/core/ (except base.py). Circuit breaker, Celery tasks, MCP servers. Run tests: pytest tests/unit/services/ --cov=src/services. Target 95% coverage."
+    echo ""
 
-  - name: backend
-    description: FastAPI 백엔드 개발
-    path: .
-    prompt: "Focus on src/api and src/agents development"
+    echo -e "${BOLD}5. Monitoring Engineer${NC} ${DIM}(src/monitoring/ 전담)${NC}"
+    echo -e "${BLUE}───────────────────────────────────────${NC}"
+    echo "Read .claude/team/monitor.md for your role. You own src/monitoring/ exclusively. Langfuse tracing, Prometheus metrics, structured logging. Run tests: pytest tests/unit/monitoring/ --cov=src/monitoring. Target 95% coverage. NEVER edit src/api/middleware/."
+    echo ""
 
-  - name: frontend
-    description: React 프론트엔드 개발
-    path: frontend
-    prompt: "Focus on frontend development"
+    echo -e "${BOLD}6. Frontend Developer${NC} ${DIM}(frontend/ 전담)${NC}"
+    echo -e "${BLUE}───────────────────────────────────────${NC}"
+    echo "Read .claude/team/frontend.md for your role. You own frontend/ entirely and tests/e2e/. React + TypeScript + Tailwind + Vite. Run: cd frontend && npm run dev. Build: npm run build. NEVER edit backend src/ code."
+    echo ""
 
-  - name: tests
-    description: 테스트 작성 및 실행
-    path: .
-    prompt: "Write and run tests, maintain 95% coverage"
+    echo -e "${BOLD}7. QA Guardian${NC} ${DIM}(tests/, CI/CD 전담)${NC}"
+    echo -e "${BLUE}───────────────────────────────────────${NC}"
+    echo "Read .claude/team/qa.md for your role. You own tests/conftest.py, tests/unit/services/, .github/workflows/. Enforce 95% overall coverage. ONLY write test code and CI config, NEVER source code. Run: pytest --cov=src --cov-fail-under=95 tests/"
+    echo ""
 
-  - name: rag
-    description: RAG 파이프라인 최적화
-    path: .
-    prompt: "Optimize RAG pipeline in src/rag"
-
-# 워크플로우 정의
-workflows:
-  feature:
-    description: 새 기능 개발
-    agents: [main, backend, frontend, tests]
-    parallel: true
-
-  bugfix:
-    description: 버그 수정
-    agents: [main, tests]
-
-  refactor:
-    description: 코드 리팩토링
-    agents: [main, tests]
-
-# 알림 설정
-notifications:
-  slack:
-    enabled: true
-    webhook: ${SLACK_WEBHOOK_URL}
-    channel: "#dev-notifications"
-
-# 동기화 설정
-sync:
-  auto_commit: false
-  branch_prefix: "cs/"
-
-# 리소스 제한
-limits:
-  max_agents: 5
-  session_timeout: 3600  # 1시간
-EOF
-
-    log "${GREEN}Created config: $SQUAD_CONFIG${NC}"
+    echo -e "${DIM}───────────────────────────────────────${NC}"
+    echo -e "${YELLOW}Tip:${NC} 리드(첫 번째 인스턴스)는 별도 프롬프트 없이 cs 시작 시 자동 생성됩니다."
+    echo -e "${YELLOW}Tip:${NC} 각 인스턴스의 .claude/team/*.md 파일에 상세 지침이 있습니다."
 }
 
-# Claude Squad 워크플로우 시작
-start_workflow() {
-    local workflow=${1:-feature}
+# 빠른 시작 가이드
+show_quickstart() {
+    echo -e "${BOLD}${CYAN}"
+    echo "=========================================="
+    echo "  Claude Squad Quick Start"
+    echo "=========================================="
+    echo -e "${NC}"
+    echo ""
 
-    if ! check_claude_squad; then
-        log "Falling back to tmux multi-session..."
-        ./.claude/scripts/multi-session.sh setup
-        return
-    fi
+    check_cs || exit 1
 
-    log "Starting Claude Squad workflow: $workflow"
-    cs start --workflow "$workflow"
+    echo ""
+    echo -e "${BOLD}Step 1:${NC} cs 실행"
+    echo "  cs"
+    echo ""
+    echo -e "${BOLD}Step 2:${NC} 리드 인스턴스가 자동 생성됩니다."
+    echo "  리드에게 팀 조율 역할을 지시하세요."
+    echo ""
+    echo -e "${BOLD}Step 3:${NC} 'N' 키로 teammate 인스턴스 추가"
+    echo "  아래 명령으로 각 세션별 프롬프트를 확인하세요:"
+    echo "  $0 prompts"
+    echo ""
+    echo -e "${BOLD}Key Bindings:${NC}"
+    echo "  n/N     새 인스턴스 생성"
+    echo "  ↑/↓     인스턴스 이동"
+    echo "  Enter   인스턴스 접속 (추가 프롬프트)"
+    echo "  c       커밋 & 일시정지"
+    echo "  s       커밋 & 푸시 (GitHub)"
+    echo "  r       일시정지된 인스턴스 재개"
+    echo "  D       인스턴스 삭제"
+    echo "  Tab     미리보기/diff 전환"
+    echo "  q       종료"
+    echo ""
+    echo -e "${BOLD}Team Sessions (7 teammates):${NC}"
+    echo "  1. RAG Engineer       - src/rag/"
+    echo "  2. Agent Developer    - src/agents/"
+    echo "  3. API Developer      - src/api/"
+    echo "  4. MCP/Infra          - src/mcp/, src/services/, node/"
+    echo "  5. Monitoring         - src/monitoring/"
+    echo "  6. Frontend           - frontend/"
+    echo "  7. QA Guardian        - tests/, CI/CD"
+    echo ""
+    echo -e "${DIM}상세 프롬프트: $0 prompts${NC}"
 }
 
-# 상태 확인
-show_status() {
-    if check_claude_squad; then
-        cs status
-    else
-        ./.claude/scripts/multi-session.sh list
-    fi
-}
-
-# 도움말
-show_help() {
-    cat << EOF
-Claude Squad Integration
-
-Usage: $0 <command> [options]
-
-Commands:
-  install     - Check/install Claude Squad
-  config      - Generate configuration file
-  start       - Start workflow (default: feature)
-  status      - Show status
-  stop        - Stop all agents
-  help        - Show this help
-
-Workflows:
-  feature     - Full feature development (4 agents)
-  bugfix      - Bug fixing (2 agents)
-  refactor    - Code refactoring (2 agents)
-
-Examples:
-  $0 config
-  $0 start feature
-  $0 status
-
-EOF
-}
-
-case "${1:-help}" in
-    install)
-        check_claude_squad
+case "${1:-}" in
+    check)
+        check_cs
         ;;
-    config)
-        create_config
+    prompts)
+        show_prompts
         ;;
-    start)
-        start_workflow "${2:-feature}"
+    help)
+        echo "Usage: $0 [command]"
+        echo ""
+        echo "Commands:"
+        echo "  (default)  Quick start guide + cs 설치 확인"
+        echo "  prompts    각 세션별 프롬프트 출력"
+        echo "  check      cs 설치 확인"
+        echo "  help       이 도움말"
         ;;
-    status)
-        show_status
-        ;;
-    stop)
-        if check_claude_squad; then
-            cs stop --all
-        else
-            ./.claude/scripts/multi-session.sh stop-all
-        fi
-        ;;
-    help|*)
-        show_help
+    *)
+        show_quickstart
         ;;
 esac
