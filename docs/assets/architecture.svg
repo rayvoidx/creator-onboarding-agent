@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="520" viewBox="0 0 840 520">
+  <defs>
+    <linearGradient id="abg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <pattern id="agrid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="12" cy="12" r="0.8" fill="#334155" opacity="0.4"/>
+    </pattern>
+    <!-- Animated pulse for data flow dots — uniform 4px circles -->
+    <circle id="dot" r="4" fill="#8b5cf6"/>
+  </defs>
+
+  <rect width="840" height="520" rx="12" fill="url(#abg)"/>
+  <rect width="840" height="520" rx="12" fill="url(#agrid)"/>
+
+  <!-- ═══ User Query (Top) ═══ -->
+  <rect x="340" y="20" width="160" height="40" rx="20" fill="#8b5cf6" opacity="0.2" stroke="#8b5cf6" stroke-width="1"/>
+  <text x="420" y="45" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#c4b5fd">User Query</text>
+
+  <!-- Arrow down -->
+  <line x1="420" y1="60" x2="420" y2="90" stroke="#475569" stroke-width="1.5"/>
+  <polygon points="414,86 420,96 426,86" fill="#475569"/>
+  <!-- Animated dot flowing down — uniform 4px -->
+  <circle r="4" fill="#8b5cf6" opacity="0.8">
+    <animateMotion dur="2s" repeatCount="indefinite" path="M420,60 L420,90"/>
+  </circle>
+
+  <!-- ═══ Intent Analyzer ═══ -->
+  <rect x="300" y="96" width="240" height="44" rx="8" fill="#1e293b" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="420" y="122" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="600" fill="#a5b4fc">Intent Analyzer (Router)</text>
+
+  <!-- Three arrows branching -->
+  <line x1="350" y1="140" x2="170" y2="180" stroke="#475569" stroke-width="1.2"/>
+  <line x1="420" y1="140" x2="420" y2="180" stroke="#475569" stroke-width="1.2"/>
+  <line x1="490" y1="140" x2="670" y2="180" stroke="#475569" stroke-width="1.2"/>
+  <!-- Animated dots on branches — all uniform 4px -->
+  <circle r="4" fill="#8b5cf6" opacity="0.7">
+    <animateMotion dur="1.8s" repeatCount="indefinite" path="M350,140 L170,180"/>
+  </circle>
+  <circle r="4" fill="#6366f1" opacity="0.7">
+    <animateMotion dur="1.8s" begin="0.6s" repeatCount="indefinite" path="M420,140 L420,180"/>
+  </circle>
+  <circle r="4" fill="#8b5cf6" opacity="0.7">
+    <animateMotion dur="1.8s" begin="1.2s" repeatCount="indefinite" path="M490,140 L670,180"/>
+  </circle>
+
+  <!-- ═══ Three Agent Boxes ═══ -->
+  <!-- Creator Agent -->
+  <rect x="80" y="184" width="180" height="120" rx="8" fill="#1e293b" stroke="#8b5cf6" stroke-width="1.5">
+    <animate attributeName="stroke-opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite"/>
+  </rect>
+  <text x="170" y="208" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="#c4b5fd">Creator Agent</text>
+  <text x="170" y="230" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#94a3b8">Profile Scraping</text>
+  <text x="170" y="246" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#94a3b8">Metric Extraction</text>
+  <text x="170" y="262" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#94a3b8">RAG Search</text>
+  <text x="170" y="278" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#94a3b8">Tier Scoring</text>
+
+  <!-- Mission Agent -->
+  <rect x="330" y="184" width="180" height="120" rx="8" fill="#1e293b" stroke="#06b6d4" stroke-width="1.5">
+    <animate attributeName="stroke-opacity" values="0.6;1;0.6" dur="3s" begin="1s" repeatCount="indefinite"/>
+  </rect>
+  <text x="420" y="208" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="#67e8f9">Mission Agent</text>
+  <text x="420" y="230" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#94a3b8">Creator-Mission Match</text>
+  <text x="420" y="246" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#94a3b8">Score Calculation</text>
+  <text x="420" y="262" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#94a3b8">MCP Tools</text>
+  <text x="420" y="278" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#94a3b8">YouTube Insights</text>
+
+  <!-- Competency Agent -->
+  <rect x="580" y="184" width="180" height="120" rx="8" fill="#1e293b" stroke="#10b981" stroke-width="1.5">
+    <animate attributeName="stroke-opacity" values="0.6;1;0.6" dur="3s" begin="2s" repeatCount="indefinite"/>
+  </rect>
+  <text x="670" y="208" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="#6ee7b7">Competency Agent</text>
+  <text x="670" y="230" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#94a3b8">ML (RandomForest)</text>
+  <text x="670" y="246" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#94a3b8">Skill Diagnosis</text>
+  <text x="670" y="262" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#94a3b8">Learning Path</text>
+  <text x="670" y="278" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#94a3b8">Recommendation</text>
+
+  <!-- ═══ Converging arrows to RAG Pipeline ═══ -->
+  <line x1="170" y1="304" x2="420" y2="350" stroke="#475569" stroke-width="1.2"/>
+  <line x1="420" y1="304" x2="420" y2="350" stroke="#475569" stroke-width="1.2"/>
+  <line x1="670" y1="304" x2="420" y2="350" stroke="#475569" stroke-width="1.2"/>
+  <!-- Animated converge dots -->
+  <circle r="4" fill="#8b5cf6" opacity="0.6">
+    <animateMotion dur="2s" repeatCount="indefinite" path="M170,304 L420,350"/>
+  </circle>
+  <circle r="4" fill="#06b6d4" opacity="0.6">
+    <animateMotion dur="2s" begin="0.7s" repeatCount="indefinite" path="M420,304 L420,350"/>
+  </circle>
+  <circle r="4" fill="#10b981" opacity="0.6">
+    <animateMotion dur="2s" begin="1.4s" repeatCount="indefinite" path="M670,304 L420,350"/>
+  </circle>
+
+  <!-- ═══ RAG Pipeline Box ═══ -->
+  <rect x="220" y="354" width="400" height="100" rx="10" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="6 3">
+    <animate attributeName="stroke-dashoffset" values="0;18" dur="3s" repeatCount="indefinite"/>
+  </rect>
+  <text x="420" y="378" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="#fbbf24">RAG Pipeline</text>
+  <text x="420" y="400" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#94a3b8">Query Expansion (5 vars) -> Hybrid Retrieval (Vector+BM25)</text>
+  <text x="420" y="416" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#94a3b8">CrossEncoder Rerank >= 0.85 -> Context Build (128K)</text>
+  <text x="420" y="432" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#94a3b8">Multi-Model: Claude | GPT | Gemini -> Response Refine + Cache</text>
+
+  <!-- Arrow to output -->
+  <line x1="420" y1="454" x2="420" y2="480" stroke="#475569" stroke-width="1.5"/>
+  <polygon points="414,476 420,486 426,476" fill="#475569"/>
+  <circle r="4" fill="#f59e0b" opacity="0.7">
+    <animateMotion dur="1.5s" repeatCount="indefinite" path="M420,454 L420,486"/>
+  </circle>
+
+  <!-- ═══ SSE Response ═══ -->
+  <rect x="340" y="486" width="160" height="28" rx="14" fill="#10b981" opacity="0.2" stroke="#10b981" stroke-width="1"/>
+  <text x="420" y="504" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="600" fill="#6ee7b7">SSE Stream Response</text>
+</svg>

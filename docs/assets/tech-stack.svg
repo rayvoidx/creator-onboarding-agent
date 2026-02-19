@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="200" viewBox="0 0 840 200">
+  <defs>
+    <linearGradient id="tsbg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <pattern id="tsgrid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="12" cy="12" r="0.8" fill="#334155" opacity="0.4"/>
+    </pattern>
+  </defs>
+
+  <rect width="840" height="200" rx="12" fill="url(#tsbg)"/>
+  <rect width="840" height="200" rx="12" fill="url(#tsgrid)"/>
+
+  <!-- Title -->
+  <text x="420" y="30" text-anchor="middle" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#f8fafc">Tech Stack</text>
+
+  <!-- ═══ Row 1: Backend ═══ -->
+  <!-- FastAPI -->
+  <g transform="translate(50, 48)">
+    <rect width="100" height="32" rx="16" fill="#059669" opacity="0.15"/>
+    <rect width="100" height="32" rx="16" fill="none" stroke="#059669" stroke-width="1" opacity="0.5">
+      <animate attributeName="opacity" values="0.3;0.7;0.3" dur="3s" repeatCount="indefinite"/>
+    </rect>
+    <text x="50" y="20" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="600" fill="#6ee7b7">FastAPI</text>
+  </g>
+
+  <!-- LangGraph -->
+  <g transform="translate(165, 48)">
+    <rect width="100" height="32" rx="16" fill="#8b5cf6" opacity="0.15"/>
+    <rect width="100" height="32" rx="16" fill="none" stroke="#8b5cf6" stroke-width="1" opacity="0.5">
+      <animate attributeName="opacity" values="0.3;0.7;0.3" dur="3s" begin="0.3s" repeatCount="indefinite"/>
+    </rect>
+    <text x="50" y="20" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="600" fill="#c4b5fd">LangGraph</text>
+  </g>
+
+  <!-- Pydantic v2 -->
+  <g transform="translate(280, 48)">
+    <rect width="100" height="32" rx="16" fill="#e11d48" opacity="0.15"/>
+    <rect width="100" height="32" rx="16" fill="none" stroke="#e11d48" stroke-width="1" opacity="0.5">
+      <animate attributeName="opacity" values="0.3;0.7;0.3" dur="3s" begin="0.6s" repeatCount="indefinite"/>
+    </rect>
+    <text x="50" y="20" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="600" fill="#fb7185">Pydantic v2</text>
+  </g>
+
+  <!-- Python 3.11 -->
+  <g transform="translate(395, 48)">
+    <rect width="100" height="32" rx="16" fill="#3b82f6" opacity="0.15"/>
+    <rect width="100" height="32" rx="16" fill="none" stroke="#3b82f6" stroke-width="1" opacity="0.5">
+      <animate attributeName="opacity" values="0.3;0.7;0.3" dur="3s" begin="0.9s" repeatCount="indefinite"/>
+    </rect>
+    <text x="50" y="20" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="600" fill="#93c5fd">Python 3.11</text>
+  </g>
+
+  <!-- ═══ Row 2: AI / LLM ═══ -->
+  <!-- Claude -->
+  <g transform="translate(50, 96)">
+    <rect width="100" height="32" rx="16" fill="#d97706" opacity="0.15"/>
+    <rect width="100" height="32" rx="16" fill="none" stroke="#d97706" stroke-width="1" opacity="0.5">
+      <animate attributeName="opacity" values="0.3;0.7;0.3" dur="3s" begin="1.2s" repeatCount="indefinite"/>
+    </rect>
+    <text x="50" y="20" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="600" fill="#fbbf24">Claude</text>
+  </g>
+
+  <!-- GPT -->
+  <g transform="translate(165, 96)">
+    <rect width="100" height="32" rx="16" fill="#059669" opacity="0.15"/>
+    <rect width="100" height="32" rx="16" fill="none" stroke="#059669" stroke-width="1" opacity="0.5">
+      <animate attributeName="opacity" values="0.3;0.7;0.3" dur="3s" begin="1.5s" repeatCount="indefinite"/>
+    </rect>
+    <text x="50" y="20" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="600" fill="#6ee7b7">GPT</text>
+  </g>
+
+  <!-- Gemini -->
+  <g transform="translate(280, 96)">
+    <rect width="100" height="32" rx="16" fill="#06b6d4" opacity="0.15"/>
+    <rect width="100" height="32" rx="16" fill="none" stroke="#06b6d4" stroke-width="1" opacity="0.5">
+      <animate attributeName="opacity" values="0.3;0.7;0.3" dur="3s" begin="1.8s" repeatCount="indefinite"/>
+    </rect>
+    <text x="50" y="20" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="600" fill="#67e8f9">Gemini</text>
+  </g>
+
+  <!-- Voyage-3 -->
+  <g transform="translate(395, 96)">
+    <rect width="100" height="32" rx="16" fill="#7c3aed" opacity="0.15"/>
+    <rect width="100" height="32" rx="16" fill="none" stroke="#7c3aed" stroke-width="1" opacity="0.5">
+      <animate attributeName="opacity" values="0.3;0.7;0.3" dur="3s" begin="2.1s" repeatCount="indefinite"/>
+    </rect>
+    <text x="50" y="20" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="600" fill="#a78bfa">Voyage-3</text>
+  </g>
+
+  <!-- ═══ Row 3: Infra ═══ -->
+  <!-- Pinecone -->
+  <g transform="translate(50, 144)">
+    <rect width="100" height="32" rx="16" fill="#06b6d4" opacity="0.15"/>
+    <rect width="100" height="32" rx="16" fill="none" stroke="#06b6d4" stroke-width="1" opacity="0.5">
+      <animate attributeName="opacity" values="0.3;0.7;0.3" dur="3.5s" repeatCount="indefinite"/>
+    </rect>
+    <text x="50" y="20" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="600" fill="#67e8f9">Pinecone</text>
+  </g>
+
+  <!-- Langfuse -->
+  <g transform="translate(165, 144)">
+    <rect width="100" height="32" rx="16" fill="#f59e0b" opacity="0.15"/>
+    <rect width="100" height="32" rx="16" fill="none" stroke="#f59e0b" stroke-width="1" opacity="0.5">
+      <animate attributeName="opacity" values="0.3;0.7;0.3" dur="3.5s" begin="0.5s" repeatCount="indefinite"/>
+    </rect>
+    <text x="50" y="20" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="600" fill="#fbbf24">Langfuse</text>
+  </g>
+
+  <!-- Prometheus -->
+  <g transform="translate(280, 144)">
+    <rect width="100" height="32" rx="16" fill="#ef4444" opacity="0.15"/>
+    <rect width="100" height="32" rx="16" fill="none" stroke="#ef4444" stroke-width="1" opacity="0.5">
+      <animate attributeName="opacity" values="0.3;0.7;0.3" dur="3.5s" begin="1s" repeatCount="indefinite"/>
+    </rect>
+    <text x="50" y="20" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="600" fill="#fca5a5">Prometheus</text>
+  </g>
+
+  <!-- Docker -->
+  <g transform="translate(395, 144)">
+    <rect width="100" height="32" rx="16" fill="#2563eb" opacity="0.15"/>
+    <rect width="100" height="32" rx="16" fill="none" stroke="#2563eb" stroke-width="1" opacity="0.5">
+      <animate attributeName="opacity" values="0.3;0.7;0.3" dur="3.5s" begin="1.5s" repeatCount="indefinite"/>
+    </rect>
+    <text x="50" y="20" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="600" fill="#93c5fd">Docker</text>
+  </g>
+
+  <!-- ═══ Right side: Category Labels ═══ -->
+  <text x="540" y="68" font-family="system-ui,sans-serif" font-size="10" fill="#475569">BACKEND</text>
+  <line x1="540" y1="72" x2="800" y2="72" stroke="#334155" stroke-width="0.5"/>
+  <text x="540" y="88" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">FastAPI + LangGraph multi-agent orchestration</text>
+  <text x="540" y="102" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">Pydantic v2 schema validation</text>
+
+  <text x="540" y="126" font-family="system-ui,sans-serif" font-size="10" fill="#475569">AI / LLM</text>
+  <line x1="540" y1="130" x2="800" y2="130" stroke="#334155" stroke-width="0.5"/>
+  <text x="540" y="146" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">Multi-model: Claude | GPT | Gemini</text>
+  <text x="540" y="160" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">Voyage-3 embedding + CrossEncoder rerank</text>
+
+  <text x="540" y="182" font-family="system-ui,sans-serif" font-size="10" fill="#475569">INFRASTRUCTURE</text>
+  <line x1="540" y1="186" x2="800" y2="186" stroke="#334155" stroke-width="0.5"/>
+</svg>
