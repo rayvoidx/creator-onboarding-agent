@@ -1,12 +1,223 @@
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
+from config.settings import Settings
 from src.core.utils.agent_config import get_agent_runtime_config
 
 logger = logging.getLogger(__name__)
+
+# Platform → profile URL templates
+_PLATFORM_URL_TEMPLATES: Dict[str, str] = {
+    "instagram": "https://www.instagram.com/{handle}/",
+    "tiktok": "https://www.tiktok.com/@{handle}",
+    "youtube": "https://www.youtube.com/@{handle}",
+    "twitter": "https://twitter.com/{handle}",
+    "x": "https://x.com/{handle}",
+}
+
+
+def _build_profile_url(platform: str, handle: str) -> str:
+    """Build a public profile URL from platform + handle."""
+    clean = handle.lstrip("@").strip()
+    tpl = _PLATFORM_URL_TEMPLATES.get(platform, "")
+    if not tpl or not clean:
+        return ""
+    return tpl.format(handle=clean)
+
+
+def _parse_number_from_text(text: str) -> int:
+    """Parse numbers like '1.2M', '543K', '12,345' from scraped text."""
+    if not text:
+        return 0
+    text = text.strip().upper().replace(",", "").replace(" ", "")
+    multipliers = {"K": 1_000, "M": 1_000_000, "B": 1_000_000_000}
+    for suffix, mult in multipliers.items():
+        if text.endswith(suffix):
+            try:
+                return int(float(text[:-1]) * mult)
+            except (ValueError, TypeError):
+                return 0
+    try:
+        return int(float(re.sub(r"[^\d.]", "", text)))
+    except (ValueError, TypeError):
+        return 0
+
+
+def _extract_metrics_from_scraped(content: str, platform: str) -> Dict[str, Any]:
+    """Extract follower/engagement metrics from scraped HTML/text content.
+
+    Data confidence levels:
+      - "verified": from og:description or structured JSON (100% accurate)
+      - "estimated": inferred from verified data (approximate)
+      - "unavailable": requires login, cannot be scraped
+    """
+    metrics: Dict[str, Any] = {}
+    data_sources: Dict[str, str] = {}  # field → "verified" | "estimated"
+    if not content:
+        return metrics
+
+    text = content.lower()
+
+    # ── Priority 1: og:description (most reliable for Instagram) ──
+    # Format: "90K Followers, 3,368 Following, 558 Posts - ..."
+    og_match = re.search(
+        r"([\d,.]+[kmb]?)\s*followers?,\s*([\d,.]+[kmb]?)\s*following,\s*([\d,.]+[kmb]?)\s*posts?",
+        text,
+    )
+    if og_match:
+        f_val = _parse_number_from_text(og_match.group(1))
+        fg_val = _parse_number_from_text(og_match.group(2))
+        p_val = _parse_number_from_text(og_match.group(3))
+        if f_val > 0:
+            metrics["followers"] = f_val
+            data_sources["followers"] = "verified"
+        if fg_val > 0:
+            metrics["following"] = fg_val
+            data_sources["following"] = "verified"
+        if p_val > 0:
+            metrics["total_posts"] = p_val
+            data_sources["total_posts"] = "verified"
+
+    # ── Priority 2: Structured JSON patterns (fallback) ──
+    if "followers" not in metrics:
+        json_follower_patterns = [
+            r'"edge_followed_by"[:\s]*\{["\s]*count["\s]*[:\s]*([\d]+)',
+            r'"followercount"[:\s]*([\d]+)',
+            r'"subscribercount"[:\s]*"?([\d]+)"?',
+        ]
+        for pat in json_follower_patterns:
+            m = re.search(pat, text)
+            if m:
+                val = _parse_number_from_text(m.group(1))
+                if val > 0:
+                    metrics["followers"] = val
+                    data_sources["followers"] = "verified"
+                    break
+
+    if "following" not in metrics:
+        m = re.search(r'"edge_follow"[:\s]*\{["\s]*count["\s]*[:\s]*([\d]+)', text)
+        if m:
+            metrics["following"] = _parse_number_from_text(m.group(1))
+            data_sources["following"] = "verified"
+
+    if "total_posts" not in metrics:
+        json_post_patterns = [
+            r'"edge_owner_to_timeline_media"[:\s]*\{["\s]*count["\s]*[:\s]*([\d]+)',
+            r'"videocount"[:\s]*([\d]+)',
+        ]
+        for pat in json_post_patterns:
+            m = re.search(pat, text)
+            if m:
+                val = _parse_number_from_text(m.group(1))
+                if val > 0:
+                    metrics["total_posts"] = val
+                    data_sources["total_posts"] = "verified"
+                    break
+
+    # ── Priority 3: Generic regex (least reliable) ──
+    if "followers" not in metrics:
+        for pat in [
+            r"([\d,.]+[kmb]?)\s*(?:followers|팔로워|subscribers|구독자)",
+            r"(?:followers|팔로워)[:\s]*([\d,.]+[kmb]?)",
+        ]:
+            m = re.search(pat, text)
+            if m:
+                val = _parse_number_from_text(m.group(1))
+                if val > 0:
+                    metrics["followers"] = val
+                    data_sources["followers"] = "verified"
+                    break
+
+    if "total_posts" not in metrics:
+        m = re.search(r"([\d,.]+[kmb]?)\s*(?:posts|게시물|게시글)", text)
+        if m:
+            val = _parse_number_from_text(m.group(1))
+            if val > 0:
+                metrics["total_posts"] = val
+                data_sources["total_posts"] = "verified"
+
+    if "following" not in metrics:
+        m = re.search(r"([\d,.]+[kmb]?)\s*(?:following|팔로잉)", text)
+        if m:
+            val = _parse_number_from_text(m.group(1))
+            if val > 0:
+                metrics["following"] = val
+                data_sources["following"] = "verified"
+
+    # ── Direct likes data (if available in page) ──
+    like_counts = re.findall(r'"edge_media_preview_like":\{"count":(\d+)\}', text)
+    if like_counts:
+        likes = [int(x) for x in like_counts]
+        metrics["avg_likes"] = sum(likes) // len(likes)
+        metrics["avg_likes_sample_size"] = len(likes)
+        data_sources["avg_likes"] = "verified"
+
+    # TikTok heartCount
+    if "avg_likes" not in metrics:
+        m = re.search(r'"heartcount"[:\s]*([\d]+)', text)
+        if m:
+            metrics["avg_likes"] = _parse_number_from_text(m.group(1))
+            data_sources["avg_likes"] = "verified"
+
+    # ── Bio ──
+    for pat in [
+        r'"biography"[:\s]*"([^"]+)"',
+        r'"description"[:\s]*"([^"]+)"',
+        r'"signature"[:\s]*"([^"]+)"',
+    ]:
+        m = re.search(pat, text)
+        if m:
+            metrics["bio"] = m.group(1)
+            break
+
+    # ── Display name from og:title ──
+    og_title = re.search(r'og:title["\s]*content="([^"]+)"', content)
+    if not og_title:
+        og_title = re.search(r'content="([^"]+)"[^>]*og:title', content)
+    if og_title:
+        raw = og_title.group(1)
+        # "Dem Jointz (@demjointz) • Instagram photos and videos" → "Dem Jointz"
+        name = re.sub(r"\s*\(.*", "", raw).strip()
+        name = re.sub(r"\s*[•·|–-]\s*.*", "", name).strip()
+        if name:
+            metrics["display_name"] = name
+
+    # ── Estimates (clearly marked) ──
+
+    # Engagement rate estimate when no direct likes available
+    if "followers" in metrics and "avg_likes" not in metrics:
+        followers = metrics["followers"]
+        # Industry average engagement rates from settings
+        cfg = Settings()
+        rate_map = {
+            "instagram": cfg.CREATOR_ENGAGEMENT_RATE_IG,
+            "tiktok": cfg.CREATOR_ENGAGEMENT_RATE_TT,
+            "youtube": cfg.CREATOR_ENGAGEMENT_RATE_YT,
+        }
+        rate = rate_map.get(platform, 0.02)
+        metrics["avg_likes"] = int(followers * rate)
+        metrics["engagement_rate_source"] = "industry_average"
+        data_sources["avg_likes"] = "estimated"
+
+    # Posting frequency estimate from total_posts
+    if "total_posts" in metrics and "posts_30d" not in metrics:
+        total = metrics["total_posts"]
+        if total > 0:
+            # Conservative estimate: assume account is ~3 years old
+            estimated_monthly = max(1, total // 36)
+            metrics["posts_30d"] = min(estimated_monthly, 60)
+            data_sources["posts_30d"] = "estimated"
+
+    # Following/follower ratio (a real signal)
+    if metrics.get("followers") and metrics.get("following"):
+        metrics["ff_ratio"] = round(metrics["following"] / metrics["followers"], 3)
+
+    metrics["_data_sources"] = data_sources
+    return metrics
 
 
 @dataclass
@@ -25,15 +236,19 @@ class CreatorEvaluationResult:
     success: bool
     platform: str
     handle: str
+    display_name: str
     decision: str
     grade: str
     score: float
-    score_breakdown: Dict[str, float]
+    score_breakdown: Dict[str, Any]
+    data_confidence: Dict[str, str]
+    tier_info: Optional[Dict[str, Any]]
     tags: List[str]
     risks: List[str]
     report: str
     raw_profile: Dict[str, Any]
     rag_enhanced: Optional[RAGEnhancedData] = None
+    trend: Optional[Dict[str, Any]] = None
 
 
 class CreatorOnboardingAgent:
@@ -235,64 +450,248 @@ class CreatorOnboardingAgent:
 
     async def execute(self, input_data: Dict[str, Any]) -> CreatorEvaluationResult:
         platform: str = str(input_data.get("platform", "")).lower()
-        handle: str = str(input_data.get("handle", "")).strip()
+        handle: str = str(input_data.get("handle", "")).strip().lstrip("@")
         profile_url: Optional[str] = input_data.get("profile_url")
         provided_metrics: Dict[str, Any] = input_data.get("metrics", {}) or {}
         category: Optional[str] = input_data.get("category")
 
-        # 1) fetch profile (via MCP HTTP)
-        profile: Dict[str, Any] = {}
-        if profile_url and profile_url.startswith("http"):
-            try:
-                from src.mcp import HttpMCP  # lazy import
+        # Auto-generate profile URL if not provided
+        if not profile_url or not profile_url.startswith("http"):
+            profile_url = _build_profile_url(platform, handle)
+            if profile_url:
+                logger.info("Auto-generated profile URL: %s", profile_url)
 
-                hmcp = HttpMCP()
-                fetched = hmcp.fetch(profile_url)
-                profile = {
-                    "url": profile_url,
-                    "fetched": True,
-                    "content_type": fetched.get("content_type"),
-                }
+        # 1) fetch profile via Supadata MCP (preferred) → HttpMCP (fallback)
+        profile: Dict[str, Any] = {}
+        scraped_metrics: Dict[str, Any] = {}
+
+        if profile_url:
+            # Try Supadata MCP first (better at scraping SNS pages)
+            try:
+                from src.services.supadata_mcp import SupadataMCPClient
+
+                supadata = SupadataMCPClient()
+                if supadata.available:
+                    results = await supadata.scrape_urls([profile_url])
+                    if results:
+                        scraped_data = results[0]
+                        content_blocks = scraped_data.get("content", [])
+                        scraped_text = ""
+                        for block in content_blocks:
+                            if isinstance(block, dict):
+                                scraped_text += block.get("text", "")
+                            elif isinstance(block, str):
+                                scraped_text += block
+                        scraped_metrics = _extract_metrics_from_scraped(
+                            scraped_text, platform
+                        )
+                        profile = {
+                            "url": profile_url,
+                            "fetched": True,
+                            "source": "supadata",
+                        }
+                        logger.info(
+                            "Supadata scraped metrics for @%s: %s",
+                            handle,
+                            scraped_metrics,
+                        )
             except Exception as e:
-                logger.info("HTTP fetch failed for %s: %s", profile_url, e)
-                profile = {"url": profile_url, "fetched": False}
+                logger.info("Supadata MCP failed for %s: %s", profile_url, e)
+
+            # Fallback to HttpMCP if Supadata didn't return useful data
+            if not scraped_metrics.get("followers"):
+                try:
+                    from src.mcp import HttpMCP
+
+                    hmcp = HttpMCP()
+                    fetched = hmcp.fetch(profile_url)
+                    raw_text = fetched.get("text", "")
+                    http_metrics = _extract_metrics_from_scraped(raw_text, platform)
+                    if http_metrics:
+                        scraped_metrics.update(http_metrics)
+                    profile = {
+                        "url": profile_url,
+                        "fetched": True,
+                        "source": "http",
+                        "content_type": fetched.get("content_type"),
+                    }
+                    logger.info(
+                        "HttpMCP scraped metrics for @%s: %s", handle, http_metrics
+                    )
+                except Exception as e:
+                    logger.info("HTTP fetch failed for %s: %s", profile_url, e)
+                    if not profile:
+                        profile = {"url": profile_url, "fetched": False}
+
+        # Merge: provided_metrics override scraped_metrics
+        profile.update(scraped_metrics)
         profile.update(provided_metrics)
 
-        # 2) derive signals (robust defaults)
+        # 2) derive signals
+        cfg = Settings()
+        data_sources: Dict[str, str] = profile.get("_data_sources", {})
         followers = _to_num(
             profile.get("followers") or profile.get("followers_count"), default=0
         )
+        following = _to_num(profile.get("following"), default=0)
+        total_posts = _to_num(profile.get("total_posts"), default=0)
         avg_likes = _to_num(profile.get("avg_likes"), default=0)
         avg_comments = _to_num(profile.get("avg_comments"), default=0)
         posts_30d = _to_num(profile.get("posts_30d"), default=0)
         reports_90d = _to_num(profile.get("reports_90d"), default=0)
-        brand_fit = float(profile.get("brand_fit", 0.0))  # 0~1 수치 (옵션)
+        brand_fit = float(profile.get("brand_fit", 0.0))
+        ff_ratio = float(profile.get("ff_ratio", 0.0))
         profile_tags: List[str] = profile.get("tags", []) or []
+        display_name = profile.get("display_name", "")
 
         engagement_rate = _safe_div(avg_likes + 2 * avg_comments, max(1, followers))
         frequency = posts_30d / 30.0
 
-        # 3) scoring (simple heuristic)
-        s_followers = _zclip(followers / 1_000_000, 0, 0.4)  # 100만 팔로워→0.4
-        s_engage = _zclip(engagement_rate * 10, 0, 0.3)  # 10%→0.3
-        s_freq = _zclip(frequency, 0, 0.15)  # 하루 1회→0.15
-        s_fit = _zclip(brand_fit * 0.15, 0, 0.15)  # 도메인 적합도
-        base_score = s_followers + s_engage + s_freq + s_fit
+        # ── 3) Tier-based scoring with normalized weights ──
+        # Load weights from settings and normalize to sum=1.0
+        raw_weights = {
+            "followers": cfg.CREATOR_WEIGHT_FOLLOWERS,
+            "engagement": cfg.CREATOR_WEIGHT_ENGAGEMENT,
+            "activity": cfg.CREATOR_WEIGHT_ACTIVITY,
+            "ff_ratio": cfg.CREATOR_WEIGHT_FF_RATIO,
+            "brand_fit": cfg.CREATOR_WEIGHT_BRAND_FIT,
+        }
+        weight_sum = sum(raw_weights.values())
+        weights = {k: v / weight_sum for k, v in raw_weights.items()}
 
-        # risk penalties
+        # Influence tier (log-scale, reflects real market value)
+        tier_name, s_followers_raw = _classify_tier(followers)
+        # Normalize: _classify_tier returns 0~0.40 → scale to 0~1.0 → apply weight
+        s_followers = (s_followers_raw / 0.40) * weights["followers"]
+
+        # Engagement score (normalized to weight)
+        # Benchmark: platform-specific rates. Scoring relative to benchmark.
+        rate_benchmarks = {
+            "instagram": cfg.CREATOR_ENGAGEMENT_RATE_IG,
+            "tiktok": cfg.CREATOR_ENGAGEMENT_RATE_TT,
+            "youtube": cfg.CREATOR_ENGAGEMENT_RATE_YT,
+        }
+        benchmark_rate = rate_benchmarks.get(platform, 0.02)
+        # Score = ratio of actual rate to 2x benchmark (max=1.0)
+        # At benchmark rate → 0.5, at 2x benchmark → 1.0
+        engage_raw = _zclip(engagement_rate / (2 * benchmark_rate), 0, 1.0)
+        s_engage = engage_raw * weights["engagement"]
+
+        # Activity score (normalized to weight)
+        # 0.5/day = full score (15 posts/30d)
+        freq_raw = _zclip(frequency / 0.5, 0, 1.0)
+        s_freq = freq_raw * weights["activity"]
+
+        # FF ratio signal (healthy ratio = low following relative to followers)
+        ff_raw = 0.0
+        ff_health = "unknown"
+        if followers > 0 and following > 0:
+            if ff_ratio <= 0.05:
+                ff_raw = 1.0
+                ff_health = "healthy"
+            elif ff_ratio <= 0.15:
+                ff_raw = 0.8
+                ff_health = "healthy"
+            elif ff_ratio <= 0.5:
+                ff_raw = 0.5
+                ff_health = "moderate"
+            elif ff_ratio <= 1.0:
+                ff_raw = 0.2
+                ff_health = "moderate"
+            else:
+                ff_raw = 0.0
+                ff_health = "unhealthy"
+        s_ff = ff_raw * weights["ff_ratio"]
+
+        # Brand fit (external input)
+        s_fit = _zclip(brand_fit, 0, 1.0) * weights["brand_fit"]
+
+        base_score = s_followers + s_engage + s_freq + s_ff + s_fit
+
+        # ── Risk penalties (only for confirmed data) ──
         risk_tags: List[str] = []
         if reports_90d >= 3:
             base_score -= 0.15
             risk_tags.append("high_reports")
-        if engagement_rate < 0.002:
-            base_score -= 0.1
+        if followers > 0 and engagement_rate < 0.002 and data_sources.get("avg_likes") == "verified":
+            base_score -= 0.10
             risk_tags.append("low_engagement")
-        if posts_30d < 4:
+        if posts_30d > 0 and posts_30d < 4 and data_sources.get("posts_30d") == "verified":
             base_score -= 0.05
             risk_tags.append("low_activity")
+        if ff_ratio > 1.5 and followers > 0:
+            base_score -= 0.05
+            risk_tags.append("follow_back_pattern")
 
         score = float(round(max(0.0, min(1.0, base_score)) * 100, 1))
-        grade, decision, tags = _grade_and_decide(score, risk_tags)
+        grade, decision, tags = _grade_and_decide(score, risk_tags, cfg)
+
+        # ── Build structured score_breakdown with ScoreDetail ──
+        max_followers = round(weights["followers"] * 100, 1)
+        max_engage = round(weights["engagement"] * 100, 1)
+        max_activity = round(weights["activity"] * 100, 1)
+        max_ff = round(weights["ff_ratio"] * 100, 1)
+        max_fit = round(weights["brand_fit"] * 100, 1)
+
+        score_breakdown: Dict[str, Any] = {
+            "followers": {
+                "score": round(s_followers * 100, 1),
+                "max": max_followers,
+                "description": f"{tier_name} — 팔로워 {followers:,}명",
+                "source": data_sources.get("followers", "unavailable"),
+            },
+            "engagement": {
+                "score": round(s_engage * 100, 1),
+                "max": max_engage,
+                "description": (
+                    f"참여율 {engagement_rate:.2%}"
+                    + (f" (업계 평균 추정)" if data_sources.get("avg_likes") == "estimated" else "")
+                ),
+                "source": data_sources.get("avg_likes", "unavailable"),
+            },
+            "activity": {
+                "score": round(s_freq * 100, 1),
+                "max": max_activity,
+                "description": f"게시 빈도 {frequency:.1f}회/일 (추정 {posts_30d}회/30일)",
+                "source": data_sources.get("posts_30d", "unavailable"),
+            },
+            "ff_ratio": {
+                "score": round(s_ff * 100, 1),
+                "max": max_ff,
+                "description": (
+                    f"FF비율 {ff_ratio:.3f} ({ff_health})"
+                    if followers > 0 and following > 0
+                    else "팔로잉 데이터 없음"
+                ),
+                "source": data_sources.get("following", "unavailable"),
+            },
+            "brand_fit": {
+                "score": round(s_fit * 100, 1),
+                "max": max_fit,
+                "description": "브랜드 적합도" + (" (미입력)" if brand_fit == 0 else f" {brand_fit:.0%}"),
+                "source": "verified" if brand_fit > 0 else "unavailable",
+            },
+        }
+
+        # ── Build data_confidence map ──
+        data_confidence: Dict[str, str] = {
+            "followers": data_sources.get("followers", "unavailable"),
+            "following": data_sources.get("following", "unavailable"),
+            "total_posts": data_sources.get("total_posts", "unavailable"),
+            "engagement": data_sources.get("avg_likes", "unavailable"),
+            "activity": data_sources.get("posts_30d", "unavailable"),
+        }
+
+        # ── Build tier_info ──
+        tier_info: Optional[Dict[str, Any]] = {
+            "name": tier_name,
+            "followers": followers,
+            "following": following,
+            "total_posts": total_posts,
+            "ff_ratio": ff_ratio,
+            "ff_health": ff_health,
+            "display_name": display_name,
+        }
 
         # 4) RAG-enhanced analysis (if enabled)
         rag_enhanced: Optional[RAGEnhancedData] = None
@@ -371,21 +770,65 @@ class CreatorOnboardingAgent:
                 logger.warning(f"RAG enhancement failed: {e}")
                 rag_enhanced = None
 
-        # 5) comprehensive report
+        # 5) CreatorHistory trend (if available)
+        trend_data: Optional[Dict[str, Any]] = None
+        try:
+            from src.services.creator_history.service import get_creator_history_service
+            history_svc = get_creator_history_service()
+            creator_id = handle
+            trend_result = await history_svc.get_trend(creator_id)
+            if trend_result and trend_result.get("evaluation_count", 0) >= 2:
+                trend_data = trend_result
+        except Exception as e:
+            logger.debug("Trend lookup skipped: %s", e)
+
+        # 6) comprehensive report
+        src_label = lambda k: f" [{data_sources.get(k, 'N/A')}]"
         report_parts = [
             f"=== Creator Evaluation Report ===",
-            f"Platform: {platform} | Handle: {handle}",
+            f"Platform: {platform} | Handle: @{handle}",
+            f"Display Name: {display_name or 'N/A'}",
             f"Category: {category or 'Not specified'}",
+            f"Tier: {tier_name}",
             "",
-            f"=== Metrics ===",
-            f"Followers: {followers:,} | Engagement: {engagement_rate:.2%} | Posts(30d): {posts_30d}",
-            f"Brand-fit: {brand_fit:.2f} | Reports(90d): {reports_90d}",
+            f"=== Profile Metrics ===",
+            f"Followers: {followers:,}{src_label('followers')}",
+            f"Following: {following:,}{src_label('following')}",
+            f"Total Posts: {total_posts:,}{src_label('total_posts')}",
+            f"FF Ratio: {ff_ratio:.3f} ({ff_health})",
             "",
-            f"=== Evaluation ===",
-            f"Score: {score} / 100 | Grade: {grade} | Decision: {decision}",
-            f"Risks: {', '.join(risk_tags) if risk_tags else 'None'}",
-            f"Tags: {', '.join(tags) if tags else 'None'}",
+            f"=== Engagement ===",
+            f"Avg Likes: {avg_likes:,}{src_label('avg_likes')}",
+            f"Engagement Rate: {engagement_rate:.2%}",
+            f"Posts/30d: {posts_30d}{src_label('posts_30d')}",
+            f"Posting Freq: {frequency:.1f}/day",
+            "",
+            f"=== Score Breakdown (weights normalized to 100) ===",
         ]
+        for key, detail in score_breakdown.items():
+            report_parts.append(
+                f"{key}: {detail['score']}/{detail['max']}  — {detail['description']} [{detail['source']}]"
+            )
+        report_parts.extend([
+            f"─────────────────",
+            f"Total: {score}/100 → Grade {grade} → {decision.upper()}",
+            "",
+            f"=== Risks ===",
+            f"{'  '.join(risk_tags) if risk_tags else 'None detected'}",
+            f"Tags: {', '.join(tags) if tags else 'None'}",
+        ])
+
+        # Trend info if available
+        if trend_data:
+            report_parts.append("")
+            report_parts.append("=== Growth Trend ===")
+            report_parts.append(f"Trend: {trend_data.get('trend_summary', 'N/A')}")
+            fc = trend_data.get("followers_change")
+            if fc is not None:
+                report_parts.append(f"Follower Change: {fc:+,}")
+            sc = trend_data.get("score_change")
+            if sc is not None:
+                report_parts.append(f"Score Change: {sc:+.1f}")
 
         # RAG 향상 정보 추가
         if rag_enhanced:
@@ -428,20 +871,19 @@ class CreatorOnboardingAgent:
             success=True,
             platform=platform,
             handle=handle,
+            display_name=display_name,
             decision=decision,
             grade=grade,
             score=score,
-            score_breakdown={
-                "followers": round(s_followers * 100, 1),
-                "engagement": round(s_engage * 100, 1),
-                "frequency": round(s_freq * 100, 1),
-                "brand_fit": round(s_fit * 100, 1),
-            },
+            score_breakdown=score_breakdown,
+            data_confidence=data_confidence,
+            tier_info=tier_info,
             tags=tags,
             risks=risk_tags,
             report=report,
             raw_profile=profile,
             rag_enhanced=rag_enhanced,
+            trend=trend_data,
         )
 
 
@@ -472,24 +914,69 @@ def _zclip(x: float, lo: float, hi: float) -> float:
     return x
 
 
-def _grade_and_decide(score: float, risk_tags: List[str]) -> tuple[str, str, List[str]]:
-    grade = "C"
-    if score >= 85:
+def _classify_tier(followers: int) -> tuple[str, float]:
+    """Classify creator into influence tier and return (tier_name, raw_score).
+
+    raw_score is on 0~0.40 scale (will be normalized by caller).
+    Tiers (industry standard):
+      Mega:       1M+     → 0.40
+      Macro-Mega: 500K+   → 0.37
+      Macro:      100K+   → 0.33
+      Mid-Tier:   50K+    → 0.28
+      Micro:      10K+    → 0.22
+      Nano:       1K+     → 0.14
+      Rising:     <1K     → up to 0.08
+    """
+    if followers >= 1_000_000:
+        return "Mega (1M+)", 0.40
+    elif followers >= 500_000:
+        return "Macro-Mega (500K+)", 0.37
+    elif followers >= 100_000:
+        return "Macro (100K+)", 0.33
+    elif followers >= 50_000:
+        return "Mid-Tier (50K+)", 0.28
+    elif followers >= 10_000:
+        return "Micro (10K+)", 0.22
+    elif followers >= 1_000:
+        return "Nano (1K+)", 0.14
+    else:
+        score = _zclip(followers / 1_000 * 0.08, 0, 0.08)
+        return "Rising (<1K)", score
+
+
+def _grade_and_decide(
+    score: float, risk_tags: List[str], cfg: Optional[Any] = None
+) -> tuple[str, str, List[str]]:
+    if cfg is None:
+        cfg = Settings()
+
+    # Extended grade system: S/A/B/C/D/F
+    if score >= cfg.CREATOR_GRADE_S_THRESHOLD:
         grade = "S"
-    elif score >= 70:
+    elif score >= cfg.CREATOR_GRADE_A_THRESHOLD:
         grade = "A"
-    elif score >= 55:
+    elif score >= cfg.CREATOR_GRADE_B_THRESHOLD:
         grade = "B"
+    elif score >= cfg.CREATOR_GRADE_C_THRESHOLD:
+        grade = "C"
+    elif score >= cfg.CREATOR_GRADE_D_THRESHOLD:
+        grade = "D"
+    else:
+        grade = "F"
 
     decision = "accept"
-    if "high_reports" in risk_tags or score < 50:
+    if "high_reports" in risk_tags or score < cfg.CREATOR_REJECT_THRESHOLD:
         decision = "reject"
-    elif "low_activity" in risk_tags and score < 70:
+    elif grade in ("D", "F"):
+        decision = "reject"
+    elif "low_activity" in risk_tags and score < cfg.CREATOR_GRADE_A_THRESHOLD:
         decision = "hold"
 
     tags: List[str] = []
     if grade in ("S", "A"):
         tags.append("top_candidate")
+    if grade == "F":
+        tags.append("data_insufficient")
     if "low_engagement" in risk_tags:
         tags.append("needs_awareness_campaign")
     if "low_activity" in risk_tags:

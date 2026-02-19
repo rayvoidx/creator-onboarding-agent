@@ -1,7 +1,7 @@
 """API 응답 스키마"""
 
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
@@ -62,20 +62,46 @@ class HealthCheckResponse(BaseModel):
     version: str
 
 
+class ScoreDetail(BaseModel):
+    """Individual score component with explanation"""
+
+    score: float
+    max: float
+    description: str
+    source: str = "verified"  # "verified" | "estimated" | "unavailable"
+
+
+class TierInfo(BaseModel):
+    """Creator influence tier information"""
+
+    name: str  # "Mid-Tier (50K+)"
+    followers: int
+    following: int = 0
+    total_posts: int = 0
+    ff_ratio: float = 0.0
+    ff_health: str = "unknown"  # "healthy" | "moderate" | "unhealthy"
+    display_name: str = ""
+
+
 class CreatorEvaluationResponse(BaseModel):
     """Creator evaluation response"""
 
     success: bool
     platform: str
     handle: str
+    display_name: str = ""
     decision: str
     grade: str
     score: float
-    score_breakdown: Dict[str, float]
+    tier: Optional[TierInfo] = None
+    score_breakdown: Dict[str, Any]
+    data_confidence: Dict[str, str] = {}
     tags: List[str]
     risks: List[str]
     report: str
     raw_profile: Dict[str, Any]
+    rag_enhanced: Optional[Dict[str, Any]] = None
+    trend: Optional[Dict[str, Any]] = None
     timestamp: datetime
 
 

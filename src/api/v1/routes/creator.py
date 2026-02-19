@@ -75,14 +75,23 @@ async def evaluate_creator(request: Dict[str, Any]) -> CreatorEvaluationResponse
             success=result.success,
             platform=result.platform,
             handle=result.handle,
+            display_name=result.display_name,
             decision=result.decision,
             grade=result.grade,
             score=result.score,
+            tier=result.tier_info,
             score_breakdown=result.score_breakdown,
+            data_confidence=result.data_confidence,
             tags=result.tags,
             risks=result.risks,
             report=result.report,
             raw_profile=result.raw_profile,
+            rag_enhanced=(
+                result.rag_enhanced.__dict__
+                if result.rag_enhanced
+                else None
+            ),
+            trend=result.trend,
             timestamp=datetime.now(),
         )
 

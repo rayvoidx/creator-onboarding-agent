@@ -55,8 +55,8 @@ services:
       - ENV=production
       - DEBUG=false
       - LOG_LEVEL=INFO
-      - SECRET_KEY=${SECRET_KEY}
-      - ENABLE_AUTH=${ENABLE_AUTH:-true}
+      - SECRET_KEY=${SECRET_KEY:-creator-onboarding-dev-secret-key-2026}
+      - ENABLE_AUTH=${ENABLE_AUTH:-false}
       - ENABLE_RATE_LIMITING=${ENABLE_RATE_LIMITING:-true}
 
       # Observability (Optional)
@@ -81,11 +81,26 @@ services:
       - creator-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: creator-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - creator-network
+    restart: unless-stopped
 
   # Node.js MCP Gateway
   mcp-gateway:

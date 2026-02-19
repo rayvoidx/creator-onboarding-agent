@@ -498,6 +498,7 @@ class RAGPipeline:
         prompt_mapping = {
             PromptType.COMPETENCY_ASSESSMENT: "competency_expert",
             PromptType.RECOMMENDATION: "recommendation_expert",
+            PromptType.CREATOR_EVALUATION: "creator_expert",
             PromptType.SEARCH: "default",
             PromptType.ANALYTICS: "default",
             PromptType.GENERAL_CHAT: "default",

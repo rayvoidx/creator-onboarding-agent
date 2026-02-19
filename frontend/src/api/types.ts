@@ -31,17 +31,40 @@ export interface CreatorEvaluationPayload {
   profile_url?: string;
 }
 
+export interface ScoreDetail {
+  score: number;
+  max: number;
+  description: string;
+  source: "verified" | "estimated" | "unavailable";
+}
+
+export interface TierInfo {
+  name: string;
+  followers: number;
+  following: number;
+  total_posts: number;
+  ff_ratio: number;
+  ff_health: "healthy" | "moderate" | "unhealthy" | "unknown";
+  display_name: string;
+}
+
 export interface CreatorEvaluationResponse {
   success: boolean;
   platform: string;
   handle: string;
+  display_name: string;
   decision: string;
   grade: string;
   score: number;
-  score_breakdown: Record<string, number>;
+  tier?: TierInfo;
+  score_breakdown: Record<string, ScoreDetail>;
+  data_confidence: Record<string, string>;
   tags: string[];
   risks: string[];
   report: string;
+  raw_profile: Record<string, unknown>;
+  rag_enhanced?: RAGEnhancedData;
+  trend?: Record<string, unknown>;
   timestamp: string;
 }
 

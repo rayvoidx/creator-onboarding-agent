@@ -18,6 +18,7 @@ class PromptType(Enum):
     ANALYTICS = "analytics"
     GENERAL_CHAT = "general_chat"
     DATA_COLLECTION = "data_collection"
+    CREATOR_EVALUATION = "creator_evaluation"
 
 
 class PromptTemplates:

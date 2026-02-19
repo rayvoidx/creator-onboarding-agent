@@ -150,6 +150,26 @@ class Settings(BaseSettings):
     TESSDATA_PREFIX: str = os.getenv("TESSDATA_PREFIX", "")
     OCR_CLEAN_FILTERS: str = os.getenv("OCR_CLEAN_FILTERS", "\t,\n,\r")
 
+    # ── Creator Scoring Configuration ──
+    CREATOR_GRADE_S_THRESHOLD: int = int(os.getenv("CREATOR_GRADE_S_THRESHOLD", "85"))
+    CREATOR_GRADE_A_THRESHOLD: int = int(os.getenv("CREATOR_GRADE_A_THRESHOLD", "70"))
+    CREATOR_GRADE_B_THRESHOLD: int = int(os.getenv("CREATOR_GRADE_B_THRESHOLD", "55"))
+    CREATOR_GRADE_C_THRESHOLD: int = int(os.getenv("CREATOR_GRADE_C_THRESHOLD", "40"))
+    CREATOR_GRADE_D_THRESHOLD: int = int(os.getenv("CREATOR_GRADE_D_THRESHOLD", "30"))
+    CREATOR_REJECT_THRESHOLD: int = int(os.getenv("CREATOR_REJECT_THRESHOLD", "40"))
+
+    # Score weights (must sum to 1.0)
+    CREATOR_WEIGHT_FOLLOWERS: float = float(os.getenv("CREATOR_WEIGHT_FOLLOWERS", "0.35"))
+    CREATOR_WEIGHT_ENGAGEMENT: float = float(os.getenv("CREATOR_WEIGHT_ENGAGEMENT", "0.25"))
+    CREATOR_WEIGHT_ACTIVITY: float = float(os.getenv("CREATOR_WEIGHT_ACTIVITY", "0.15"))
+    CREATOR_WEIGHT_FF_RATIO: float = float(os.getenv("CREATOR_WEIGHT_FF_RATIO", "0.10"))
+    CREATOR_WEIGHT_BRAND_FIT: float = float(os.getenv("CREATOR_WEIGHT_BRAND_FIT", "0.15"))
+
+    # Engagement rate benchmarks by platform (industry average)
+    CREATOR_ENGAGEMENT_RATE_IG: float = float(os.getenv("CREATOR_ENGAGEMENT_RATE_IG", "0.018"))
+    CREATOR_ENGAGEMENT_RATE_TT: float = float(os.getenv("CREATOR_ENGAGEMENT_RATE_TT", "0.045"))
+    CREATOR_ENGAGEMENT_RATE_YT: float = float(os.getenv("CREATOR_ENGAGEMENT_RATE_YT", "0.025"))
+
     # Reranker/Query expansion
     RERANKER_THRESHOLD: float = float(os.getenv("RERANKER_THRESHOLD", "0.85"))
     QUERY_EXPANSION_ENABLED: bool = (
