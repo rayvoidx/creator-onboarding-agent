@@ -1,71 +1,104 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="840" height="180" viewBox="0 0 840 180">
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="220" viewBox="0 0 840 220">
   <defs>
-    <!-- Animated gradient background — stays behind text -->
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0f172a"/>
-      <stop offset="100%" stop-color="#1e293b"/>
+    <linearGradient id="hbg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0e1a"/>
+      <stop offset="50%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1a1040"/>
     </linearGradient>
-    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+    <linearGradient id="haccent" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#8b5cf6">
         <animate attributeName="stop-color" values="#8b5cf6;#6366f1;#8b5cf6" dur="4s" repeatCount="indefinite"/>
       </stop>
-      <stop offset="100%" stop-color="#06b6d4">
+      <stop offset="50%" stop-color="#06b6d4">
         <animate attributeName="stop-color" values="#06b6d4;#8b5cf6;#06b6d4" dur="4s" repeatCount="indefinite"/>
       </stop>
+      <stop offset="100%" stop-color="#10b981">
+        <animate attributeName="stop-color" values="#10b981;#06b6d4;#10b981" dur="4s" repeatCount="indefinite"/>
+      </stop>
     </linearGradient>
-    <!-- Subtle grid dots — uniform, behind everything -->
-    <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse">
-      <circle cx="12" cy="12" r="1" fill="#334155" opacity="0.5"/>
+    <pattern id="hdots" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="10" cy="10" r="0.6" fill="#334155" opacity="0.35"/>
     </pattern>
   </defs>
 
-  <!-- Background -->
-  <rect width="840" height="180" rx="12" fill="url(#bg)"/>
-  <rect width="840" height="180" rx="12" fill="url(#dots)"/>
+  <rect width="840" height="220" rx="12" fill="url(#hbg)"/>
+  <rect width="840" height="220" rx="12" fill="url(#hdots)"/>
 
-  <!-- Animated accent line at bottom — uniform 3px, never overlaps text -->
-  <rect x="0" y="174" width="840" height="3" rx="1.5" fill="url(#accent)" opacity="0.8"/>
+  <!-- Accent bar top -->
+  <rect x="0" y="0" width="840" height="3" rx="1.5" fill="url(#haccent)" opacity="0.6"/>
 
-  <!-- Left decorative orb — fixed position, subtle pulse -->
-  <circle cx="70" cy="90" r="40" fill="#8b5cf6" opacity="0.06">
-    <animate attributeName="r" values="40;44;40" dur="3s" repeatCount="indefinite"/>
+  <!-- Left orb -->
+  <circle cx="80" cy="110" r="50" fill="#8b5cf6" opacity="0.04">
+    <animate attributeName="r" values="50;56;50" dur="4s" repeatCount="indefinite"/>
   </circle>
-  <circle cx="70" cy="90" r="24" fill="#8b5cf6" opacity="0.1">
-    <animate attributeName="r" values="24;27;24" dur="3s" repeatCount="indefinite"/>
-  </circle>
-
-  <!-- Right decorative orb -->
-  <circle cx="770" cy="90" r="40" fill="#06b6d4" opacity="0.06">
-    <animate attributeName="r" values="40;44;40" dur="3.5s" repeatCount="indefinite"/>
-  </circle>
-  <circle cx="770" cy="90" r="24" fill="#06b6d4" opacity="0.1">
-    <animate attributeName="r" values="24;27;24" dur="3.5s" repeatCount="indefinite"/>
+  <circle cx="80" cy="110" r="28" fill="#8b5cf6" opacity="0.07">
+    <animate attributeName="r" values="28;32;28" dur="4s" repeatCount="indefinite"/>
   </circle>
 
-  <!-- Text (always on top, no animation overlaps) -->
-  <text x="420" y="65" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="28" font-weight="700" fill="#f8fafc">Creator Onboarding Agent</text>
-  <text x="420" y="100" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="15" fill="#94a3b8">Agentic AI  |  LangGraph Multi-Agent  |  RAG-Enhanced Evaluation</text>
+  <!-- Right orb -->
+  <circle cx="760" cy="110" r="50" fill="#06b6d4" opacity="0.04">
+    <animate attributeName="r" values="50;56;50" dur="4.5s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="760" cy="110" r="28" fill="#06b6d4" opacity="0.07">
+    <animate attributeName="r" values="28;32;28" dur="4.5s" repeatCount="indefinite"/>
+  </circle>
 
-  <!-- Three animated badge pills — uniform size -->
-  <g transform="translate(210, 120)">
-    <rect width="120" height="28" rx="14" fill="#8b5cf6" opacity="0.15"/>
-    <rect width="120" height="28" rx="14" fill="none" stroke="#8b5cf6" stroke-width="1" opacity="0.4">
-      <animate attributeName="opacity" values="0.4;0.7;0.4" dur="2.5s" repeatCount="indefinite"/>
+  <!-- Beta badge -->
+  <rect x="370" y="24" width="100" height="22" rx="11" fill="#f59e0b" opacity="0.15" stroke="#f59e0b" stroke-width="0.8"/>
+  <text x="420" y="39" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="10" font-weight="700" fill="#fbbf24" letter-spacing="2">PUBLIC BETA</text>
+
+  <!-- Title -->
+  <text x="420" y="78" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="30" font-weight="800" fill="#f8fafc">Creator Onboarding Agent</text>
+  <text x="420" y="106" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="14" fill="#94a3b8">Autonomous multi-agent system for creator evaluation, scoring, and mission matching</text>
+
+  <!-- Feature pills row 1 -->
+  <g transform="translate(110, 128)">
+    <rect width="130" height="28" rx="14" fill="#8b5cf6" opacity="0.12"/>
+    <rect width="130" height="28" rx="14" fill="none" stroke="#8b5cf6" stroke-width="0.8" opacity="0.4">
+      <animate attributeName="opacity" values="0.3;0.6;0.3" dur="3s" repeatCount="indefinite"/>
     </rect>
-    <text x="60" y="18" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#c4b5fd">9 AI Agents</text>
+    <text x="65" y="18" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#c4b5fd">9 AI Agents</text>
   </g>
-  <g transform="translate(360, 120)">
-    <rect width="120" height="28" rx="14" fill="#06b6d4" opacity="0.15"/>
-    <rect width="120" height="28" rx="14" fill="none" stroke="#06b6d4" stroke-width="1" opacity="0.4">
-      <animate attributeName="opacity" values="0.4;0.7;0.4" dur="2.5s" begin="0.8s" repeatCount="indefinite"/>
+  <g transform="translate(260, 128)">
+    <rect width="130" height="28" rx="14" fill="#6366f1" opacity="0.12"/>
+    <rect width="130" height="28" rx="14" fill="none" stroke="#6366f1" stroke-width="0.8" opacity="0.4">
+      <animate attributeName="opacity" values="0.3;0.6;0.3" dur="3s" begin="0.5s" repeatCount="indefinite"/>
     </rect>
-    <text x="60" y="18" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#67e8f9">RAG Pipeline</text>
+    <text x="65" y="18" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#a5b4fc">LangGraph</text>
   </g>
-  <g transform="translate(510, 120)">
-    <rect width="120" height="28" rx="14" fill="#10b981" opacity="0.15"/>
-    <rect width="120" height="28" rx="14" fill="none" stroke="#10b981" stroke-width="1" opacity="0.4">
-      <animate attributeName="opacity" values="0.4;0.7;0.4" dur="2.5s" begin="1.6s" repeatCount="indefinite"/>
+  <g transform="translate(410, 128)">
+    <rect width="130" height="28" rx="14" fill="#06b6d4" opacity="0.12"/>
+    <rect width="130" height="28" rx="14" fill="none" stroke="#06b6d4" stroke-width="0.8" opacity="0.4">
+      <animate attributeName="opacity" values="0.3;0.6;0.3" dur="3s" begin="1s" repeatCount="indefinite"/>
     </rect>
-    <text x="60" y="18" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#6ee7b7">MCP Tools</text>
+    <text x="65" y="18" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#67e8f9">RAG Pipeline</text>
   </g>
+  <g transform="translate(560, 128)">
+    <rect width="130" height="28" rx="14" fill="#10b981" opacity="0.12"/>
+    <rect width="130" height="28" rx="14" fill="none" stroke="#10b981" stroke-width="0.8" opacity="0.4">
+      <animate attributeName="opacity" values="0.3;0.6;0.3" dur="3s" begin="1.5s" repeatCount="indefinite"/>
+    </rect>
+    <text x="65" y="18" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#6ee7b7">MCP Tools</text>
+  </g>
+
+  <!-- Stat pills row 2 -->
+  <g transform="translate(170, 172)">
+    <rect width="100" height="24" rx="12" fill="rgba(255,255,255,0.04)"/>
+    <text x="50" y="16" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#64748b">Multi-Model LLM</text>
+  </g>
+  <g transform="translate(290, 172)">
+    <rect width="100" height="24" rx="12" fill="rgba(255,255,255,0.04)"/>
+    <text x="50" y="16" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#64748b">6-Grade Scoring</text>
+  </g>
+  <g transform="translate(410, 172)">
+    <rect width="100" height="24" rx="12" fill="rgba(255,255,255,0.04)"/>
+    <text x="50" y="16" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#64748b">Real-time SSE</text>
+  </g>
+  <g transform="translate(530, 172)">
+    <rect width="100" height="24" rx="12" fill="rgba(255,255,255,0.04)"/>
+    <text x="50" y="16" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#64748b">Docker-Ready</text>
+  </g>
+
+  <!-- Accent bar bottom -->
+  <rect x="0" y="217" width="840" height="3" rx="1.5" fill="url(#haccent)" opacity="0.6"/>
 </svg>

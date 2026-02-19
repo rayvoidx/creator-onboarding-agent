@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="280" viewBox="0 0 840 280">
+  <defs>
+    <linearGradient id="cbg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <pattern id="cgrid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="12" cy="12" r="0.8" fill="#334155" opacity="0.4"/>
+    </pattern>
+  </defs>
+
+  <rect width="840" height="280" rx="12" fill="url(#cbg)"/>
+  <rect width="840" height="280" rx="12" fill="url(#cgrid)"/>
+
+  <!-- Title -->
+  <text x="420" y="28" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="#f8fafc">Why Agentic AI? — Beyond Simple LLM Chatbots</text>
+
+  <!-- ═══ Column 1: LLM Chatbot ═══ -->
+  <rect x="30" y="48" width="240" height="210" rx="8" fill="#1e293b" stroke="#6b7280" stroke-width="1"/>
+  <text x="150" y="72" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="#9ca3af">LLM Chatbot</text>
+  <line x1="60" y1="82" x2="240" y2="82" stroke="#334155" stroke-width="0.5"/>
+  <text x="150" y="104" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#6b7280">Query</text>
+  <text x="150" y="118" text-anchor="middle" font-family="system-ui,sans-serif" font-size="16" fill="#475569">|</text>
+  <rect x="100" y="126" width="100" height="28" rx="4" fill="rgba(107,114,128,0.1)" stroke="#6b7280" stroke-width="0.5"/>
+  <text x="150" y="144" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#9ca3af">System Prompt</text>
+  <text x="150" y="160" text-anchor="middle" font-family="system-ui,sans-serif" font-size="16" fill="#475569">|</text>
+  <rect x="100" y="168" width="100" height="28" rx="4" fill="rgba(107,114,128,0.1)" stroke="#6b7280" stroke-width="0.5"/>
+  <text x="150" y="186" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#9ca3af">LLM Response</text>
+  <text x="150" y="202" text-anchor="middle" font-family="system-ui,sans-serif" font-size="16" fill="#475569">|</text>
+  <text x="150" y="218" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#6b7280">Output</text>
+  <!-- Label -->
+  <rect x="80" y="232" width="140" height="18" rx="9" fill="rgba(107,114,128,0.15)"/>
+  <text x="150" y="244" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#9ca3af">Single pass, no tools</text>
+
+  <!-- ═══ Column 2: RAG ═══ -->
+  <rect x="300" y="48" width="240" height="210" rx="8" fill="#1e293b" stroke="#3b82f6" stroke-width="1"/>
+  <text x="420" y="72" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="#93c5fd">RAG System</text>
+  <line x1="330" y1="82" x2="510" y2="82" stroke="#334155" stroke-width="0.5"/>
+  <text x="420" y="104" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#93c5fd">Query</text>
+  <text x="420" y="118" text-anchor="middle" font-family="system-ui,sans-serif" font-size="16" fill="#475569">|</text>
+  <rect x="370" y="126" width="100" height="28" rx="4" fill="rgba(59,130,246,0.1)" stroke="#3b82f6" stroke-width="0.5"/>
+  <text x="420" y="144" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#93c5fd">Vector Search</text>
+  <text x="420" y="160" text-anchor="middle" font-family="system-ui,sans-serif" font-size="16" fill="#475569">|</text>
+  <rect x="370" y="168" width="100" height="28" rx="4" fill="rgba(59,130,246,0.1)" stroke="#3b82f6" stroke-width="0.5"/>
+  <text x="420" y="186" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#93c5fd">Augmented Gen</text>
+  <text x="420" y="202" text-anchor="middle" font-family="system-ui,sans-serif" font-size="16" fill="#475569">|</text>
+  <text x="420" y="218" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#93c5fd">Output</text>
+  <!-- Label -->
+  <rect x="340" y="232" width="160" height="18" rx="9" fill="rgba(59,130,246,0.15)"/>
+  <text x="420" y="244" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#93c5fd">Knowledge-grounded</text>
+
+  <!-- ═══ Column 3: Agentic AI (This Project) ═══ -->
+  <rect x="570" y="48" width="250" height="210" rx="8" fill="#1e293b" stroke="#8b5cf6" stroke-width="1.5">
+    <animate attributeName="stroke-opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite"/>
+  </rect>
+  <text x="695" y="72" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="#c4b5fd">Agentic AI (This Project)</text>
+  <line x1="600" y1="82" x2="790" y2="82" stroke="#334155" stroke-width="0.5"/>
+  <text x="695" y="100" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#c4b5fd">Query</text>
+  <text x="695" y="112" text-anchor="middle" font-family="system-ui,sans-serif" font-size="14" fill="#475569">|</text>
+  <rect x="640" y="116" width="110" height="22" rx="4" fill="rgba(139,92,246,0.1)" stroke="#8b5cf6" stroke-width="0.5"/>
+  <text x="695" y="131" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#c4b5fd">Intent Router</text>
+
+  <!-- Three mini branches -->
+  <line x1="670" y1="138" x2="630" y2="150" stroke="#475569" stroke-width="0.8"/>
+  <line x1="695" y1="138" x2="695" y2="150" stroke="#475569" stroke-width="0.8"/>
+  <line x1="720" y1="138" x2="760" y2="150" stroke="#475569" stroke-width="0.8"/>
+  <rect x="608" y="150" width="44" height="18" rx="3" fill="rgba(139,92,246,0.1)" stroke="#8b5cf6" stroke-width="0.5"/>
+  <text x="630" y="162" text-anchor="middle" font-family="system-ui,sans-serif" font-size="7" fill="#c4b5fd">Agent A</text>
+  <rect x="673" y="150" width="44" height="18" rx="3" fill="rgba(6,182,212,0.1)" stroke="#06b6d4" stroke-width="0.5"/>
+  <text x="695" y="162" text-anchor="middle" font-family="system-ui,sans-serif" font-size="7" fill="#67e8f9">Agent B</text>
+  <rect x="738" y="150" width="44" height="18" rx="3" fill="rgba(16,185,129,0.1)" stroke="#10b981" stroke-width="0.5"/>
+  <text x="760" y="162" text-anchor="middle" font-family="system-ui,sans-serif" font-size="7" fill="#6ee7b7">Agent C</text>
+
+  <!-- Converge -->
+  <line x1="630" y1="168" x2="695" y2="178" stroke="#475569" stroke-width="0.5"/>
+  <line x1="695" y1="168" x2="695" y2="178" stroke="#475569" stroke-width="0.5"/>
+  <line x1="760" y1="168" x2="695" y2="178" stroke="#475569" stroke-width="0.5"/>
+  <rect x="645" y="180" width="100" height="18" rx="3" fill="rgba(245,158,11,0.1)" stroke="#f59e0b" stroke-width="0.5"/>
+  <text x="695" y="192" text-anchor="middle" font-family="system-ui,sans-serif" font-size="7" fill="#fbbf24">RAG + Tool Use</text>
+
+  <!-- Replan loop arrow -->
+  <path d="M745,189 C770,189 770,175 745,175" fill="none" stroke="#f59e0b" stroke-width="0.5" stroke-dasharray="2 1"/>
+  <text x="780" y="185" font-family="system-ui,sans-serif" font-size="6" fill="#f59e0b">loop</text>
+
+  <text x="695" y="210" text-anchor="middle" font-family="system-ui,sans-serif" font-size="14" fill="#475569">|</text>
+  <text x="695" y="224" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#c4b5fd">Output + Reasoning Trace</text>
+
+  <!-- Label -->
+  <rect x="615" y="232" width="160" height="18" rx="9" fill="rgba(139,92,246,0.15)"/>
+  <text x="695" y="244" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#c4b5fd">Autonomous, multi-agent</text>
+
+  <!-- Animated dots between columns -->
+  <circle r="4" fill="#6b7280" opacity="0.3">
+    <animateMotion dur="3s" repeatCount="indefinite" path="M275,150 L295,150"/>
+  </circle>
+  <circle r="4" fill="#3b82f6" opacity="0.3">
+    <animateMotion dur="3s" begin="1s" repeatCount="indefinite" path="M545,150 L565,150"/>
+  </circle>
+</svg>

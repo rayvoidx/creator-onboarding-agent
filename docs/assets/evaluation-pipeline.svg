@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="840" height="320" viewBox="0 0 840 320">
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="340" viewBox="0 0 840 340">
   <defs>
     <linearGradient id="epbg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#0f172a"/>
@@ -9,93 +9,97 @@
     </pattern>
   </defs>
 
-  <rect width="840" height="320" rx="12" fill="url(#epbg)"/>
-  <rect width="840" height="320" rx="12" fill="url(#epgrid)"/>
+  <rect width="840" height="340" rx="12" fill="url(#epbg)"/>
+  <rect width="840" height="340" rx="12" fill="url(#epgrid)"/>
 
   <!-- Title -->
-  <text x="420" y="32" text-anchor="middle" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#f8fafc">Evaluation Pipeline</text>
+  <text x="420" y="28" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="#f8fafc">Creator Evaluation Pipeline</text>
 
   <!-- ═══ Step 1: Data Collection ═══ -->
-  <rect x="30" y="56" width="150" height="80" rx="8" fill="#1e293b" stroke="#8b5cf6" stroke-width="1.5">
+  <rect x="30" y="50" width="160" height="100" rx="8" fill="#1e293b" stroke="#8b5cf6" stroke-width="1.5">
     <animate attributeName="stroke-opacity" values="0.5;1;0.5" dur="3s" repeatCount="indefinite"/>
   </rect>
-  <text x="105" y="80" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#c4b5fd">1. Data Collection</text>
-  <text x="105" y="100" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">Profile Scraping</text>
-  <text x="105" y="114" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">og:description Parse</text>
-  <text x="105" y="128" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">Metric Extraction</text>
+  <text x="110" y="72" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#c4b5fd">1. Data Collection</text>
+  <text x="110" y="92" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">Profile Scraping</text>
+  <text x="110" y="106" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">og:description Parse</text>
+  <text x="110" y="120" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">Metric Extraction</text>
+  <text x="110" y="134" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">Confidence Tagging</text>
 
-  <!-- Arrow 1→2 -->
-  <line x1="180" y1="96" x2="220" y2="96" stroke="#475569" stroke-width="1.5"/>
-  <polygon points="216,91 226,96 216,101" fill="#475569"/>
+  <!-- Arrow 1-2 -->
+  <line x1="190" y1="100" x2="230" y2="100" stroke="#475569" stroke-width="1.5"/>
+  <polygon points="226,95 236,100 226,105" fill="#475569"/>
   <circle r="4" fill="#8b5cf6" opacity="0.8">
-    <animateMotion dur="1.5s" repeatCount="indefinite" path="M180,96 L220,96"/>
+    <animateMotion dur="1.5s" repeatCount="indefinite" path="M190,100 L230,100"/>
   </circle>
 
   <!-- ═══ Step 2: Tier Classification ═══ -->
-  <rect x="230" y="56" width="150" height="80" rx="8" fill="#1e293b" stroke="#6366f1" stroke-width="1.5">
+  <rect x="240" y="50" width="160" height="100" rx="8" fill="#1e293b" stroke="#6366f1" stroke-width="1.5">
     <animate attributeName="stroke-opacity" values="0.5;1;0.5" dur="3s" begin="0.5s" repeatCount="indefinite"/>
   </rect>
-  <text x="305" y="80" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#a5b4fc">2. Tier Classification</text>
-  <text x="305" y="100" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">7-Tier System</text>
-  <text x="305" y="114" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">Mega → Rising</text>
-  <text x="305" y="128" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">FF Ratio Health</text>
+  <text x="320" y="72" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#a5b4fc">2. Tier Classification</text>
+  <text x="320" y="92" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">7-Tier System</text>
+  <text x="320" y="106" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">Mega &gt; Rising</text>
+  <text x="320" y="120" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">FF Ratio Health Check</text>
+  <text x="320" y="134" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">Account Authenticity</text>
 
-  <!-- Arrow 2→3 -->
-  <line x1="380" y1="96" x2="420" y2="96" stroke="#475569" stroke-width="1.5"/>
-  <polygon points="416,91 426,96 416,101" fill="#475569"/>
+  <!-- Arrow 2-3 -->
+  <line x1="400" y1="100" x2="440" y2="100" stroke="#475569" stroke-width="1.5"/>
+  <polygon points="436,95 446,100 436,105" fill="#475569"/>
   <circle r="4" fill="#6366f1" opacity="0.8">
-    <animateMotion dur="1.5s" begin="0.5s" repeatCount="indefinite" path="M380,96 L420,96"/>
+    <animateMotion dur="1.5s" begin="0.5s" repeatCount="indefinite" path="M400,100 L440,100"/>
   </circle>
 
   <!-- ═══ Step 3: Multi-Criteria Scoring ═══ -->
-  <rect x="430" y="56" width="150" height="80" rx="8" fill="#1e293b" stroke="#06b6d4" stroke-width="1.5">
+  <rect x="450" y="50" width="160" height="100" rx="8" fill="#1e293b" stroke="#06b6d4" stroke-width="1.5">
     <animate attributeName="stroke-opacity" values="0.5;1;0.5" dur="3s" begin="1s" repeatCount="indefinite"/>
   </rect>
-  <text x="505" y="80" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#67e8f9">3. Scoring (5 Cat.)</text>
-  <text x="505" y="100" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">Weighted Normalize</text>
-  <text x="505" y="114" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">Benchmark Compare</text>
-  <text x="505" y="128" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">Confidence Tag</text>
+  <text x="530" y="72" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#67e8f9">3. Weighted Scoring</text>
+  <text x="530" y="92" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">5 Categories (sum=100)</text>
+  <text x="530" y="106" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">Platform Benchmarks</text>
+  <text x="530" y="120" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">Normalized Weights</text>
+  <text x="530" y="134" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">Risk Penalty Deduction</text>
 
-  <!-- Arrow 3→4 -->
-  <line x1="580" y1="96" x2="620" y2="96" stroke="#475569" stroke-width="1.5"/>
-  <polygon points="616,91 626,96 616,101" fill="#475569"/>
+  <!-- Arrow 3-4 -->
+  <line x1="610" y1="100" x2="650" y2="100" stroke="#475569" stroke-width="1.5"/>
+  <polygon points="646,95 656,100 646,105" fill="#475569"/>
   <circle r="4" fill="#06b6d4" opacity="0.8">
-    <animateMotion dur="1.5s" begin="1s" repeatCount="indefinite" path="M580,96 L620,96"/>
+    <animateMotion dur="1.5s" begin="1s" repeatCount="indefinite" path="M610,100 L650,100"/>
   </circle>
 
   <!-- ═══ Step 4: Grade & Decision ═══ -->
-  <rect x="630" y="56" width="180" height="80" rx="8" fill="#1e293b" stroke="#10b981" stroke-width="1.5">
+  <rect x="660" y="50" width="160" height="100" rx="8" fill="#1e293b" stroke="#10b981" stroke-width="1.5">
     <animate attributeName="stroke-opacity" values="0.5;1;0.5" dur="3s" begin="1.5s" repeatCount="indefinite"/>
   </rect>
-  <text x="720" y="80" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#6ee7b7">4. Grade &amp; Decision</text>
-  <text x="720" y="100" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">S/A/B/C/D/F Grade</text>
-  <text x="720" y="114" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">Accept / Review / Reject</text>
-  <text x="720" y="128" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">Risk Assessment</text>
+  <text x="740" y="72" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#6ee7b7">4. Grade &amp; Decide</text>
+  <text x="740" y="92" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">S / A / B / C / D / F</text>
+  <text x="740" y="106" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">Accept / Review / Reject</text>
+  <text x="740" y="120" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">Structured Report</text>
+  <text x="740" y="134" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">Growth Trend Analysis</text>
 
-  <!-- ═══ Lower Section: RAG Enhancement ═══ -->
-  <!-- Arrow from Step 3 down -->
-  <line x1="505" y1="136" x2="505" y2="170" stroke="#475569" stroke-width="1.2"/>
-  <polygon points="499,166 505,176 511,166" fill="#475569"/>
+  <!-- Arrow down from Step 3 to RAG -->
+  <line x1="530" y1="150" x2="530" y2="184" stroke="#475569" stroke-width="1.2"/>
+  <polygon points="524,180 530,190 536,180" fill="#475569"/>
   <circle r="4" fill="#f59e0b" opacity="0.7">
-    <animateMotion dur="2s" repeatCount="indefinite" path="M505,136 L505,170"/>
+    <animateMotion dur="2s" repeatCount="indefinite" path="M530,150 L530,184"/>
   </circle>
 
   <!-- ═══ RAG Pipeline Box ═══ -->
-  <rect x="180" y="178" width="480" height="70" rx="10" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="6 3">
+  <rect x="180" y="192" width="480" height="76" rx="10" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="6 3">
     <animate attributeName="stroke-dashoffset" values="0;18" dur="3s" repeatCount="indefinite"/>
   </rect>
-  <text x="420" y="200" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="#fbbf24">RAG Enhancement (Optional)</text>
-  <text x="420" y="218" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">Query Expand → Hybrid Retrieval (Vector + BM25) → CrossEncoder Rerank ≥ 0.85</text>
-  <text x="420" y="234" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">Similar Creator Compare → LLM Analysis → Report Generation</text>
+  <text x="420" y="214" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="#fbbf24">RAG Enhancement (Optional)</text>
+  <text x="420" y="232" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">Query Expand &gt; Hybrid Retrieval (Vector + BM25) &gt; CrossEncoder Rerank &gt;= 0.85</text>
+  <text x="420" y="248" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#94a3b8">Similar Creator Analysis &gt; LLM Interpretation &gt; Report Augmentation</text>
+  <text x="420" y="258" text-anchor="middle" font-family="system-ui,sans-serif" font-size="8" fill="#64748b">Powered by Pinecone + Voyage-3 + Multi-Model LLM</text>
 
   <!-- Arrow to Output -->
-  <line x1="420" y1="248" x2="420" y2="278" stroke="#475569" stroke-width="1.5"/>
-  <polygon points="414,274 420,284 426,274" fill="#475569"/>
+  <line x1="420" y1="268" x2="420" y2="296" stroke="#475569" stroke-width="1.5"/>
+  <polygon points="414,292 420,302 426,292" fill="#475569"/>
   <circle r="4" fill="#10b981" opacity="0.7">
-    <animateMotion dur="1.5s" repeatCount="indefinite" path="M420,248 L420,278"/>
+    <animateMotion dur="1.5s" repeatCount="indefinite" path="M420,268 L420,296"/>
   </circle>
 
   <!-- ═══ Output ═══ -->
-  <rect x="320" y="284" width="200" height="28" rx="14" fill="#10b981" opacity="0.2" stroke="#10b981" stroke-width="1"/>
-  <text x="420" y="302" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="600" fill="#6ee7b7">CreatorEvaluationResponse</text>
+  <rect x="280" y="302" width="280" height="28" rx="14" fill="#10b981" opacity="0.2" stroke="#10b981" stroke-width="1"/>
+  <text x="420" y="320" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="600" fill="#6ee7b7">CreatorEvaluationResponse (JSON)</text>
 </svg>
