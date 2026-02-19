@@ -613,10 +613,18 @@ class CreatorOnboardingAgent:
         if reports_90d >= 3:
             base_score -= 0.15
             risk_tags.append("high_reports")
-        if followers > 0 and engagement_rate < 0.002 and data_sources.get("avg_likes") == "verified":
+        if (
+            followers > 0
+            and engagement_rate < 0.002
+            and data_sources.get("avg_likes") == "verified"
+        ):
             base_score -= 0.10
             risk_tags.append("low_engagement")
-        if posts_30d > 0 and posts_30d < 4 and data_sources.get("posts_30d") == "verified":
+        if (
+            posts_30d > 0
+            and posts_30d < 4
+            and data_sources.get("posts_30d") == "verified"
+        ):
             base_score -= 0.05
             risk_tags.append("low_activity")
         if ff_ratio > 1.5 and followers > 0:
@@ -645,7 +653,11 @@ class CreatorOnboardingAgent:
                 "max": max_engage,
                 "description": (
                     f"참여율 {engagement_rate:.2%}"
-                    + (f" (업계 평균 추정)" if data_sources.get("avg_likes") == "estimated" else "")
+                    + (
+                        f" (업계 평균 추정)"
+                        if data_sources.get("avg_likes") == "estimated"
+                        else ""
+                    )
                 ),
                 "source": data_sources.get("avg_likes", "unavailable"),
             },
@@ -668,7 +680,8 @@ class CreatorOnboardingAgent:
             "brand_fit": {
                 "score": round(s_fit * 100, 1),
                 "max": max_fit,
-                "description": "브랜드 적합도" + (" (미입력)" if brand_fit == 0 else f" {brand_fit:.0%}"),
+                "description": "브랜드 적합도"
+                + (" (미입력)" if brand_fit == 0 else f" {brand_fit:.0%}"),
                 "source": "verified" if brand_fit > 0 else "unavailable",
             },
         }
@@ -774,6 +787,7 @@ class CreatorOnboardingAgent:
         trend_data: Optional[Dict[str, Any]] = None
         try:
             from src.services.creator_history.service import get_creator_history_service
+
             history_svc = get_creator_history_service()
             creator_id = handle
             trend_result = await history_svc.get_trend(creator_id)
@@ -809,14 +823,16 @@ class CreatorOnboardingAgent:
             report_parts.append(
                 f"{key}: {detail['score']}/{detail['max']}  — {detail['description']} [{detail['source']}]"
             )
-        report_parts.extend([
-            f"─────────────────",
-            f"Total: {score}/100 → Grade {grade} → {decision.upper()}",
-            "",
-            f"=== Risks ===",
-            f"{'  '.join(risk_tags) if risk_tags else 'None detected'}",
-            f"Tags: {', '.join(tags) if tags else 'None'}",
-        ])
+        report_parts.extend(
+            [
+                f"─────────────────",
+                f"Total: {score}/100 → Grade {grade} → {decision.upper()}",
+                "",
+                f"=== Risks ===",
+                f"{'  '.join(risk_tags) if risk_tags else 'None detected'}",
+                f"Tags: {', '.join(tags) if tags else 'None'}",
+            ]
+        )
 
         # Trend info if available
         if trend_data:

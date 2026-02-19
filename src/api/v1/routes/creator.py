@@ -87,9 +87,7 @@ async def evaluate_creator(request: Dict[str, Any]) -> CreatorEvaluationResponse
             report=result.report,
             raw_profile=result.raw_profile,
             rag_enhanced=(
-                result.rag_enhanced.__dict__
-                if result.rag_enhanced
-                else None
+                result.rag_enhanced.__dict__ if result.rag_enhanced else None
             ),
             trend=result.trend,
             timestamp=datetime.now(),
