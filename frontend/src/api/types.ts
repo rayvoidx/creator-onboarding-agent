@@ -110,6 +110,7 @@ export interface MissionRecommendationResponse {
   success: boolean;
   creator_id: string;
   recommendations: MissionRecommendationItem[];
+  timestamp?: string;
 }
 
 export interface AnalyticsRequestPayload {
@@ -124,6 +125,7 @@ export interface AnalyticsRequestPayload {
 export interface AnalyticsResponse {
   success: boolean;
   report_type: string;
+  report_id?: string;
   user_id: string;
   report_data: Record<string, unknown>;
   insights: string[];

@@ -29,7 +29,7 @@ class IntegrationAgent(BaseAgent):
     """외부 서비스 통합 에이전트"""
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-        self.config = config or {}
+        super().__init__(name="integration", config=config)
         self.logger = logging.getLogger("IntegrationAgent")
 
     async def execute(self, state: IntegrationState) -> IntegrationState:

@@ -9,7 +9,10 @@ from enum import Enum
 from functools import wraps
 from typing import Any, Callable, Dict, Optional
 
-import pybreaker
+try:
+    import pybreaker
+except ImportError:
+    pybreaker = None  # type: ignore[assignment]
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +25,10 @@ class CircuitState(str, Enum):
     HALF_OPEN = "half_open"  # 복구 테스트 중
 
 
-class CircuitBreakerListener(pybreaker.CircuitBreakerListener):
+_CircuitBreakerListenerBase = pybreaker.CircuitBreakerListener if pybreaker else object
+
+
+class CircuitBreakerListener(_CircuitBreakerListenerBase):  # type: ignore[misc]
     """서킷 브레이커 이벤트 리스너"""
 
     def __init__(self, name: str):
@@ -48,7 +54,7 @@ class CircuitBreakerManager:
     """서킷 브레이커 관리자"""
 
     def __init__(self):
-        self._breakers: Dict[str, pybreaker.CircuitBreaker] = {}
+        self._breakers: Dict[str, Any] = {}
         self._stats: Dict[str, Dict[str, Any]] = {}
 
     def get_breaker(
@@ -56,8 +62,8 @@ class CircuitBreakerManager:
         name: str,
         fail_max: int = 5,
         reset_timeout: int = 30,
-        exclude: tuple | None = None,
-    ) -> pybreaker.CircuitBreaker:
+        exclude: Optional[tuple] = None,
+    ) -> Any:
         """
         서킷 브레이커 가져오기 (없으면 생성)
 
@@ -70,6 +76,12 @@ class CircuitBreakerManager:
         Returns:
             서킷 브레이커 인스턴스
         """
+        if pybreaker is None:
+            logger.warning(
+                "pybreaker not installed; circuit breaker '%s' disabled", name
+            )
+            return None
+
         if name not in self._breakers:
             listener = CircuitBreakerListener(name)
 
@@ -96,7 +108,7 @@ class CircuitBreakerManager:
 
         return self._breakers[name]
 
-    def get_status(self, name: str | None = None) -> Dict[str, Any]:
+    def get_status(self, name: Optional[str] = None) -> Dict[str, Any]:
         """
         서킷 브레이커 상태 조회
 
@@ -171,8 +183,8 @@ def circuit_breaker(
     name: str,
     fail_max: int = 5,
     reset_timeout: int = 30,
-    fallback: Callable | None = None,
-    exclude: tuple | None = None,
+    fallback: Optional[Callable] = None,
+    exclude: Optional[tuple] = None,
 ):
     """
     서킷 브레이커 데코레이터
@@ -195,6 +207,10 @@ def circuit_breaker(
         async def async_wrapper(*args, **kwargs):
             manager = get_circuit_breaker_manager()
             breaker = manager.get_breaker(name, fail_max, reset_timeout, exclude)
+
+            # pybreaker not installed – pass through
+            if breaker is None:
+                return await func(*args, **kwargs)
 
             try:
                 # 서킷이 열려있으면 바로 폴백 실행
@@ -243,6 +259,10 @@ def circuit_breaker(
         def sync_wrapper(*args, **kwargs):
             manager = get_circuit_breaker_manager()
             breaker = manager.get_breaker(name, fail_max, reset_timeout, exclude)
+
+            # pybreaker not installed – pass through
+            if breaker is None:
+                return func(*args, **kwargs)
 
             try:
                 if breaker.current_state == pybreaker.STATE_OPEN:
@@ -300,6 +320,10 @@ CIRCUIT_BREAKER_CONFIGS = {
 
 def init_circuit_breakers() -> None:
     """모든 사전 정의된 서킷 브레이커 초기화"""
+    if pybreaker is None:
+        logger.warning("pybreaker not installed; skipping circuit breaker init")
+        return
+
     manager = get_circuit_breaker_manager()
 
     for name, config in CIRCUIT_BREAKER_CONFIGS.items():

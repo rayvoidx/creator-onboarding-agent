@@ -515,11 +515,6 @@ class RAGPipeline:
             if not response or len(response.strip()) < 10:
                 return "응답이 너무 짧습니다. 더 자세한 정보를 제공해주세요."
 
-            # 부적절한 내용 필터링 (기본적인 검증)
-            inappropriate_keywords = ["오류", "에러", "실패", "불가능"]
-            if any(keyword in response for keyword in inappropriate_keywords):
-                return "죄송합니다. 적절한 답변을 제공할 수 없습니다."
-
             return response
 
         except Exception as e:

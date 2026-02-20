@@ -6,7 +6,12 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field
+
+try:
+    from pydantic import EmailStr
+except ImportError:
+    EmailStr = str  # type: ignore[misc, assignment]
 
 
 class UserRole(str, Enum):

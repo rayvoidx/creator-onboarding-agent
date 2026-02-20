@@ -180,9 +180,10 @@ class MainOrchestrator:
             }
         )
 
-        # Deep Agents 초기화 (통합)
+        # Deep Agents 초기화 (통합) — GenerationEngine 연결
         self.deep_agents = UnifiedDeepAgents(
-            get_agent_runtime_config("deep_agents", self.config.get("deep_agents"))
+            get_agent_runtime_config("deep_agents", self.config.get("deep_agents")),
+            generation_engine=self.planner_engine,
         )
 
         # 체크포인터 설정 (영속적 저장용)
@@ -336,7 +337,8 @@ class MainOrchestrator:
             # 폴백: 메모리 체크포인터 사용 가능 시 사용
             try:
                 if SqliteSaver is not None:
-                    self.checkpointer = SqliteSaver.from_conn_string(":memory:")  # type: ignore
+                    mem_conn = sqlite3.connect(":memory:", check_same_thread=False)
+                    self.checkpointer = SqliteSaver(mem_conn)  # type: ignore
                     self.logger.info("Using in-memory checkpointer as fallback")
                 else:
                     self.checkpointer = None

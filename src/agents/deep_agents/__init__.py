@@ -38,13 +38,14 @@ class UnifiedDeepAgents:
     4. 최종 품질 검증
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Optional[Dict[str, Any]] = None, generation_engine=None):
         self.config = config or {}
         self.logger = logging.getLogger("UnifiedDeepAgents")
         self.max_steps = self.config.get("max_steps", 8)
         self.critic_rounds = self.config.get("critic_rounds", 2)
         self.timeout_secs = self.config.get("timeout_secs", 60)
         self.quality_threshold = self.config.get("quality_threshold", 0.7)
+        self.generation_engine = generation_engine
 
     def should_use_deep_agents(self, query: str) -> bool:
         """
@@ -185,42 +186,112 @@ class UnifiedDeepAgents:
             }
 
     async def _generate_initial_response(self, query: str) -> str:
-        """초기 응답 생성"""
-        # 실제 구현에서는 LLM을 호출하여 응답 생성
-        return f"[초기 응답] {query}에 대한 분석 결과입니다."
+        """초기 응답 생성 (LLM 호출)"""
+        if self.generation_engine is None:
+            return f"[초기 응답] {query}에 대한 분석 결과입니다."
+
+        try:
+            system_prompt = (
+                "You are a deep analysis agent. Provide a thorough, structured analysis "
+                "of the user's request in Korean. Use clear headings (##), bullet points, "
+                "and concrete examples. Be comprehensive but concise."
+            )
+            return await self.generation_engine.generate(
+                prompt=query,
+                system_prompt=system_prompt,
+                temperature=0.3,
+            )
+        except Exception as e:
+            self.logger.warning("LLM generation failed, using fallback: %s", e)
+            return f"[초기 응답] {query}에 대한 분석 결과입니다."
 
     async def _critique_response(self, query: str, response: str) -> Dict[str, Any]:
-        """응답 품질 비평"""
-        # 실제 구현에서는 LLM을 사용하여 품질 평가
-        # 여기서는 간단한 휴리스틱 사용
-        score = 0.5
+        """응답 품질 비평 (LLM 호출)"""
+        if self.generation_engine is None:
+            return self._heuristic_critique(response)
 
-        # 응답 길이 기반 점수
+        try:
+            system_prompt = (
+                "You are a quality critic. Evaluate the response to the user query.\n"
+                "Output ONLY valid JSON with this schema:\n"
+                '{"score": 0.0-1.0, "feedback": "string", "improvements": ["string"]}\n'
+                "Rules:\n"
+                "- score 0.8+ means high quality\n"
+                "- score <0.5 means needs significant improvement\n"
+                "- List specific, actionable improvements"
+            )
+            raw = await self.generation_engine.generate(
+                prompt=f"Query: {query}\n\nResponse to evaluate:\n{response}",
+                system_prompt=system_prompt,
+                temperature=0.1,
+            )
+            import json
+
+            cleaned = raw.strip()
+            # Strip markdown code fences if present
+            if cleaned.startswith("```"):
+                cleaned = cleaned.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
+            result = json.loads(cleaned)
+            result["score"] = float(result.get("score", 0.5))
+            return result
+        except Exception as e:
+            self.logger.warning("LLM critique failed, using heuristic: %s", e)
+            return self._heuristic_critique(response)
+
+    def _heuristic_critique(self, response: str) -> Dict[str, Any]:
+        """Fallback heuristic-based critique."""
+        score = 0.5
         if len(response) > 100:
             score += 0.1
         if len(response) > 300:
             score += 0.1
-
-        # 구조화 여부
         if any(marker in response for marker in ["1.", "2.", "-", "•", "##"]):
             score += 0.1
-
         return {
             "score": min(score, 1.0),
-            "feedback": "품질 평가 완료",
+            "feedback": "품질 평가 완료 (heuristic)",
             "improvements": ["더 구체적인 예시 추가", "구조화된 형식으로 정리"],
         }
 
     async def _improve_response(
         self, query: str, response: str, critique: Dict[str, Any]
     ) -> str:
-        """응답 개선"""
-        # 실제 구현에서는 LLM을 사용하여 응답 개선
-        improvements = critique.get("improvements", [])
-        improved = f"{response}\n\n[개선사항 반영]\n"
-        for imp in improvements:
-            improved += f"- {imp}\n"
-        return improved
+        """응답 개선 (LLM 호출)"""
+        if self.generation_engine is None:
+            improvements = critique.get("improvements", [])
+            improved = f"{response}\n\n[개선사항 반영]\n"
+            for imp in improvements:
+                improved += f"- {imp}\n"
+            return improved
+
+        try:
+            feedback = critique.get("feedback", "")
+            improvements = critique.get("improvements", [])
+            improvements_text = "\n".join(f"- {imp}" for imp in improvements)
+
+            system_prompt = (
+                "You are a response improvement agent. Improve the original response "
+                "based on the critique feedback. Write in Korean. Keep the improved "
+                "response structured and comprehensive."
+            )
+            return await self.generation_engine.generate(
+                prompt=(
+                    f"Original query: {query}\n\n"
+                    f"Original response:\n{response}\n\n"
+                    f"Critique feedback: {feedback}\n"
+                    f"Required improvements:\n{improvements_text}\n\n"
+                    "Please provide an improved response."
+                ),
+                system_prompt=system_prompt,
+                temperature=0.3,
+            )
+        except Exception as e:
+            self.logger.warning("LLM improvement failed, using fallback: %s", e)
+            improvements = critique.get("improvements", [])
+            improved = f"{response}\n\n[개선사항 반영]\n"
+            for imp in improvements:
+                improved += f"- {imp}\n"
+            return improved
 
 
 __all__ = ["UnifiedDeepAgents", "DeepAgentsState"]
