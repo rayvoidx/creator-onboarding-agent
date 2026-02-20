@@ -41,7 +41,7 @@ AI 기반 크리에이터 온보딩 및 미션 추천 시스템
 - **Agents**: `BaseAgent` 상속, `async execute()` 메서드 구현
 - **RAG**: Hybrid retrieval → Rerank (0.85) → Refine → SSE
 - **API**: Pydantic v2 스키마, `Depends()` 의존성 주입, Circuit Breaker
-- **Testing**: pytest 95% coverage, Cypress E2E
+- **Testing**: pytest (target 95% coverage), Cypress E2E
 
 ## Goals
 

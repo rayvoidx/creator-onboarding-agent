@@ -164,6 +164,13 @@ class GenerationEngine:
         except Exception as e:
             self.logger.error(f"Model initialization failed: {e}")
 
+        if not self.models:
+            self.logger.warning(
+                "No LLM models initialized. Set at least one API key "
+                "(ANTHROPIC_API_KEY, OPENAI_API_KEY, or GOOGLE_API_KEY) in .env. "
+                "See .env.example for details."
+            )
+
     async def generate_stream(
         self,
         prompt: str,
@@ -400,7 +407,13 @@ class GenerationEngine:
     async def _fallback_generation(
         self, prompt: str, context: Optional[Dict[str, Any]]
     ) -> str:
-        return "죄송합니다. 현재 응답을 생성할 수 없습니다."
+        if not self.models:
+            return (
+                "LLM API 키가 설정되지 않았습니다. "
+                ".env 파일에 ANTHROPIC_API_KEY, OPENAI_API_KEY, 또는 GOOGLE_API_KEY를 설정해주세요. "
+                "(.env.example 파일을 참고하세요)"
+            )
+        return "죄송합니다. 현재 응답을 생성할 수 없습니다. 잠시 후 다시 시도해주세요."
 
     async def generate_openai_function_call(self, *args, **kwargs):
         # Implementation omitted for brevity, keep existing logic if needed

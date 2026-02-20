@@ -5,7 +5,7 @@
 <p align="center">
   <a href="#quick-start"><img src="https://img.shields.io/badge/Quick_Start-Guide-10b981?style=flat-square" alt="Quick Start"/></a>
   <a href="#api-reference"><img src="https://img.shields.io/badge/API-Reference-3b82f6?style=flat-square" alt="API Reference"/></a>
-  <a href="#roadmap"><img src="https://img.shields.io/badge/Roadmap-v2.0-f59e0b?style=flat-square" alt="Roadmap"/></a>
+  <a href="#roadmap"><img src="https://img.shields.io/badge/Status-PoC-f59e0b?style=flat-square" alt="PoC"/></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-8b5cf6?style=flat-square" alt="License"/></a>
 </p>
 
@@ -13,12 +13,13 @@
   <strong>An autonomous multi-agent system that evaluates social media creators, scores their influence, and matches them with brand campaigns — powered by LangGraph, RAG pipelines, and multi-model LLMs.</strong>
 </p>
 
-> **Public Beta** — This project is in active development. Core evaluation, scoring, and mission-matching features are fully functional. Platform API integrations and batch processing are on the [roadmap](#roadmap) for v1.0 stable release.
+> **Proof of Concept** — This repository is a PoC (Proof of Concept) demonstrating the architecture and core capabilities of an AI-powered creator onboarding system. Creator Evaluation, Mission Recommendation, and RAG-based Q&A are fully functional. Production development will continue in a separate repository. See [Project Status](#project-status) for details.
 
 ---
 
 ## Table of Contents
 
+- [Project Status](#project-status)
 - [Why Agentic AI?](#why-agentic-ai)
 - [Architecture](#architecture)
 - [Creator Evaluation System](#creator-evaluation-system)
@@ -33,6 +34,44 @@
 - [Roadmap](#roadmap)
 - [Contributing](#contributing)
 - [License](#license)
+
+---
+
+## Project Status
+
+This repository serves as a **Proof of Concept (PoC)** — a working prototype that validates the system architecture and demonstrates core capabilities. Production-level development will continue in a separate repository.
+
+### What works in this PoC
+
+| Feature | Status | Description |
+|:--------|:------:|:------------|
+| **Creator Evaluation** | Working | Instagram profile scraping, 5-category scoring, 6-grade system |
+| **Mission Recommendation** | Working | Rule-based creator-mission matching engine |
+| **RAG Pipeline** | Working | Hybrid retrieval + reranking + streaming generation (requires API keys) |
+| **LangGraph Orchestrator** | Working | 14-node graph with intent routing, planning, and multi-agent dispatch |
+| **Multi-Model LLM Fleet** | Working | Claude + GPT + Gemini with automatic failover |
+| **Frontend UI** | Working | React 18 evaluation dashboard, RAG chat, admin panel |
+| **Docker Deployment** | Working | Full-stack Docker Compose (6 services) |
+| **Auth / RBAC** | Working | JWT tokens, role-based access, refresh flow |
+
+### Prototype / partial implementation
+
+| Feature | Status | Notes |
+|:--------|:------:|:------|
+| **Analytics Agent** | Prototype | Returns sample data for UI demonstration |
+| **GraphRAG** | Prototype | Simulated graph-based retrieval |
+| **TikTok / YouTube scraping** | Limited | Requires JS rendering not yet implemented |
+| **Test Coverage** | ~30% | Target: 95% (to be achieved in production repo) |
+
+### What's next (separate repository)
+
+Production development will address:
+- Official platform API integrations (OAuth-based)
+- Real engagement metrics collection
+- Kubernetes deployment with auto-scaling
+- Comprehensive test coverage (95%+)
+- Batch processing for large-scale creator evaluation
+- Campaign automation workflows
 
 ---
 
@@ -458,7 +497,7 @@ creator-onboarding-agent/
   <img src="docs/assets/roadmap.svg" alt="Product Roadmap" width="840"/>
 </p>
 
-### Beta (Current)
+### PoC (Current — this repository)
 
 - [x] 9 AI agents with LangGraph orchestration
 - [x] 6-grade scoring system (S/A/B/C/D/F)
@@ -469,15 +508,17 @@ creator-onboarding-agent/
 - [x] React frontend with evaluation visualization
 - [x] Data confidence transparency (verified/estimated/unavailable)
 
-### v1.0 — Stable
+> **Note:** This repository is complete as a PoC. The items below will be developed in a separate production repository.
+
+### v1.0 — Production (separate repository)
 
 - [ ] **TikTok & YouTube scraping** — JS rendering support for dynamic platforms
 - [ ] **OAuth API integration** — Official platform APIs for verified engagement data
 - [ ] **Real engagement metrics** — Actual likes/comments/shares per post
+- [ ] **Test coverage 95%** — Comprehensive unit, integration, and E2E tests
+- [ ] **Kubernetes deployment** — Production-grade orchestration with auto-scaling
 - [ ] **Webhook notifications** — Event-driven alerts for evaluation completion
 - [ ] **Admin dashboard** — Campaign management, creator CRM, bulk operations
-- [ ] **Kubernetes deployment** — Production-grade orchestration with auto-scaling
-- [ ] **Rate limiting & auth** — JWT authentication, API key management, RBAC
 
 ### v2.0 — Scale
 
@@ -525,5 +566,5 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 ---
 
 <p align="center">
-  <sub>Built with LangGraph, FastAPI, and multi-model LLMs</sub>
+  <sub>Built with LangGraph, FastAPI, and multi-model LLMs — PoC Repository</sub>
 </p>
