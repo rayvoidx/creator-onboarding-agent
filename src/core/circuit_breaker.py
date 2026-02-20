@@ -28,7 +28,7 @@ class CircuitState(str, Enum):
 _CircuitBreakerListenerBase = pybreaker.CircuitBreakerListener if pybreaker else object
 
 
-class CircuitBreakerListener(_CircuitBreakerListenerBase):  # type: ignore[misc]
+class CircuitBreakerListener(_CircuitBreakerListenerBase):  # type: ignore[misc,valid-type]
     """서킷 브레이커 이벤트 리스너"""
 
     def __init__(self, name: str):
